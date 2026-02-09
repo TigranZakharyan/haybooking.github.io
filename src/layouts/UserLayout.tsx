@@ -1,44 +1,53 @@
 import { Container } from "@/components";
 import { Link, Outlet } from "react-router-dom";
+import { CircleDollarSign, Search, UserCircle2 } from "lucide-react";
 
 export function UserLayout() {
-    return (
-        <div className="h-full grid grid-rows-[auto_1fr]">
-            <header className="py-8">
-                <Container className="flex justify-between items-center">
-                    <a href="/" className="flex items-center justify-center gap-3">
-                        <img src="/public/logo.png" className="w-12 h-12" />
-                        <h2 className="">Haybooking</h2>
-                    </a>
-                    <div className="flex gap-6">
-                        <Link
-                            to="#"
-                            className="relative text-white text-lg font-medium transition-all group"
-                        >
-                            Pricing
-                            {/* The Animated Line */}
-                            <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
-                        </Link>
+  return (
+    <div className="h-full grid grid-rows-[auto_1fr]">
+      <header className="py-8">
+        <Container className="flex justify-between items-center">
+          {/* Logo Section */}
+          <Link to="/" className="flex items-center justify-center gap-3">
+            <img src="/logo.png" className="w-10 h-10 md:w-12 md:h-12" alt="Logo" />
+            <h1 className="text-xl font-bold">Haybooking</h1>
+          </Link>
 
-                        <Link
-                            to="#"
-                            className="relative text-white text-lg font-medium transition-all group"
-                        >
-                            Find Service
-                            <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
-                        </Link>
+          {/* Navigation Links */}
+          <nav className="flex gap-4 md:gap-8">
+            <Link
+              to="/pricing"
+              className="relative text-white group flex items-center gap-2"
+            >
+              <CircleDollarSign className="w-6 h-6 md:hidden" />
+              <span className="hidden md:block text-lg font-medium">Pricing</span>
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
+            </Link>
 
-                        <Link
-                            to="#"
-                            className="relative text-white text-lg font-medium transition-all group"
-                        >
-                            Sign In/Up
-                            <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
-                        </Link>
-                    </div>
-                </Container>
-            </header>
-            <Outlet />
-        </div>
-    )
+            <Link
+              to="/find-service"
+              className="relative text-white group flex items-center gap-2"
+            >
+              <Search className="w-6 h-6 md:hidden" />
+              <span className="hidden md:block text-lg font-medium">Find Service</span>
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+
+            <Link
+              to="/auth"
+              className="relative text-white group flex items-center gap-2"
+            >
+              <UserCircle2 className="w-6 h-6 md:hidden" />
+              <span className="hidden md:block text-lg font-medium">Sign In/Up</span>
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+          </nav>
+        </Container>
+      </header>
+
+      <main className="h-full">
+        <Outlet />
+      </main>
+    </div>
+  );
 }
