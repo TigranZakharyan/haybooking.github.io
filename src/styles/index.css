@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #b39595;
+  --color-secondary: #A88F85;
+  --color-text-body: #6a6a6a;
+}
+
+@layer base {
+  h1 {
+    @apply text-4xl font-bold text-primary;
+  }
+  h2 {
+    @apply text-3xl font-semibold text-primary;
+  }
+  h3 {
+    @apply text-2xl font-semibold text-primary;
+  }
+  h4 {
+    @apply text-xl font-medium text-primary;
+  }
+  h5 {
+    @apply text-lg font-medium text-primary;
+  }
+  h6 {
+    @apply text-base font-bold text-primary;
+  }
+  
+  /* Setting the default body color you provided */
+  body {
+    @apply text-text-body;
+  }
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  color: var(--color-text);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-primary-50);
+  margin: 0;
+  height: 100vh;
+  margin: 0;
+}
+
+#root {
+  height: 100%;
+}
+
