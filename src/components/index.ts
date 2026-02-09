@@ -1,2 +1,5 @@
 export * from './Container'
 export * from './Button'
+export * from './Input'
+export * from './DividerWithText'
+export * from './Tabs'

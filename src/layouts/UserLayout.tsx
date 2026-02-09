@@ -34,7 +34,7 @@ export function UserLayout() {
             </Link>
 
             <Link
-              to="/auth"
+              to="/signin"
               className="relative text-white group flex items-center gap-2"
             >
               <UserCircle2 className="w-6 h-6 md:hidden" />
