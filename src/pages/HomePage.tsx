@@ -2,8 +2,10 @@ import Lottie from 'react-lottie'
 import hiringLottie from '@/assets/lottie/hiring.json'
 import seekingJobLottie from '@/assets/lottie/seekingJob.json'
 import { Button } from '@/components'
+import { useNavigate } from 'react-router-dom';
 
 export function HomePage() {
+  const navigate = useNavigate();
   return (
     <div className="h-full relative flex items-center justify-center px-4">
       {/* background */}
@@ -22,6 +24,7 @@ export function HomePage() {
 
           <Button
             size="large"
+            onClick={() => navigate("/pricing")}
             className="mt-6 text-secondary shadow-[4px_4px_10px_rgba(0,0,0,0.2)]"
           >
             Find Services
@@ -50,6 +53,7 @@ export function HomePage() {
 
           <Button
             size="large"
+            onClick={() => navigate("/signin")}
             className="mt-6 bg-primary text-white hover:bg-primary/92 shadow-[4px_4px_10px_rgba(0,0,0,0.2)]"
           >
             Login | Register

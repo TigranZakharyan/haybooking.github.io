@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { User, Mail, Lock, Phone } from "lucide-react";
-import { Input, DividerWithText, Tabs } from "@/components";
+import { Mail, Lock, Phone } from "lucide-react";
+import { Input, DividerWithText, Tabs, Button } from "@/components";
 
 // Define the available login methods for strict typing
 type LoginMethod = "email" | "phone";
@@ -9,20 +9,20 @@ type LoginMethod = "email" | "phone";
 export function SignInPage() {
     const [loginMethod, setLoginMethod] = useState<LoginMethod>("email");
 
-    const tabOptions: { id: LoginMethod; label: string }[] = [
+    const tabOptions: { id: LoginMethod; label: string }[] = useMemo(() => [
         { id: "email", label: "Email" },
         { id: "phone", label: "Phone Number" }
-    ];
+    ], []);
 
     return (
         <div className="h-full grid grid-cols-2 md:grid-cols-2 overflow-hidden">
             {/* LEFT SIDE: Form Section */}
             <div className="w-full flex flex-col justify-center items-center p-8 md:p-16 bg-white">
-                <div className="w-full max-w-md space-y-8">
+                <div className="w-full max-w-lg space-y-8">
                     {/* Header */}
                     <div className="text-center">
                         <h2 className="text-liberty">Sign In</h2>
-                        <p className="text-liberty mt-2">Let's get started with your 30 days free trial</p>
+                        <p className="text-liberty mt-2">Welcome Back!</p>
                     </div>
 
                     {/* Shared Tabs Component */}
@@ -58,16 +58,11 @@ export function SignInPage() {
                         />
 
                         {/* Primary Action */}
-                        <button
-                            type="submit"
-                            className="w-full py-4 bg-liberty text-white rounded-xl font-semibold shadow-lg hover:brightness-110 transition-all active:scale-[0.98]"
-                        >
-                            Sign Up
-                        </button>
+                        <Button type="submit" size="large" variant="liberty" className="w-full">Sign In</Button>
                     </form>
 
                     <DividerWithText>
-                        Already have an account? <Link to="/login" className="font-bold text-liberty hover:underline">Log in</Link>
+                        Don't have an account? <Link to="/signup" className="font-bold text-liberty hover:underline">Sign up</Link>
                     </DividerWithText>
 
                     {/* Footer Legal */}
@@ -80,7 +75,7 @@ export function SignInPage() {
 
             {/* RIGHT SIDE: Visual Section */}
             <div className="w-full h-full">
-                <div className="absolute w-1/2 h-full -z-1 top-0 bg-[url(/booking.jpg)] bg-no-repeat bg-cover bg-center"></div>
+                <div className="fixed w-1/2 h-full -z-1 top-0 bg-[url(/booking.jpg)] bg-no-repeat bg-cover bg-center"></div>
             </div>
         </div>
     );
