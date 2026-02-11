@@ -6,8 +6,8 @@ import { useLocation } from "react-router-dom";
 export function UserLayout() {
   const location = useLocation()
   console.log(location.pathname)
-  const titleColor = location.pathname === '/findServices' || location.pathname === "/pricing" ? "text-white" : "undefined"
-  const headerBg = location.pathname === '/findServices' || location.pathname === "/pricing" ? "bg-primary" : "undefined"
+  const titleColor = location.pathname === '/findServices' || location.pathname === "/pricing" ? "text-white!" : "undefined"
+  const headerBg = location.pathname === '/findServices' || location.pathname === "/pricing" ? "bg-primary!" : "undefined"
   return (
     <div className="h-full grid grid-rows-[auto_1fr]">
       <header className={`py-8 md:bg-transparent bg-primary ${headerBg}`}>
