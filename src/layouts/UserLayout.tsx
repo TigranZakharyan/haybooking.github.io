@@ -1,16 +1,21 @@
 import { Container } from "@/components";
 import { Link, Outlet } from "react-router-dom";
 import { CircleDollarSign, Search, UserCircle2 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 export function UserLayout() {
+  const location = useLocation()
+  console.log(location.pathname)
+  const titleColor = location.pathname === '/findServices' || location.pathname === "/pricing" ? "text-white" : "undefined"
+  const headerBg = location.pathname === '/findServices' || location.pathname === "/pricing" ? "bg-primary" : "undefined"
   return (
     <div className="h-full grid grid-rows-[auto_1fr]">
-      <header className="py-8">
+      <header className={`py-8 ${headerBg}`}>
         <Container className="flex justify-between items-center">
           {/* Logo Section */}
           <Link to="/" className="flex items-center justify-center gap-3">
             <img src="/logo.png" className="w-10 h-10 md:w-12 md:h-12" alt="Logo" />
-            <h1 className="text-xl font-bold">Haybooking</h1>
+            <h1 className={`text-xl font-bold ${titleColor}`}>Haybooking</h1>
           </Link>
 
           {/* Navigation Links */}
@@ -25,7 +30,7 @@ export function UserLayout() {
             </Link>
 
             <Link
-              to="/find-service"
+              to="/findServices"
               className="relative text-white group flex items-center gap-2"
             >
               <Search className="w-6 h-6 md:hidden" />

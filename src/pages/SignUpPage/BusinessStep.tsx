@@ -8,8 +8,9 @@ import {
     CheckCircle,
     Plus,
 } from "lucide-react";
-import { Button, Input } from "@/components";
+import { Button, Input, Select } from "@/components";
 import { nanoid } from "nanoid";
+import { cities, countries } from "@/constants";
 
 /* ================= TYPES ================= */
 
@@ -283,23 +284,23 @@ export function BusinessStep({
                                         />
 
                                         <div className="grid grid-cols-2 gap-4">
-                                            <Input
-                                                label="Country"
-                                                required
-                                                value={branch.country}
-                                                placeholder="USA"
+                                            <Select
                                                 onChange={(e) =>
                                                     updateBranch(branch.id, "country", e.target.value)
                                                 }
+                                                value={branch.country}
+                                                options={countries}
+                                                label="Country"
+                                                placeholder="Select Country"
                                             />
-                                            <Input
-                                                label="City"
-                                                required
-                                                value={branch.city}
-                                                placeholder="New York"
+                                            <Select
                                                 onChange={(e) =>
                                                     updateBranch(branch.id, "city", e.target.value)
                                                 }
+                                                value={branch.city}
+                                                options={branch.country ? cities[branch.country] : []}
+                                                label="City"
+                                                placeholder="Select City"
                                             />
                                         </div>
 
@@ -353,7 +354,6 @@ export function BusinessStep({
                     </div>
                 </>
             )}
-
         </div>
     );
 }

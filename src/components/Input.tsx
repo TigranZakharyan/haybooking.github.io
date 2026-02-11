@@ -2,10 +2,11 @@ import React from "react";
 import { type LucideIcon, Eye, EyeOff } from "lucide-react";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+  label?: string; // ✅ now optional
   icon?: LucideIcon;
   isPassword?: boolean;
   hint?: string;
+  variant?: "default" | "primary"; // ✅ new variant
 }
 
 export function Input({
@@ -13,21 +14,29 @@ export function Input({
   icon: Icon,
   isPassword,
   hint,
+  variant = "default",
   className = "",
-  required, // Destructure required to use it for the UI logic
+  required,
   ...props
 }: InputProps) {
   const [showPassword, setShowPassword] = React.useState(false);
-  
+
   const paddingLeft = Icon ? "pl-10" : "pl-4";
+
+  const borderVariant =
+    variant === "primary"
+      ? "border-primary focus:ring-primary"
+      : "border-slate-200 focus:ring-indigo-500";
 
   return (
     <div className={`w-full text-left ${className}`}>
-      <label className="text-sm font-medium text-slate-700 block mb-1">
-        {label}
-        {/* Render asterisk if required is true */}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+      {/* ✅ Render label only if provided */}
+      {label && (
+        <label className="text-sm font-medium text-slate-700 block mb-1">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
 
       <div className="relative flex items-center">
         {Icon && (
@@ -37,11 +46,17 @@ export function Input({
         <input
           {...props}
           required={required}
-          // Logic: If isPassword is true, toggle between 'text' and 'password'
-          type={isPassword ? (showPassword ? "text" : "password") : (props.type ?? "text")}
-          className={`w-full ${paddingLeft} pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl
-            focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all
-            placeholder:text-slate-400 ${className || ""}`}
+          type={
+            isPassword
+              ? showPassword
+                ? "text"
+                : "password"
+              : props.type ?? "text"
+          }
+          className={`w-full ${paddingLeft} pr-10 py-3 bg-slate-50 border rounded-lg
+            focus:outline-none focus:ring-2 transition-all
+            placeholder:text-slate-400
+            ${borderVariant}`}
         />
 
         {isPassword && (
