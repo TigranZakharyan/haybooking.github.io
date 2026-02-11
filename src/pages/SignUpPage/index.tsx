@@ -20,7 +20,7 @@ export function SignUpPage() {
   const [code, setCode] = useState("");
 
   return (
-    <div className="h-full grid grid-cols-1 md:grid-cols-2 overflow-hidden">
+    <div className="h-full grid md:grid-cols-2 overflow-hidden">
       {/* LEFT SIDE */}
       <div className="w-full flex flex-col justify-center items-center p-8 md:p-16 bg-white">
         <div className="w-full max-w-lg space-y-4">
@@ -148,7 +148,7 @@ export function SignUpPage() {
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="w-full h-full">
+      <div className="w-full h-full md:block hidden">
         <div className="fixed w-1/2 h-full -z-1 top-0 bg-[url(/booking.jpg)] bg-no-repeat bg-cover bg-center"></div>
       </div>
     </div>

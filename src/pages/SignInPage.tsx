@@ -15,7 +15,7 @@ export function SignInPage() {
     ], []);
 
     return (
-        <div className="h-full grid grid-cols-2 md:grid-cols-2 overflow-hidden">
+        <div className="h-full grid md:grid-cols-2 overflow-hidden">
             {/* LEFT SIDE: Form Section */}
             <div className="w-full flex flex-col justify-center items-center p-8 md:p-16 bg-white">
                 <div className="w-full max-w-lg space-y-8">
@@ -74,7 +74,7 @@ export function SignInPage() {
             </div>
 
             {/* RIGHT SIDE: Visual Section */}
-            <div className="w-full h-full">
+            <div className="w-full h-full hidden md:block">
                 <div className="fixed w-1/2 h-full -z-1 top-0 bg-[url(/booking.jpg)] bg-no-repeat bg-cover bg-center"></div>
             </div>
         </div>

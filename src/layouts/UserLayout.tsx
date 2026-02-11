@@ -10,12 +10,12 @@ export function UserLayout() {
   const headerBg = location.pathname === '/findServices' || location.pathname === "/pricing" ? "bg-primary" : "undefined"
   return (
     <div className="h-full grid grid-rows-[auto_1fr]">
-      <header className={`py-8 ${headerBg}`}>
+      <header className={`py-8 md:bg-transparent bg-primary ${headerBg}`}>
         <Container className="flex justify-between items-center">
           {/* Logo Section */}
           <Link to="/" className="flex items-center justify-center gap-3">
             <img src="/logo.png" className="w-10 h-10 md:w-12 md:h-12" alt="Logo" />
-            <h1 className={`text-xl font-bold ${titleColor}`}>Haybooking</h1>
+            <h1 className={`text-xl font-bold md:text-primary text-white ${titleColor}`}>Haybooking</h1>
           </Link>
 
           {/* Navigation Links */}
