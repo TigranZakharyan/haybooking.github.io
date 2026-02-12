@@ -1,65 +1,90 @@
-import Lottie from 'react-lottie'
-import hiringLottie from '@/assets/lottie/hiring.json'
-import seekingJobLottie from '@/assets/lottie/seekingJob.json'
-import { Button } from '@/components'
-import { useNavigate } from 'react-router-dom';
+import Lottie from "react-lottie";
+import hiringLottie from "@/assets/lottie/hiring.json";
+import seekingJobLottie from "@/assets/lottie/seekingJob.json";
+import { Button } from "@/components";
+import { useNavigate } from "react-router-dom";
 
 export function HomePage() {
   const navigate = useNavigate();
-  return (
-    <div className="h-full relative flex items-center justify-center px-4">
-      {/* background */}
-      <div className="fixed inset-0 -z-10 bg-linear-[90deg,var(--color-white)_50%,var(--color-primary)_50%]" />
 
-      <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+  return (
+    <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-12 py-12 bg-gray-50">
+      {/* CARDS WRAPPER */}
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 w-full max-w-7xl justify-center items-stretch">
+
         {/* LEFT CARD */}
-        <section className="bg-secondary w-full max-w-md p-8 sm:p-12 lg:p-16 rounded-3xl flex flex-col items-center text-center">
-          <h2 className="text-white uppercase font-bold mb-4">
+        <section className="
+          bg-white
+          rounded-3xl
+          border border-gray-200
+          shadow-[0_10px_30px_rgba(0,0,0,0.08)]
+          py-8 sm:py-12
+          px-6 sm:px-12 lg:px-16
+          text-center
+          flex flex-col items-center
+          justify-between
+          transition hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+          flex-1
+        ">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-800">
             I'm here for hiring
           </h2>
 
-          <div className="w-56 sm:w-64 md:w-72">
+          <p className="text-gray-500 text-sm sm:text-base mb-6 max-w-xs sm:max-w-sm leading-relaxed">
+            Best for spa, salon, wellness center, and therapy business owners
+            who want to manage bookings, appointments, and clients.
+          </p>
+
+          <div className="w-40 sm:w-52 md:w-60 mb-6">
             <Lottie options={{ animationData: hiringLottie }} />
           </div>
 
           <Button
             size="large"
-            onClick={() => navigate("/pricing")}
-            className="mt-6 text-secondary shadow-[4px_4px_10px_rgba(0,0,0,0.2)]"
+            onClick={() => navigate("/findServices")}
+            className="w-full bg-primary text-white hover:bg-primary/90 rounded-xl"
           >
             Find Services
           </Button>
         </section>
 
-        {/* CENTER LOGO */}
-        <div className="grid grid-cols-2 rounded-lg bg-linear-[90deg,var(--color-primary)_50%,var(--color-white)_50%] px-2 py-3 sm:px-4 sm:py-4">
-          <p className="uppercase text-lg sm:text-xl text-white text-center font-bold">
-            fast
-          </p>
-          <p className="uppercase text-lg sm:text-xl text-center font-bold">
-            booking
-          </p>
-        </div>
-
         {/* RIGHT CARD */}
-        <section className="bg-white w-full max-w-md p-8 sm:p-12 lg:p-16 rounded-3xl flex flex-col items-center text-center">
-          <h2 className="uppercase font-bold mb-4">
+        <section className="
+          bg-white
+          rounded-3xl
+          border border-gray-200
+          shadow-[0_10px_30px_rgba(0,0,0,0.08)]
+          py-8 sm:py-12
+          px-6 sm:px-12 lg:px-16
+          text-center
+          flex flex-col items-center
+          justify-between
+          transition hover:shadow-[0_15px_40px_rgba(0,0,0,0.12)]
+          flex-1
+        ">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-4 text-gray-800">
             I'm here seeking job
           </h2>
 
-          <div className="w-56 sm:w-64 md:w-72">
+          <p className="text-gray-500 text-sm sm:text-base mb-6 max-w-xs sm:max-w-sm leading-relaxed">
+            Best for personal users who want to book appointments for spa,
+            salon, and wellness services at their favorite businesses.
+          </p>
+
+          <div className="w-40 sm:w-52 md:w-60 mb-6">
             <Lottie options={{ animationData: seekingJobLottie }} />
           </div>
 
           <Button
             size="large"
             onClick={() => navigate("/signin")}
-            className="mt-6 bg-primary text-white hover:bg-primary/92 shadow-[4px_4px_10px_rgba(0,0,0,0.2)]"
+            className="w-full border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
           >
             Login | Register
           </Button>
         </section>
+
       </div>
     </div>
-  )
+  );
 }
