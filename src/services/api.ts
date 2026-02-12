@@ -1,5 +1,5 @@
-import type { TCredentials } from '@/types';
-import axios from 'axios';
+import type { ApiResponse, TCredentials, TRegisterBusinessCreds, TRegisterCustomerCreds, TUser } from '@/types';
+import axios, { type AxiosResponse } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
@@ -24,11 +24,10 @@ api.interceptors.request.use(
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response.data.data,
+  <T>(response: AxiosResponse<ApiResponse<T>>) => response.data.data,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/signin';
     }
     
     return Promise.reject(error);
@@ -41,21 +40,18 @@ export const authService = {
     const response = await api.post('/auth/send-verification', { phone });
     return response;
   },
-  login: async (credential: TCredentials) => {
-    const loginData = credential.phone 
-      ? { phone: credential, password: credential.password }
-      : { email: credential, password: credential.password };
-    const response = await api.post('/auth/login', loginData);
+  login: async (credential: TCredentials): Promise<{ token: string }> => {
+    return api.post('/auth/login', credential);
+  },
+  registerCustomer: async (credential: TRegisterCustomerCreds) => {
+    const response = await api.post('/auth/register', credential);
     return response;
   },
-//   register: async (data) => {
-//     const response = await api.post('/auth/register', data);
-//     return response;
-//   },
-//   getMe: async () => {
-//     const response = await api.get('/auth/me');
-//     return response.user;
-//   },
+  registerBusiness: async (credential: TRegisterBusinessCreds) => {
+    const response = await api.post('/auth/register', credential);
+    return response;
+  },
+  getMe: async (): Promise<{ user: TUser }> => await api.get('/auth/me'),
 //   updateProfile: async (data) => {
 //     const response = await api.put('/auth/profile', data);
 //     return response.user;

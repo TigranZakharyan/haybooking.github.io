@@ -7,6 +7,7 @@ interface SelectProps
   label?: string;
   icon?: LucideIcon;
   hint?: string;
+  error?: string; // ✅ added
   variant?: "default" | "primary";
   options: TOption[];
   placeholder?: string;
@@ -16,6 +17,7 @@ export function Select({
   label,
   icon: Icon,
   hint,
+  error, // ✅ added
   variant = "default",
   className = "",
   required,
@@ -53,7 +55,11 @@ export function Select({
           value={value ?? ""}
           className={`appearance-none w-full ${paddingLeft} pr-10 py-3 bg-slate-50 border rounded-lg
             focus:outline-none focus:ring-2 transition-all
-            ${borderVariant}
+            ${
+              error
+                ? "border-red-500 focus:ring-red-500"
+                : borderVariant
+            }
             ${isPlaceholderSelected ? "text-slate-400" : "text-slate-700"}`}
         >
           {placeholder && (
@@ -72,7 +78,15 @@ export function Select({
         <ChevronDown className="absolute right-3 w-5 h-5 text-slate-400 pointer-events-none" />
       </div>
 
-      {hint && (
+      {/* ✅ Error message */}
+      {error && (
+        <p className="mt-1 text-xs text-red-500 leading-snug">
+          {error}
+        </p>
+      )}
+
+      {/* Hint only if no error */}
+      {!error && hint && (
         <p className="mt-1 text-xs text-slate-400 leading-snug">
           {hint}
         </p>

@@ -2,11 +2,12 @@ import React from "react";
 import { type LucideIcon, Eye, EyeOff } from "lucide-react";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string; // ✅ now optional
+  label?: string;
   icon?: LucideIcon;
   isPassword?: boolean;
   hint?: string;
-  variant?: "default" | "primary"; // ✅ new variant
+  error?: string; // ✅ new error prop
+  variant?: "default" | "primary";
 }
 
 export function Input({
@@ -14,6 +15,7 @@ export function Input({
   icon: Icon,
   isPassword,
   hint,
+  error,
   variant = "default",
   className = "",
   required,
@@ -30,7 +32,7 @@ export function Input({
 
   return (
     <div className={`w-full text-left ${className}`}>
-      {/* ✅ Render label only if provided */}
+      {/* Label */}
       {label && (
         <label className="text-sm font-medium text-slate-700 block mb-1">
           {label}
@@ -56,7 +58,8 @@ export function Input({
           className={`w-full ${paddingLeft} pr-10 py-3 bg-slate-50 border rounded-lg
             focus:outline-none focus:ring-2 transition-all
             placeholder:text-slate-400
-            ${borderVariant}`}
+            ${borderVariant}
+            ${error ? "border-red-500 focus:ring-red-500" : ""}`} // ✅ red border on error
         />
 
         {isPassword && (
@@ -65,19 +68,16 @@ export function Input({
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 text-slate-400 hover:text-slate-600 focus:outline-none"
           >
-            {showPassword ? (
-              <EyeOff className="w-5 h-5" />
-            ) : (
-              <Eye className="w-5 h-5" />
-            )}
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
         )}
       </div>
 
-      {hint && (
-        <p className="mt-1 text-xs text-slate-400 leading-snug">
-          {hint}
-        </p>
+      {/* Hint or Error */}
+      {error ? (
+        <p className="mt-1 text-xs text-red-500 leading-snug">{error}</p>
+      ) : (
+        hint && <p className="mt-1 text-xs text-slate-400 leading-snug">{hint}</p>
       )}
     </div>
   );

@@ -1,10 +1,7 @@
-export interface TabOption<T extends string> {
-  id: T;
-  label: string;
-}
+import type { TTabOption } from "@/types";
 
 interface TabsProps<T extends string> {
-  tabs: TabOption<T>[];
+  tabs: TTabOption<T>[];
   activeTab: T;
   onChange: (id: T) => void;
   className?: string;
@@ -24,7 +21,7 @@ export function Tabs<T extends string>({
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            type="button" // Prevents accidental form submission
+            type="button" 
             className={`flex-1 py-3 text-sm font-semibold transition-all duration-200 relative
               ${isActive ? "text-liberty" : "text-gray-400 hover:text-gray-600"}
             `}

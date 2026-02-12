@@ -1,59 +1,75 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Phone } from "lucide-react";
 import { Input, DividerWithText, Tabs, Button } from "@/components";
 import { authService } from "@/services/api";
-import type { TCredentials } from "@/types";
+import type { TCredentials, TTabOption } from "@/types";
 import { formatPhone, isValidEmail, isValidPhone } from "@/services/validation";
+import { useAuth } from "@/context/AuthContext";
 
 type LoginMethod = "email" | "phone";
 
+interface FormErrors {
+  email?: string;
+  phone?: string;
+  password?: string;
+}
+
+const tabOptions: TTabOption<LoginMethod>[] = [
+  { id: "email", label: "Email" },
+  { id: "phone", label: "Phone Number" },
+];
+
 export function SignInPage() {
+  const navigate = useNavigate()
+  const auth = useAuth()
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const tabOptions: { id: LoginMethod; label: string }[] = useMemo(
-    () => [
-      { id: "email", label: "Email" },
-      { id: "phone", label: "Phone Number" },
-    ],
-    []
-  );
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [serverError, setServerError] = useState("");
+
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (loginMethod === "email") {
+      if (!email) newErrors.email = "Email is required";
+      else if (!isValidEmail(email)) newErrors.email = "Enter a valid email";
+    } else {
+      if (!phone) newErrors.phone = "Phone number is required";
+      else if (!isValidPhone(phone))
+        newErrors.phone = "Enter a valid phone number";
+    }
+
+    if (!password) newErrors.password = "Password is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
-    // Validation
-    if (loginMethod === "email") {
-      if (!isValidEmail(email)) {
-        alert("Enter a valid email address");
-        return;
-      }
-    } else {
-      if (!isValidPhone(phone)) {
-        alert("Enter a valid phone number");
-        return;
-      }
-    }
+    setServerError("");
 
-    if (!password) {
-      alert("Password cannot be empty");
-      return;
-    }
+    if (!validate()) return;
 
-    // Prepare login data
     const credential: TCredentials =
       loginMethod === "email"
         ? { email, password }
         : { phone: formatPhone(phone), password };
 
     try {
+      setServerError("")
       setLoading(true);
-      await authService.login(credential);
+      const response = await authService.login(credential);
+      localStorage.setItem("token", response.token)
+      auth.refreshUser()
+      navigate("/dashboard")
     } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.message || "Login failed");
+      console.log(err)
+      setServerError(err.response?.data?.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }
@@ -61,47 +77,47 @@ export function SignInPage() {
 
   return (
     <div className="h-full grid md:grid-cols-2 overflow-hidden">
-      {/* LEFT SIDE: Form Section */}
       <div className="w-full flex flex-col justify-center items-center p-8 md:p-16">
         <div className="w-full max-w-lg space-y-8">
-          {/* Header */}
           <div className="text-center">
             <h2 className="text-liberty">Sign In</h2>
             <p className="text-liberty mt-2">Welcome Back!</p>
           </div>
 
-          {/* Shared Tabs Component */}
           <Tabs
             tabs={tabOptions}
             activeTab={loginMethod}
-            onChange={(id) => setLoginMethod(id)}
+            onChange={(id: LoginMethod) => {
+              setLoginMethod(id);
+              setErrors({});
+              setServerError("");
+            }}
           />
 
-          {/* Form Fields */}
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmit();
-            }}
-          >
+          <div className="space-y-4">
             {loginMethod === "email" ? (
               <Input
-                key="email"
                 label="Email"
                 icon={Mail}
                 placeholder="Your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                error={errors.email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setErrors((prev) => ({ ...prev, email: undefined }));
+                }}
               />
             ) : (
               <Input
-                key="phone"
                 label="Phone Number"
                 icon={Phone}
                 placeholder="+1 (555) 000-0000"
                 value={phone}
-                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                error={errors.phone}
+                onChange={(e) => {
+                  setPhone(formatPhone(e.target.value));
+                  setErrors((prev) => ({ ...prev, phone: undefined }));
+                }}
               />
             )}
 
@@ -111,12 +127,22 @@ export function SignInPage() {
               placeholder="Your password"
               isPassword
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              error={errors.password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setErrors((prev) => ({ ...prev, password: undefined }));
+              }}
             />
 
-            {/* Primary Action */}
+            {/* Backend Error */}
+            {serverError && (
+              <div className="text-sm text-red-500 text-center">
+                {serverError}
+              </div>
+            )}
+
             <Button
-              type="submit"
+              onClick={handleSubmit}
               size="large"
               variant="liberty"
               className="w-full"
@@ -124,7 +150,7 @@ export function SignInPage() {
             >
               {loading ? "Signing In..." : "Sign In"}
             </Button>
-          </form>
+          </div>
 
           <DividerWithText>
             Don't have an account?{" "}
@@ -136,7 +162,6 @@ export function SignInPage() {
             </Link>
           </DividerWithText>
 
-          {/* Footer Legal */}
           <p className="text-center text-sm text-gray-400 leading-relaxed">
             By signing up to create an account I accept <br />
             Company's{" "}
@@ -152,7 +177,6 @@ export function SignInPage() {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Visual Section */}
       <div className="w-full h-full hidden md:block relative">
         <div className="fixed w-1/2 h-full top-0 bg-[url(/booking.jpg)] bg-no-repeat bg-cover bg-center"></div>
       </div>

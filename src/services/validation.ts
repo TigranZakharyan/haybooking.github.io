@@ -1,6 +1,11 @@
 export function formatPhone(input: string): string {
-  return input.replace(/\D/g, "");
+  if (!input) return "";
+  let cleaned = input.replace(/[^\d+]/g, "");
+  cleaned = cleaned.replace(/\+/g, "");
+
+  return "+" + cleaned;
 }
+
 
 export function isValidPhone(phone: string, minLength = 8, maxLength = 15): boolean {
   const cleaned = formatPhone(phone);

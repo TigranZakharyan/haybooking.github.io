@@ -1,35 +1,49 @@
 import { Link } from "react-router-dom";
-import {
-  Phone,
-  User,
-  Briefcase,
-} from "lucide-react";
+import { Phone, User, Briefcase } from "lucide-react";
 import { useState } from "react";
 import { Input, DividerWithText, Button } from "@/components";
 import { CustomerStep } from "./CustomerStep";
 import { BusinessStep } from "./BusinessStep";
+import type { TRole } from "@/types";
+import { formatPhone, isValidPhone } from "@/services/validation";
 
 type Step = "phone" | "verify";
 
 export function SignUpPage() {
   const [step, setStep] = useState<Step>("phone");
-  const [accountType, setAccountType] = useState<"customer" | "business">(
-    "customer"
-  );
+  const [accountType, setAccountType] = useState<TRole>("customer");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
+  const [showPhoneError, setShowPhoneError] = useState(false);
+
+  // Format phone on change
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value);
+    setPhone(formatted);
+    if (showPhoneError && isValidPhone(formatted)) {
+      setShowPhoneError(false); // hide error if now valid
+    }
+  };
+
+  const validPhone = isValidPhone(phone);
+
+  const handleNext = () => {
+    if (!validPhone) {
+      setShowPhoneError(true); // show error if phone invalid
+      return;
+    }
+    setStep("verify");
+  };
 
   return (
     <div className="h-full grid md:grid-cols-2 overflow-hidden">
       {/* LEFT SIDE */}
       <div className="w-full flex flex-col justify-center items-center p-8 md:p-16">
         <div className="w-full max-w-lg space-y-4">
-          {/* Header */}
           <div className="text-center">
             <h2 className="text-liberty">Sign Up</h2>
           </div>
 
-          {/* ================= STEP 1 ================= */}
           {step === "phone" && (
             <>
               {/* Account Type */}
@@ -37,9 +51,7 @@ export function SignUpPage() {
                 <h4 className="text-sm font-semibold text-gray-700">
                   Account Type
                 </h4>
-
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Customer */}
                   <button
                     type="button"
                     onClick={() => setAccountType("customer")}
@@ -61,7 +73,6 @@ export function SignUpPage() {
                     </p>
                   </button>
 
-                  {/* Business */}
                   <button
                     type="button"
                     onClick={() => setAccountType("business")}
@@ -92,8 +103,9 @@ export function SignUpPage() {
                 icon={Phone}
                 placeholder="+37494623343"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => handlePhoneChange(e.target.value)}
                 hint="Enter your phone number with country code"
+                error={showPhoneError && !validPhone ? "Phone number is invalid" : ""}
               />
 
               {/* Info */}
@@ -109,13 +121,13 @@ export function SignUpPage() {
                 size="large"
                 variant="liberty"
                 className="w-full"
-                disabled={phone.length < 6}
-                onClick={() => setStep("verify")}
-              >Send verification code</Button>
+                onClick={handleNext}
+              >
+                Send verification code
+              </Button>
             </>
           )}
 
-          {/* ================= STEP 2 ================= */}
           {step === "verify" && (
             <>
               {accountType === "customer" ? (

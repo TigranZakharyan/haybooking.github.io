@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { Lock, Mail, User, CheckCircle } from "lucide-react";
 import { Input, Button } from "@/components";
+import { authService } from "@/services/api";
+import { formatPhone, isValidEmail } from "@/services/validation";
 
 type CustomerStepProps = {
   phone: string;
@@ -8,12 +11,55 @@ type CustomerStepProps = {
   onBack: () => void;
 };
 
-export function CustomerStep({
-  phone,
-  code,
-  setCode,
-  onBack,
-}: CustomerStepProps) {
+export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Error state only shown after submit
+  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+
+  const handleRegister = async () => {
+    const newErrors: typeof errors = {};
+
+    if (code.length !== 6) newErrors.code = "Verification code must be 6 digits";
+    if (!firstName.trim()) newErrors.firstName = "First name is required";
+    if (!lastName.trim()) newErrors.lastName = "Last name is required";
+    if (email.trim() && !isValidEmail(email)) newErrors.email = "Email is invalid";
+    if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
+
+    // Set errors to show them under inputs
+    setErrors(newErrors);
+
+    // Stop if any errors
+    if (Object.keys(newErrors).length > 0) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const registerData = {
+        phone: formatPhone(phone),
+        verificationCode: code,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        password,
+        role: "customer" as const,
+      };
+
+      await authService.registerCustomer(registerData);
+      // TODO: redirect or success state
+    } catch (err: any) {
+      console.error(err.response?.data || err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       {/* Verify */}
@@ -31,6 +77,7 @@ export function CustomerStep({
           value={code}
           onChange={(e) => setCode(e.target.value)}
           hint={`Code sent to ${phone}`}
+          error={errors.code}
         />
       </div>
 
@@ -39,14 +86,33 @@ export function CustomerStep({
         <h4 className="font-semibold text-gray-900">Personal Information</h4>
 
         <div className="grid grid-cols-2 gap-4">
-          <Input label="First Name" required icon={User} placeholder="John" />
-          <Input label="Last Name" required icon={User} placeholder="Doe" />
+          <Input
+            label="First Name"
+            required
+            icon={User}
+            placeholder="John"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            error={errors.firstName}
+          />
+          <Input
+            label="Last Name"
+            required
+            icon={User}
+            placeholder="Doe"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            error={errors.lastName}
+          />
         </div>
 
         <Input
           label="Email (Optional)"
           icon={Mail}
           placeholder="john.doe@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
         />
 
         <div className="grid grid-cols-2 gap-4">
@@ -56,6 +122,9 @@ export function CustomerStep({
             icon={Lock}
             placeholder="Min. 6 characters"
             isPassword
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={errors.password}
           />
           <Input
             label="Confirm Password"
@@ -63,6 +132,9 @@ export function CustomerStep({
             icon={Lock}
             placeholder="Repeat password"
             isPassword
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={errors.confirmPassword}
           />
         </div>
 
@@ -81,9 +153,10 @@ export function CustomerStep({
             variant="liberty"
             size="large"
             className="w-full"
-            type="submit"
+            onClick={handleRegister}
+            disabled={isSubmitting} // disabled only while submitting
           >
-            Create Customer Account
+            {isSubmitting ? "Creating..." : "Create Customer Account"}
           </Button>
         </div>
       </div>
