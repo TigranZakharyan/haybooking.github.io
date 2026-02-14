@@ -1,4 +1,5 @@
-import { Outlet, Navigate, useLocation, NavLink, Link } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { Outlet, NavLink, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Home,
@@ -6,111 +7,175 @@ import {
   Users,
   BarChart2,
   Settings,
-  Bell,
+  ChevronLeft,
+  Menu,
+  X,
 } from "lucide-react";
 
-// ── Nav config ────────────────────────────────────────────────────────────────
-
 const NAV_ITEMS = [
-  { label: "Dashboard",   Icon: Home,   to: "/dashboard" },
-  { label: "Services",    Icon: Box,    to: "/dashboard/services" },
+  { label: "Dashboard", Icon: Home, to: "/dashboard" },
+  { label: "Services", Icon: Box, to: "/dashboard/services" },
   { label: "Specialists", Icon: Users, to: "/dashboard/specialists" },
-  { label: "Analytics",  Icon: BarChart2,   to: "/dashboard/analytics" },
-  { label: "Settings",   Icon: Settings,    to: "/dashboard/settings" },
+  { label: "Analytics", Icon: BarChart2, to: "/dashboard/analytics" },
+  { label: "Settings", Icon: Settings, to: "/dashboard/settings" },
 ];
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function DashboardLayout() {
   const { user } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  if(!user) return null;
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
-  const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
+  const initials = useMemo(() => {
+    if (!user) return "";
+    return `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
+  }, [user]);
+
+  if (!user) return null;
+
+  function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden px-3">
+        {/* Logo */}
+        <Link
+          to="/dashboard"
+          onClick={onNavClick}
+          className="flex items-center h-16"
+        >
+          <div className="h-11 px-2 rounded-xl flex items-center justify-center shrink-0">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+          </div>
+
+          <span
+            className={`text-xl font-semibold text-primary font-serif whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+              ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}
+            `}
+          >
+            Haybooking
+          </span>
+        </Link>
+
+        {/* Navigation */}
+        <nav className="flex flex-col gap-2 flex-1">
+          {NAV_ITEMS.map(({ label, Icon, to }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/dashboard"}
+              onClick={onNavClick}
+              className={({ isActive }) =>
+                `flex items-center rounded-xl select-none h-11 px-3.5 transition-colors duration-200 ease-[cubic-bezier(0.65,0,0.35,1)]
+                ${
+                  isActive
+                    ? "bg-white shadow-sm text-gray-900"
+                    : "text-gray-400 hover:bg-white/50 hover:text-gray-800"
+                }`
+              }
+            >
+              <span className="flex items-center justify-center w-5 h-5 shrink-0">
+                <Icon className="w-5 h-5" strokeWidth={1.8} />
+              </span>
+
+              <span
+                className={`whitespace-nowrap font-medium leading-none text-[13.5px] overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+                  ${collapsed ? "max-w-0 opacity-0 ml-0" : "max-w-[180px] opacity-100 ml-2.5"}
+                `}
+              >
+                {label}
+              </span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    );
+  }
 
   return (
-    /* ── Page wrapper ─────────────────────────────────────────────────── */
-    <div
-      className="min-h-screen flex items-start justify-center p-5"
-      style={{ background: "linear-gradient(145deg, #ded4d7c5 0%, #c2cbcdff 100%)" }}
-    >
-      {/* ── App shell ─────────────────────────────────────────────────── */}
-      <div
-        className="w-full flex rounded-2xl overflow-hidden shadow-2xl min-h-[calc(100vh-40px)] backdrop-blur-3xl"
-      >
-        {/* ══════════════════════ SIDEBAR ══════════════════════════════ */}
-        <aside
-          className="w-[220px] shrink-0 flex flex-col py-8 px-5 border-r border-black/7"
-        >
-          {/* Logo */}
-          <Link to='/dashboard' className="flex items-center gap-2.5 mb-9 px-1">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm"
-            >
-              <img src="/logo.png" />
-            </div>
-            <span
-              className="text-lg font-semibold tracking-tight text-gray-800 font-serif"
-            >
-              Haybooking
-            </span>
-          </Link>
+    <div className="min-h-screen flex items-start justify-center p-5 bg-[linear-gradient(145deg,#ded4d7c5_0%,#c2cbcdff_100%)]">
+      <div className="w-full flex rounded-2xl overflow-hidden shadow-2xl min-h-[calc(100vh-40px)] relative">
+        
+        {/* Mobile Overlay */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-20 bg-black/25 backdrop-blur-[2px] md:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
 
-          {/* Nav */}
-          <nav className="flex flex-col gap-0.5 flex-1">
-            {NAV_ITEMS.map(({ label, Icon, to }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/dashboard"}
-                className={({ isActive }) =>
-                  [
-                    "flex items-center gap-3 px-3 py-[10px] rounded-xl text-sm font-medium transition-all duration-150 select-none",
-                    isActive
-                      ? "bg-white shadow-sm text-gray-800"
-                      : "text-[#8a7f76] hover:bg-white/60 hover:text-gray-800",
-                  ].join(" ")
-                }
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </NavLink>
-            ))}
-          </nav>
+        {/* Mobile Sidebar */}
+        <aside
+          className={`fixed top-0 left-0 z-30 h-full flex flex-col border-r border-black/5 bg-[#efe9e8] md:hidden
+          w-[260px] transition-transform duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+          `}
+        >
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:bg-white/60 transition-colors duration-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <SidebarContent onNavClick={() => setMobileOpen(false)} />
         </aside>
 
-        {/* ══════════════════════ MAIN AREA ═══════════════════════════ */}
-        <div className="flex flex-col flex-1 min-w-0">
+        {/* Desktop Sidebar */}
+        <aside
+          className={`hidden md:block shrink-0 border-r border-black/5 bg-[#efe9e8]
+          transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)] overflow-x-hidden
+          ${collapsed ? "w-[72px]" : "w-[260px]"}
+          `}
+        >
+          <SidebarContent />
+        </aside>
 
-          {/* ── Top bar ────────────────────────────────────────────── */}
-          <header
-            className="flex items-center justify-between px-8 py-5 shrink-0 border-b border-black/7"
-          >
-            <h1
-              className="text-xl font-semibold tracking-tight text-gray-800 font-serif"
-            >
-              {user.business?.businessName}
-            </h1>
-
+        {/* Main Area */}
+        <div className="flex flex-col flex-1 min-w-0 bg-white/30">
+          
+          {/* Header */}
+          <header className="flex items-center justify-between px-6 h-16 border-b border-black/5 bg-white/40 backdrop-blur-lg">
             <div className="flex items-center gap-3">
-              {/* User avatar */}
-              {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.firstName}
-                  className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm"
+              
+              {/* Mobile Hamburger */}
+              <button
+                onClick={() => setMobileOpen(true)}
+                className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-white/60 transition-colors duration-200"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+
+              {/* Desktop Collapse */}
+              <button
+                onClick={() => setCollapsed((c) => !c)}
+                className="hidden md:flex items-center justify-center w-[34px] h-[34px] rounded-xl bg-white shadow-sm border border-black/5 hover:shadow-md transition-shadow duration-200"
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <ChevronLeft
+                  className={`w-4 h-4 text-gray-500 transition-transform duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+                  ${collapsed ? "rotate-180" : "rotate-0"}
+                  `}
                 />
-              ) : (
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ring-2 ring-white shadow-sm bg-[#c8bfb5] text-text-body"
-                >
-                  {initials}
-                </div>
-              )}
+              </button>
+
+              <h1 className="text-[17px] font-semibold tracking-tight text-gray-800 font-serif truncate">
+                {user.business?.businessName}
+              </h1>
+            </div>
+
+            {/* Avatar */}
+            <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm bg-[#c8bfb5] text-gray-700 select-none">
+              {initials}
             </div>
           </header>
 
-          {/* ── Outlet ─────────────────────────────────────────────── */}
+          {/* Content */}
           <main className="flex-1 overflow-auto">
             <Outlet />
           </main>
