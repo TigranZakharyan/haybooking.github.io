@@ -176,7 +176,7 @@ export function DashboardLayout() {
           </header>
 
           {/* Content */}
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto p-2">
             <Outlet />
           </main>
         </div>
