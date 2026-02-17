@@ -98,9 +98,9 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen flex items-start justify-center p-5 bg-[linear-gradient(145deg,#ded4d7c5_0%,#c2cbcdff_100%)]">
-      <div className="w-full flex rounded-2xl overflow-hidden shadow-2xl min-h-[calc(100vh-40px)] relative">
-        
+    <div className="h-screen flex items-start justify-center p-5 bg-[linear-gradient(145deg,#ded4d7c5_0%,#c2cbcdff_100%)]">
+      <div className="w-full flex rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-40px)] relative">
+
         {/* Mobile Overlay */}
         {mobileOpen && (
           <div
@@ -128,7 +128,7 @@ export function DashboardLayout() {
 
         {/* Desktop Sidebar */}
         <aside
-          className={`hidden md:block shrink-0 border-r border-black/5 bg-[#efe9e8]
+          className={`hidden md:block shrink-0 border-r border-black/5 bg-[#efe9e8] overflow-y-auto
           transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)] overflow-x-hidden
           ${collapsed ? "w-[72px]" : "w-[260px]"}
           `}
@@ -137,12 +137,12 @@ export function DashboardLayout() {
         </aside>
 
         {/* Main Area */}
-        <div className="flex flex-col flex-1 min-w-0 bg-white/30">
-          
+        <div className="flex flex-col flex-1 min-w-0 min-h-0 bg-white/30">
+
           {/* Header */}
-          <header className="flex items-center justify-between px-6 h-16 border-b border-black/5 bg-white/40 backdrop-blur-lg">
+          <header className="flex items-center justify-between px-6 h-16 shrink-0 border-b border-black/5 bg-white/40 backdrop-blur-lg">
             <div className="flex items-center gap-3">
-              
+
               {/* Mobile Hamburger */}
               <button
                 onClick={() => setMobileOpen(true)}
@@ -170,13 +170,13 @@ export function DashboardLayout() {
             </div>
 
             {/* Avatar */}
-            <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm bg-[#c8bfb5] text-gray-700 select-none">
+            <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm bg-primary text-white select-none">
               {initials}
             </div>
           </header>
 
-          {/* Content */}
-          <main className="flex-1 overflow-auto p-2">
+          {/* Content — only this scrolls */}
+          <main className="flex-1 overflow-auto p-8">
             <Outlet />
           </main>
         </div>

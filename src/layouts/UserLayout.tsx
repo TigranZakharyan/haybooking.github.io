@@ -25,12 +25,6 @@ export function UserLayout() {
               <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
             </Link>
 
-            <Link to="/findServices" className="relative group flex items-center gap-2">
-              <Search className="w-6 h-6 md:hidden" />
-              <span className="hidden md:block text-lg font-medium">Find Service</span>
-              <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
-            </Link>
-
             <Link to="/signin" className="relative group flex items-center gap-2">
               <UserCircle2 className="w-6 h-6 md:hidden" />
               <span className="hidden md:block text-lg font-medium">Sign In/Up</span>

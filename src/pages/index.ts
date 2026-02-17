@@ -1,5 +1,6 @@
 export * from './HomePage'
 export * from './SignInPage'
 export * from './SignUpPage'
-export * from './FindServicesPage'
 export * from './DashboardPage'
+export * from './PricingPage'
+export * from './SettingsPage'

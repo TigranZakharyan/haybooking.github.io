@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Lock,
     User,
@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { Button, Input, Select } from "@/components";
 import { nanoid } from "nanoid";
-import { categories, cities, countries } from "@/constants";
-import { formatPhone, isValidPhone, isValidEmail } from "@/services/validation";
-import { authService } from "@/services/api";
-import type { TBranch } from "@/types";
+import { cities, countries } from "@/constants";
+import { formatPhone, isValidPhone, isValidEmail, isValidPasswordLength, isValidPasswordMatch } from "@/services/validation";
+import { authService, searchService } from "@/services/api";
+import type { TBranch, TBusinessType } from "@/types";
 import { useNavigate } from "react-router-dom";
 
 /* ================= TYPES ================= */
@@ -87,6 +87,7 @@ function makeBranch(): TBranchLocal {
 export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps) {
     const navigate = useNavigate();
     const [step, setStep] = useState<Step>("personal");
+    const [types, setTypes] = useState<TBusinessType[]>([])
 
     /* -------- Personal Info -------- */
     const [personal, setPersonal] = useState<PersonalState>({
@@ -131,9 +132,8 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
             firstName: personal.firstName ? "" : "Required",
             lastName: personal.lastName ? "" : "Required",
             email: personal.email && !isValidEmail(personal.email) ? "Invalid email" : "",
-            password: personal.password.length >= 6 ? "" : "Password must be at least 6 chars",
-            confirmPassword:
-                personal.password === personal.confirmPassword ? "" : "Passwords do not match",
+            password: isValidPasswordLength(personal.password) ? "" : "Password must be at least 6 chars",
+            confirmPassword: isValidPasswordMatch(personal.password, personal.confirmPassword) ? "" : "Passwords do not match",
             code: code.length === 6 ? "" : "Enter 6-digit code",
         };
         setPersonalErrors(errors);
@@ -263,6 +263,15 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
         }
     };
 
+    useEffect(() => {
+        fetchInitialData()
+    }, [])
+    
+    const fetchInitialData = async () => {
+        const res = await searchService.getBusinessTypes()
+        setTypes(res)
+    }
+
     /* ================= RENDER ================= */
     return (
         <div className="space-y-4">
@@ -369,12 +378,12 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
                         error={businessErrors.name}
                     />
                     <Select
-                        options={categories}
+                        options={types}
                         label="Business Type"
                         required
                         value={business.businessType}
                         placeholder="Select Type"
-                        onChange={(e) => setBusiness({ ...business, businessType: e.target.value })}
+                        onChange={(value) => setBusiness({ ...business, businessType: value })}
                         error={businessErrors.type}
                     />
                     <textarea
@@ -462,8 +471,8 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <Select
-                                                onChange={(e) =>
-                                                    updateAddress(branch.id, "country", e.target.value)
+                                                onChange={(value) =>
+                                                    updateAddress(branch.id, "country", value)
                                                 }
                                                 value={branch.address.country}
                                                 options={countries}
@@ -472,8 +481,8 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
                                                 error={errors.country}
                                             />
                                             <Select
-                                                onChange={(e) =>
-                                                    updateAddress(branch.id, "city", e.target.value)
+                                                onChange={(value) =>
+                                                    updateAddress(branch.id, "city", value)
                                                 }
                                                 value={branch.address.city}
                                                 options={

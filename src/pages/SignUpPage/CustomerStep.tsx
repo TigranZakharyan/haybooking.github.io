@@ -3,6 +3,7 @@ import { Lock, Mail, User, CheckCircle } from "lucide-react";
 import { Input, Button } from "@/components";
 import { authService } from "@/services/api";
 import { formatPhone, isValidEmail } from "@/services/validation";
+import { useNavigate } from "react-router-dom";
 
 type CustomerStepProps = {
   phone: string;
@@ -12,6 +13,7 @@ type CustomerStepProps = {
 };
 
 export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps) {
+  const navigate = useNavigate()
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -52,7 +54,7 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
       };
 
       await authService.registerCustomer(registerData);
-      // TODO: redirect or success state
+      navigate("/signin")
     } catch (err: any) {
       console.error(err.response?.data || err);
     } finally {

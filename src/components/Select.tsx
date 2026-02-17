@@ -1,42 +1,56 @@
-import React from "react";
-import { type LucideIcon, ChevronDown } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { type LucideIcon, ChevronDown, Check } from "lucide-react";
 import type { TOption } from "@/types";
 
-interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps {
   label?: string;
   icon?: LucideIcon;
   hint?: string;
-  error?: string; // ✅ added
+  error?: string;
   variant?: "default" | "primary";
   options: TOption[];
   placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  required?: boolean;
+  className?: string;
 }
 
 export function Select({
   label,
   icon: Icon,
   hint,
-  error, // ✅ added
+  error,
   variant = "default",
-  className = "",
-  required,
   options,
   placeholder,
   value,
-  ...props
+  onChange,
+  required,
+  className = "",
 }: SelectProps) {
-  const paddingLeft = Icon ? "pl-10" : "pl-4";
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const borderVariant =
     variant === "primary"
       ? "border-primary focus:ring-primary"
       : "border-slate-200 focus:ring-indigo-500";
 
-  const isPlaceholderSelected = !value;
-
   return (
-    <div className={`w-full text-left ${className}`}>
+    <div className={`w-full text-left ${className}`} ref={ref}>
       {label && (
         <label className="text-sm font-medium text-slate-700 block mb-1">
           {label}
@@ -44,48 +58,79 @@ export function Select({
         </label>
       )}
 
-      <div className="relative flex items-center">
-        {Icon && (
-          <Icon className="absolute left-3 w-5 h-5 text-slate-400 pointer-events-none" />
-        )}
-
-        <select
-          {...props}
-          required={required}
-          value={value ?? ""}
-          className={`appearance-none w-full ${paddingLeft} pr-10 py-3 bg-slate-50 border rounded-lg
-            focus:outline-none focus:ring-2 transition-all
+      <div className="relative">
+        {/* Trigger */}
+        <button
+          type="button"
+          onClick={() => setOpen((p) => !p)}
+          className={`w-full flex items-center justify-between px-4 py-3 bg-slate-50 border rounded-xl
+            transition-all focus:outline-none focus:ring-2
             ${
               error
                 ? "border-red-500 focus:ring-red-500"
                 : borderVariant
-            }
-            ${isPlaceholderSelected ? "text-slate-400" : "text-slate-700"}`}
+            }`}
         >
-          {placeholder && (
-            <option value="" disabled hidden>
-              {placeholder}
-            </option>
-          )}
+          <div className="flex items-center gap-3">
+            {Icon && <Icon className="w-5 h-5 text-slate-400" />}
+            <span
+              className={
+                selectedOption ? "text-slate-700" : "text-slate-400"
+              }
+            >
+              {selectedOption?.label || placeholder || "Select option"}
+            </span>
+          </div>
 
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <ChevronDown
+            className={`w-5 h-5 text-slate-400 transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </button>
 
-        <ChevronDown className="absolute right-3 w-5 h-5 text-slate-400 pointer-events-none" />
+        {/* Dropdown */}
+        {open && (
+          <div
+            className="absolute left-0 right-0 mt-[4px] bg-white border border-slate-200
+              rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95"
+          >
+            {options.map((option) => {
+              const isSelected = option.value === value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange?.(option.value);
+                    setOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3 text-left
+                    hover:bg-slate-100 transition-colors
+                    ${isSelected ? "bg-slate-100 font-medium" : ""}
+                  `}
+                >
+                  <span>{option.label}</span>
+                  {isSelected && (
+                    <Check className="w-4 h-4 text-indigo-500" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Hidden input for forms */}
+        <input type="hidden" value={value} required={required} />
       </div>
 
-      {/* ✅ Error message */}
       {error && (
         <p className="mt-1 text-xs text-red-500 leading-snug">
           {error}
         </p>
       )}
 
-      {/* Hint only if no error */}
       {!error && hint && (
         <p className="mt-1 text-xs text-slate-400 leading-snug">
           {hint}
