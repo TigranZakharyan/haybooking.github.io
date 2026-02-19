@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Lock, ShieldCheck, AlertCircle } from "lucide-react";
 import { Button, Input } from "@/components";
-import { Card } from "./ui/Card";
-import { SectionTitle } from "./ui/SectionTitle";
+import { Card } from "../../components/Card";
+import { SectionTitle } from "../../components/SectionTitle";
 import {
   isValidPasswordLength,
   isValidPasswordMatch,

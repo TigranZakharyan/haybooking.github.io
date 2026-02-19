@@ -77,23 +77,23 @@ export const authService = {
 export const businessService = {
   getMyBusiness: async () => {
     const response = await api.get('/businesses/my-business');
-    return response.business;
+    return response.data.business;
   },
   updateMyBusiness: async (data) => {
     const response = await api.put('/businesses/my-business', data);
-    return response.business;
+    return response.data.business;
   },
   getBusinessByLink: async (bookingLink) => {
     const response = await api.get(`/businesses/link/${bookingLink}`);
-    return response.business;
+    return response.data.business;
   },
   getStats: async () => {
     const response = await api.get('/businesses/stats');
-    return response.stats;
+    return response.data.stats;
   },
   updateWorkingHours: async (workingHours) => {
     const response = await api.put('/businesses/working-hours', { workingHours });
-    return response.business;
+    return response.data.business;
   },
 };
 
@@ -101,19 +101,19 @@ export const businessService = {
 export const serviceService = {
   createService: async (data) => {
     const response = await api.post('/services', data);
-    return response.service;
+    return response.data.service;
   },
   getMyServices: async () => {
     const response = await api.get('/services');
-    return response.services;
+    return response.data.services;
   },
   getService: async (id) => {
     const response = await api.get(`/services/${id}`);
-    return response.service;
+    return response.data.service;
   },
   updateService: async (id, data) => {
     const response = await api.put(`/services/${id}`, data);
-    return response.service;
+    return response.data.service;
   },
   deleteService: async (id) => {
     return await api.delete(`/services/${id}`);
@@ -239,3 +239,58 @@ export const searchService = {
     return response.data.types;
   },
 };
+
+
+// Upload service
+export const uploadService = {
+  uploadBusinessLogo: async (formData) => {
+    const response = await api.post('/images/business-logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    // response is the unwrapped `data` object from backend -> { logo, ... }
+    return response.data.logo;
+  },
+  getBusinessLogo: async () => {
+    const response = await api.get('/images/business-logo');
+    // backend returns { logo, businessName }
+    return response.data.logo || null;
+  },
+  deleteBusinessLogo: async () => {
+    return await api.delete('/images/business-logo');
+  },
+  uploadServiceImage: async (serviceId, formData) => {
+    const response = await api.post(`/images/service-image/${serviceId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    // backend returns { image, serviceName }
+    return response.data.image;
+  },
+  uploadSpecialistPhoto: async (specialistId, formData) => {
+    const response = await api.post(`/images/specialist-photo/${specialistId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    // backend returns { photo, specialistName }
+    return response.data.photo;
+  },
+  deleteServiceImage: async (serviceId) => {
+    return await api.delete(`/images/service-image/${serviceId}`);
+  },
+  deleteSpecialistPhoto: async (specialistId) => {
+    return await api.delete(`/images/specialist-photo/${specialistId}`);
+  },
+};
+
+
+export const branchesService = {
+  updateMyBranch: async (branchId, data) => {
+    const response = await api.put(`/branches/${branchId}`, data);
+    return response;
+  },
+  createBranch: async (businessId, data) => {
+    const response = await api.post(`/branches/${businessId}`, data);
+    return response.branch;
+  },
+  deleteBranch: async (branchId) => {
+    await api.delete(`/branches/${branchId}`);
+  }
+}

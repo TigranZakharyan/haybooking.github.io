@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { UserLayout, DashboardLayout } from "@/layouts";
-import { HomePage, SignInPage, SignUpPage, DashboardPage, PricingPage, SettingsPage, AnalyticsPage } from "@/pages";
+import { HomePage, SignInPage, SignUpPage, DashboardPage, PricingPage, SettingsPage, AnalyticsPage, SpecialistsPage, ServicesPage } from "@/pages";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +20,8 @@ const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: "settings", element: <SettingsPage /> },
       { path: "analytics", element: <AnalyticsPage /> },
+      { path: "services", element: <ServicesPage /> },
+      { path: "specialists", element: <SpecialistsPage /> },
     ]
 
   }

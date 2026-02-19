@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { Button, Input } from "@/components";
 import { Edit2 } from "lucide-react";
-import { Card } from "./ui/Card";
-import { SectionTitle } from "./ui/SectionTitle";
+import { Card } from "../../components/Card";
+import { SectionTitle } from "../../components/SectionTitle";
 import type { TUpdateProfile, TUser } from "@/types";
 import { authService } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";

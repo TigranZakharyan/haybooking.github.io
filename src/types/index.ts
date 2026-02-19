@@ -77,14 +77,6 @@ export interface Price {
   currency?: string;
 }
 
-export interface Service {
-  _id: string;
-  name: string;
-  description?: string;
-  duration: number;
-  price: Price;
-}
-
 export interface Specialist {
   _id: string;
   name: string;
@@ -122,7 +114,7 @@ export interface Business {
   phone: string;
   address: Address;
   owner?: BusinessOwner;
-  services?: Service[];
+  services?: TService[];
   specialists?: Specialist[];
   workingHours?: WorkingHour[];
   settings?: BusinessSettings;
@@ -145,7 +137,7 @@ export interface TimeSlot {
 
 export interface ConfirmedPayload {
   booking: unknown;
-  selectedService: Service;
+  selectedService: TService;
   selectedSpecialist: Specialist;
   customerInfo: CustomerInfo;
 }
@@ -175,4 +167,32 @@ export type TUpdateProfile = {
 export type TUpdatePassword = {
   currentPassword: string;
   newPassword: string;
+}
+
+export interface Branch {
+  _id: string;
+  address: {
+    street: string;
+    city: string;
+    country: string;
+  };
+  isBaseBranch?: boolean;
+}
+
+export interface Image {
+  cdnUrl?: string;
+  url?: string;
+}
+
+export type TService = {
+  _id: string;
+  name: string;
+  duration: number;
+  price: Price;
+  description?: string;
+  timeInterval?: number;
+  allowSpecificTimes?: boolean;
+  isActive: boolean;
+  branch: Branch;
+  image?: Image | null;
 }
