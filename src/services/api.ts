@@ -191,7 +191,7 @@ export const bookingService = {
   // Get availability
   getAvailability: async (params) => {
     const response = await api.get("/bookings/availability", { params });
-    return response;
+    return response.data;
   },
 
   // Update booking status (business)

@@ -113,6 +113,7 @@ export interface BusinessOwner {
 export interface Business {
   _id: string;
   businessName: string;
+  bookingLink: string;
   phone: string;
   address: Address;
   owner?: BusinessOwner;

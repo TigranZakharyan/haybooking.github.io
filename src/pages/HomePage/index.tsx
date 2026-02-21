@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Container, Input, Select } from "@/components";
 import { Modal } from './Modal';
-import { searchService } from '@/services/api';
+import { businessService, searchService } from '@/services/api';
 import type { Business, TBusinessType } from '@/types';
 import { ServiceCard } from './ServiceCard'
 
@@ -56,8 +56,10 @@ export function HomePage() {
     }
   };
 
-  const handleBookingClick = (business: Business) => {
-    setSelectedBusiness(business);
+  const handleBookingClick = async (business: Business) => {
+    const fetchBusinessDetails = await businessService.getBusinessByLink(business.bookingLink)
+    console.log('Fetched business details:', fetchBusinessDetails);
+    setSelectedBusiness(fetchBusinessDetails);
   };
 
   const handleCloseModal = () => {

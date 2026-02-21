@@ -3,7 +3,7 @@ import { MapPin, Phone, Mail, Clock, DollarSign, X } from 'lucide-react';
 import { bookingService } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { formatPhone, isValidPhone, isValidEmail } from '@/services/validation';
-import type { ModalProps, Service, Specialist, CustomerInfo, TimeSlot, CalendarDate } from '@/types';
+import type { ModalProps, TService, Specialist, CustomerInfo, TimeSlot, CalendarDate } from '@/types';
 import { months, weekdays } from '@/constants';
 
 // ── Step definitions ──────────────────────────────────────────────────────────
@@ -11,7 +11,7 @@ const STEPS = [
   { num: 1, label: 'Select Branch',        short: 'Branch'  },
   { num: 2, label: 'Service & Specialist', short: 'Service' },
   { num: 3, label: 'Date & Time',          short: 'Date'    },
-  { num: 4, label: 'Your Phone',           short: 'Phone'   },
+  { num: 4, label: 'Your Info',            short: 'Info'    },
   { num: 5, label: 'Phone Verify',         short: 'Verify'  },
 ] as const;
 
@@ -62,12 +62,14 @@ function generateCalendar(calendarDate: Date): (CalendarDate | null)[] {
 function canGoToStep(
   num: number,
   {
+    selectedBranch,
     selectedService,
     selectedSpecialist,
     selectedDate,
     selectedTime,
     sentCode,
   }: {
+    selectedBranch:     unknown;
     selectedService:    unknown;
     selectedSpecialist: unknown;
     selectedDate:       string | null;
@@ -75,7 +77,8 @@ function canGoToStep(
     sentCode:           string;
   },
 ): boolean {
-  if (num <= 2) return true;
+  if (num <= 1) return true;
+  if (num === 2) return !!selectedBranch;
   if (num === 3) return !!(selectedService && selectedSpecialist);
   if (num === 4) return !!(selectedDate && selectedTime);
   if (num === 5) return !!sentCode;
@@ -86,8 +89,12 @@ function canGoToStep(
 
 export function serviceIcon(name: string): string {
   const n = name.toLowerCase();
-  if (n.includes('tooth') || n.includes('fill')) return '🦷';
-  if (n.includes('scal'))                        return '🔬';
+  if (n.includes('tooth') || n.includes('fill') || n.includes('dental')) return '🦷';
+  if (n.includes('scal') || n.includes('clean'))                         return '🔬';
+  if (n.includes('hair') || n.includes('cut'))                           return '✂️';
+  if (n.includes('color') || n.includes('dye'))                          return '🎨';
+  if (n.includes('massage') || n.includes('spa'))                        return '💆';
+  if (n.includes('nail') || n.includes('manicure'))                      return '💅';
   return '✦';
 }
 
@@ -172,11 +179,14 @@ const ScrollPicker = ({ length, value, onChange, scrollRef }: ScrollPickerProps)
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
-  const [step, setStep] = useState(2);
+  const [step, setStep] = useState(1);
 
-  const [selectedService,    setSelectedService]    = useState<Service | null>(null);
+  // Branch selection
+  const [selectedBranch, setSelectedBranch] = useState<any>(null);
+
+  const [selectedService,    setSelectedService]    = useState<TService | null>(null);
   const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | null>(null);
   const [selectedDate,       setSelectedDate]       = useState<string | null>(null);
   const [selectedTime,       setSelectedTime]       = useState<TimeSlot | null>(null);
@@ -220,6 +230,14 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
     if (selectedDate && selectedService && selectedSpecialist) fetchSlots();
   }, [selectedDate, selectedService, selectedSpecialist]);
 
+  // Auto-select branch if only one exists
+  useEffect(() => {
+    if (business.branches && business.branches.length === 1) {
+      setSelectedBranch(business.branches[0]);
+      setStep(2);
+    }
+  }, [business.branches]);
+
   // ── Data fetching ───────────────────────────────────────────────────────────
 
   const fetchSlots = async () => {
@@ -251,7 +269,12 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
     });
   });
 
-  const selectService = (service: Service) => {
+  const selectBranch = (branch: any) => {
+    setSelectedBranch(branch);
+    setStep(2);
+  };
+
+  const selectService = (service: TService) => {
     setSelectedService(service);
     setSelectedSpecialist(null);
   };
@@ -317,13 +340,14 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
     const lastName  = names.slice(1).join(' ') || names[0];
     const booking = await bookingService.createBooking({
       businessId:     business._id,
+      branchId:       selectedBranch?._id,
       serviceId:      selectedService._id,
       specialistId:   selectedSpecialist._id,
       bookingDate:    selectedDate,
       startTime:      selectedTime.startTime,
       customerInfo:   { firstName, lastName, email: customerInfo.email, phone: customerInfo.phone },
       notes:          customerInfo.notes,
-      isGuestBooking: !isAuthenticated,
+      isGuestBooking: !user,
     });
     onConfirmed?.({ booking, selectedService, selectedSpecialist, customerInfo });
   };
@@ -358,7 +382,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
   };
 
   const stepGate = (num: number) =>
-    canGoToStep(num, { selectedService, selectedSpecialist, selectedDate, selectedTime, sentCode });
+    canGoToStep(num, { selectedBranch, selectedService, selectedSpecialist, selectedDate, selectedTime, sentCode });
 
   const monthYearLabel = `${months[calendarDate.getMonth()]} ${calendarDate.getFullYear()}`;
   const changeMonth    = (dir: number) =>
@@ -366,6 +390,9 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
 
   const calendarDays = generateCalendar(calendarDate);
   const today        = new Date(new Date().setHours(0, 0, 0, 0));
+
+  // Get current working hours from selected branch
+  const currentBranchWorkingHours = selectedBranch?.workingHours || business.workingHours;
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -382,11 +409,11 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
               </h2>
               <div className="space-y-1.5 text-xs sm:text-sm text-white/85">
                 {[
-                  { Icon: MapPin, text: `${business.address?.street}, ${business.address?.city}` },
-                  { Icon: Phone,  text: business.phone },
+                  { Icon: MapPin, text: selectedBranch ? `${selectedBranch.address?.street}, ${selectedBranch.address?.city}` : 'Select a branch' },
+                  { Icon: Phone,  text: selectedBranch?.phones?.[0] || business.phone },
                   { Icon: Mail,   text: business.owner?.email ?? `info@${business.businessName.toLowerCase().replace(/\s/g,'')}.com` },
-                ].map(({ Icon, text }) => (
-                  <div key={text} className="flex items-center gap-2.5">
+                ].map(({ Icon, text }, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5">
                     <Icon className="h-3.5 w-3.5 flex-shrink-0 text-white/70" />
                     <span>{text}</span>
                   </div>
@@ -407,11 +434,12 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                 <button
                   key={num}
                   onClick={() => stepGate(num) && setStep(num)}
+                  disabled={!stepGate(num)}
                   className={[
                     'flex-1 py-3 px-1 text-xs font-medium border-b-[3px] border-transparent transition-all whitespace-nowrap',
                     active ? 'bg-[#3D2B2B] text-white border-primary/60' :
-                    done   ? 'bg-[#c8adad] text-white' :
-                             'bg-white/12 text-white/75 hover:bg-white/20',
+                    done   ? 'bg-[#c8adad] text-white cursor-pointer hover:bg-[#b89d9d]' :
+                             'bg-white/12 text-white/75 cursor-not-allowed',
                   ].join(' ')}
                 >
                   <span className="hidden sm:inline">{num}. {label}</span>
@@ -425,24 +453,79 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
         {/* ── Body ───────────────────────────────────────────────────────── */}
         <div className="p-5 sm:p-6">
 
-          {/* ── Step 1: Branch ─────────────────────────────────────────── */}
+          {/* ── Step 1: Branch Selection ───────────────────────────────── */}
           {step === 1 && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-primary">Select Branch</h3>
-              <div className="border-2 border-primary rounded-xl p-4 bg-primary/5 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {business.businessName?.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm text-[#3D2B2B]">{business.businessName}</p>
-                    <p className="text-xs text-primary">{business.address?.street}, {business.address?.city}</p>
-                  </div>
+              
+              {!business.branches || business.branches.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No branches available</p>
+                  <button onClick={onClose} className="bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
+                    Close
+                  </button>
                 </div>
-              </div>
-              <button onClick={() => setStep(2)} className="w-full bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 transition-opacity">
-                Continue to Service Selection
-              </button>
+              ) : (
+                <div className="space-y-3">
+                  {business.branches.map((branch: any) => {
+                    const isSelected = selectedBranch?._id === branch._id;
+                    return (
+                      <div
+                        key={branch._id}
+                        onClick={() => selectBranch(branch)}
+                        className={[
+                          'border-2 rounded-xl p-4 cursor-pointer transition-all',
+                          isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white hover:border-primary/50 hover:bg-primary/5',
+                        ].join(' ')}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {branch.address?.city?.charAt(0) || 'B'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-sm text-[#3D2B2B]">
+                                {branch.address?.city || 'Branch'}
+                              </p>
+                              {branch.isBaseBranch && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                                  Main Branch
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600 mb-2">
+                              {branch.address?.street}, {branch.address?.city}
+                              {branch.address?.state && `, ${branch.address.state}`}
+                            </p>
+                            {branch.phones && branch.phones.length > 0 && (
+                              <div className="flex items-center gap-1.5 text-xs text-primary">
+                                <Phone className="h-3 w-3" />
+                                <span>{branch.phones[0]}</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Custom radio */}
+                          <div className={[
+                            'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5',
+                            isSelected ? 'border-primary bg-primary' : 'border-gray-300 bg-white',
+                          ].join(' ')}>
+                            {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {selectedBranch && (
+                <button 
+                  onClick={() => setStep(2)} 
+                  className="w-full mt-4 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Continue to Service Selection
+                </button>
+              )}
             </div>
           )}
 
@@ -455,7 +538,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                 <p className="text-center py-8 text-gray-500">No services have been added yet.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                  {business.services.map(service => {
+                  {business.services.map((service: any) => {
                     const selected = selectedService?._id === service._id;
                     return (
                       <div
@@ -516,9 +599,16 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                           <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                             {specialist.name.charAt(0)}
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="font-semibold text-sm text-[#3D2B2B]">{specialist.name}</p>
                             {specialist.title && <p className="text-xs text-primary">{specialist.title}</p>}
+                          </div>
+                          {/* Custom radio */}
+                          <div className={[
+                            'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0',
+                            selected ? 'border-primary bg-primary' : 'border-gray-300 bg-white',
+                          ].join(' ')}>
+                            {selected && <div className="w-2 h-2 rounded-full bg-white" />}
                           </div>
                         </div>
                       );
@@ -559,7 +649,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                     <div key={d} className="font-semibold py-1 text-xs text-primary">{d}</div>
                   ))}
                   {calendarDays.map((dateObj, idx) => {
-                    const isWorking  = business.workingHours?.some(e => e.dayOfWeek === (dateObj?.getDay() ?? -1) && e.isOpen) ?? false;
+                    const isWorking  = currentBranchWorkingHours?.some(e => e.dayOfWeek === (dateObj?.getDay() ?? -1) && e.isOpen) ?? false;
                     const isPast     = dateObj ? dateObj < today : false;
                     const isDisabled = !dateObj || isPast || !isWorking;
                     const isSelected = dateObj && selectedDate === dateObj.dateString;
@@ -567,7 +657,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                       <div key={idx}>
                         {dateObj && (
                           <button
-                            onClick={() => selectDate(dateObj.dateString)}
+                            onClick={() => !isDisabled && selectDate(dateObj.dateString)}
                             disabled={isDisabled}
                             className={[
                               'w-full aspect-square rounded-md text-[13px] transition-colors flex items-center justify-center',
@@ -666,17 +756,19 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                       )}
 
                       {/* Working hours banner */}
-                      {business.workingHours && (
+                      {currentBranchWorkingHours && (
                         <div className="rounded-lg p-3 mb-4 flex items-center gap-2 text-sm bg-primary/5 border border-primary/30 text-[#3D2B2B]">
                           <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
                           <span className="font-semibold">Working Hours:</span>
                           <span className="text-secondary">
                             {(() => {
                               const day      = new Date(selectedDate).getDay();
-                              const schedule = business.workingHours!.find(wh => wh.dayOfWeek === day);
-                              return schedule?.isOpen && schedule.shifts?.length
-                                ? schedule.shifts.map(s => `${s.startTime} - ${s.endTime}`).join(', ')
-                                : 'Closed';
+                              const schedule = currentBranchWorkingHours.find(wh => wh.dayOfWeek === day);
+                              if (!schedule?.isOpen) return 'Closed';
+                              if (schedule.hasBreak && schedule.breakStart && schedule.breakEnd) {
+                                return `${schedule.openTime} - ${schedule.breakStart}, ${schedule.breakEnd} - ${schedule.closeTime}`;
+                              }
+                              return `${schedule.openTime} - ${schedule.closeTime}`;
                             })()}
                           </span>
                         </div>
