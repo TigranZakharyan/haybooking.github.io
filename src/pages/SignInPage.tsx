@@ -21,8 +21,8 @@ const tabOptions: TTabOption<LoginMethod>[] = [
 ];
 
 export function SignInPage() {
-  const navigate = useNavigate()
-  const auth = useAuth()
+  const navigate = useNavigate();
+  const auth = useAuth();
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -50,7 +50,8 @@ export function SignInPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setServerError("");
 
     if (!validate()) return;
@@ -61,14 +62,13 @@ export function SignInPage() {
         : { phone: formatPhone(phone), password };
 
     try {
-      setServerError("")
+      setServerError("");
       setLoading(true);
       const response = await authService.login(credential);
-      localStorage.setItem("token", response.token)
-      auth.refreshUser()
-      navigate("/dashboard")
+      localStorage.setItem("token", response.token);
+      auth.refreshUser();
+      navigate("/dashboard");
     } catch (err: any) {
-      console.log(err)
       setServerError(err.response?.data?.message || "Invalid credentials");
     } finally {
       setLoading(false);
@@ -94,10 +94,11 @@ export function SignInPage() {
             }}
           />
 
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {loginMethod === "email" ? (
               <Input
                 label="Email"
+                type="email"
                 icon={Mail}
                 placeholder="Your email"
                 value={email}
@@ -142,7 +143,7 @@ export function SignInPage() {
             )}
 
             <Button
-              onClick={handleSubmit}
+              type="submit"
               size="large"
               variant="liberty"
               className="w-full"
@@ -150,7 +151,7 @@ export function SignInPage() {
             >
               {loading ? "Signing In..." : "Sign In"}
             </Button>
-          </div>
+          </form>
 
           <DividerWithText>
             Don't have an account?{" "}

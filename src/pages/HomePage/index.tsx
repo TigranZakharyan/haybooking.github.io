@@ -70,7 +70,6 @@ export function HomePage() {
     selectedSpecialist: unknown;
     customerInfo: unknown;
   }) => {
-    console.log('Booking confirmed:', payload);
     setSelectedBusiness(null);
   };
 
@@ -83,8 +82,6 @@ export function HomePage() {
       </Container>
     );
   }
-
-  console.log(businesses)
 
   return (
     <>
@@ -132,7 +129,6 @@ export function HomePage() {
             businesses.map((business) => (
               <ServiceCard
                 key={business._id}
-                image={business.image}
                 title={business.businessName}
                 address={business.address}
                 specialists={business.specialists?.length || 0}

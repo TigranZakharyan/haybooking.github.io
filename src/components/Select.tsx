@@ -63,7 +63,7 @@ export function Select({
         <button
           type="button"
           onClick={() => setOpen((p) => !p)}
-          className={`w-full flex items-center justify-between px-4 py-3 bg-slate-50 border rounded-xl
+          className={`w-full flex items-center justify-between px-4 py-3 bg-slate-50 border rounded-lg
             transition-all focus:outline-none focus:ring-2
             ${
               error

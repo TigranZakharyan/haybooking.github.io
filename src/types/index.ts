@@ -69,7 +69,7 @@ export type TUser = {
   lastName: string;
   phone?: string;
   isActive: boolean;
-  business?: BusinessProfile; // optional, only for business users
+  business?: BusinessProfile;
 };
 
 export interface Price {
@@ -80,8 +80,10 @@ export interface Price {
 export interface Specialist {
   _id: string;
   name: string;
-  title?: string;
-  services?: (string | { _id: string })[];
+  branch: Branch;
+  photo?: Image | null;
+  isActive: boolean;
+  services: TService[];
 }
 
 export interface Address {
@@ -175,6 +177,23 @@ export interface Branch {
     street: string;
     city: string;
     country: string;
+    state: string,
+    zipCode: string;
+    phones: string[];
+    workingHours: {
+      _id: string;
+      hasBreak: boolean;
+      dayOfWeek: number;
+      isOpen: boolean;
+      closeTime: string;
+      openTime: string;
+      breakStart?: string;
+      breakEnd?: string;
+    }[];
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
   };
   isBaseBranch?: boolean;
 }
@@ -195,4 +214,24 @@ export type TService = {
   isActive: boolean;
   branch: Branch;
   image?: Image | null;
+}
+
+export interface WorkingHoursUI {
+  dayOfWeek: number;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+  hasBreak: boolean;
+  breakStart?: string;
+  breakEnd?: string;
+}
+
+export interface NewBranch {
+  address: Pick<
+    Branch["address"],
+    "street" | "city" | "country" | "state" | "zipCode"
+  >;
+  phones: Branch["address"]["phones"];
+  workingHours: WorkingHoursUI[];
+  isBaseBranch: Branch["isBaseBranch"];
 }

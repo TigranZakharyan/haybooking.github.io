@@ -10,11 +10,13 @@ import {
   ChevronLeft,
   Menu,
   X,
+  MapPin,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Dashboard", Icon: Home, to: "/dashboard" },
   { label: "Services", Icon: Box, to: "/dashboard/services" },
+  { label: "Branches", Icon: MapPin, to: "/dashboard/branches" },
   { label: "Specialists", Icon: Users, to: "/dashboard/specialists" },
   { label: "Analytics", Icon: BarChart2, to: "/dashboard/analytics" },
   { label: "Settings", Icon: Settings, to: "/dashboard/settings" },

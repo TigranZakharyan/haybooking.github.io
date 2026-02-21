@@ -9,7 +9,6 @@ interface Price {
   amount: number;
 }
 
-
 interface NewService {
   name: string;
   duration: number;
@@ -168,7 +167,10 @@ export const ServicesPage = () => {
 
     setCreatingService(true);
     try {
-      await serviceService.createService(newService);
+      const createdService = await serviceService.createService(newService);
+
+      // Add new service to state locally
+      setServices((prev) => [...prev, createdService]);
 
       // Reset form with current base branch
       const baseBranch =
@@ -188,7 +190,8 @@ export const ServicesPage = () => {
         serviceDuration: "",
         servicePrice: "",
       });
-      await fetchData();
+    } catch (error) {
+      console.error("Failed to create service:", error);
     } finally {
       setCreatingService(false);
     }
@@ -234,7 +237,17 @@ export const ServicesPage = () => {
 
     setCreatingService(true);
     try {
-      await serviceService.updateService(editingService._id, newService);
+      const updatedService = await serviceService.updateService(
+        editingService._id,
+        newService,
+      );
+
+      // Update service in state locally
+      setServices((prev) =>
+        prev.map((s) =>
+          s._id === editingService._id ? updatedService : s,
+        ),
+      );
 
       // Reset form with current base branch
       const baseBranch =
@@ -255,7 +268,8 @@ export const ServicesPage = () => {
         serviceDuration: "",
         servicePrice: "",
       });
-      await fetchData();
+    } catch (error) {
+      console.error("Failed to update service:", error);
     } finally {
       setCreatingService(false);
     }
@@ -285,7 +299,9 @@ export const ServicesPage = () => {
   const handleDeleteService = async (id: string) => {
     try {
       await serviceService.deleteService(id);
-      await fetchData();
+      
+      // Remove service from state locally
+      setServices((prev) => prev.filter((s) => s._id !== id));
     } catch (error) {
       console.error("Failed to delete service:", error);
     }
@@ -295,13 +311,28 @@ export const ServicesPage = () => {
     serviceId: string,
     currentStatus: boolean,
   ) => {
+    const newStatus = !currentStatus;
+    
+    // Optimistically update UI
+    setServices((prev) =>
+      prev.map((s) =>
+        s._id === serviceId ? { ...s, isActive: newStatus } : s,
+      ),
+    );
+
     try {
       await serviceService.updateService(serviceId, {
-        isActive: !currentStatus,
+        isActive: newStatus,
       });
-      await fetchData();
     } catch (error) {
       console.error("Failed to toggle service status:", error);
+      
+      // Revert on error
+      setServices((prev) =>
+        prev.map((s) =>
+          s._id === serviceId ? { ...s, isActive: currentStatus } : s,
+        ),
+      );
     }
   };
 
@@ -318,7 +349,7 @@ export const ServicesPage = () => {
       </Card>
     );
   }
-
+  console.log(branches, services)
   const branchOptions = branches.map((b) => ({
     value: b._id,
     label: `${b.address.country}, ${b.address.city}, ${b.address.street}`,

@@ -124,23 +124,23 @@ export const serviceService = {
 export const specialistService = {
   createSpecialist: async (data) => {
     const response = await api.post('/specialists', data);
-    return response.specialist;
+    return response.data.specialist;
   },
   getMySpecialists: async () => {
     const response = await api.get('/specialists');
-    return response.specialists;
+    return response.data.specialists;
   },
   getSpecialist: async (id) => {
     const response = await api.get(`/specialists/${id}`);
-    return response.specialist;
+    return response.data.specialist;
   },
   getSpecialistsByBusinessId: async (businessId) => {
     const response = await api.get(`/specialists/business/${businessId}`);
-    return response.specialists || response.data;
+    return response.data.specialists || response.data;
   },
   updateSpecialist: async (id, data) => {
     const response = await api.put(`/specialists/${id}`, data);
-    return response.specialist;
+    return response.data.specialist;
   },
   deleteSpecialist: async (id) => {
     return await api.delete(`/specialists/${id}`);
@@ -204,12 +204,6 @@ export const bookingService = {
   cancelBooking: async (id, reason) => {
     const response = await api.put(`/bookings/${id}/cancel`, { reason });
     return response.booking;
-  },
-
-  // Get availability
-  getAvailability: async (params) => {
-    const response = await api.get("/bookings/availability", { params });
-    return response;
   },
 
   // NEW: Add this method - Validate Custom Time

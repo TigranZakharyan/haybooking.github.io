@@ -59,7 +59,7 @@ export function Input({
             focus:outline-none focus:ring-2 transition-all
             placeholder:text-slate-400
             ${borderVariant}
-            ${error ? "border-red-500 focus:ring-red-500" : ""}`} // ✅ red border on error
+            ${error ? "!border-red-500 focus:ring-red-500" : ""}`} // ✅ red border on error
         />
 
         {isPassword && (
