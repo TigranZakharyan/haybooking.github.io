@@ -1,9 +1,11 @@
 import { Container } from "@/components";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { CircleDollarSign, Search, UserCircle2 } from "lucide-react";
+import { CircleDollarSign, UserCircle2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export function UserLayout() {
   const location = useLocation()
+  const { user } = useAuth()
   const textColor = location.pathname === '/signin' || location.pathname === "/signup" ? "text-white" : 'text-primary'
   const bgColor = location.pathname === '/signin' || location.pathname === "/signup" ? "bg-white" : 'bg-primary'
   return (
@@ -25,11 +27,27 @@ export function UserLayout() {
               <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
             </Link>
 
-            <Link to="/signin" className="relative group flex items-center gap-2">
-              <UserCircle2 className="w-6 h-6 md:hidden" />
-              <span className="hidden md:block text-lg font-medium">Sign In/Up</span>
-              <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
-            </Link>
+            {user ? (
+              user.role === 'business' ? (
+                <Link to="/dashboard" className="relative group flex items-center gap-2">
+                  <UserCircle2 className="w-6 h-6 md:hidden" />
+                  <span className="hidden md:block text-lg font-medium">Dashboard</span>
+                  <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
+                </Link>
+              ) : (
+                <Link to="/my-bookings" className="relative group flex items-center gap-2">
+                  <UserCircle2 className="w-6 h-6 md:hidden" />
+                  <span className="hidden md:block text-lg font-medium">My Bookings</span>
+                  <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
+                </Link>
+              )
+            ) : (
+              <Link to="/signin" className="relative group flex items-center gap-2">
+                <UserCircle2 className="w-6 h-6 md:hidden" />
+                <span className="hidden md:block text-lg font-medium">Sign In/Up</span>
+                <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
+              </Link>
+            )}
           </nav>
         </Container>
       </header>

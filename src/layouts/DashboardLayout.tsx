@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Outlet, NavLink, Link } from "react-router-dom";
+import { Outlet, NavLink, Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   Home,
@@ -41,13 +41,14 @@ export function DashboardLayout() {
   }, [user]);
 
   if (!user) return null;
+  if(user.role !== "business") return <Navigate to="/" />;
 
   function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     return (
       <div className="flex flex-col h-full overflow-hidden px-3">
         {/* Logo */}
         <Link
-          to="/dashboard"
+          to="/"
           onClick={onNavClick}
           className="flex items-center h-16"
         >
