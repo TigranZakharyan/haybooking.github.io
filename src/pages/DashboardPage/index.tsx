@@ -3,8 +3,8 @@ import { Filter } from "@/pages/DashboardPage/Filter";
 import { useState, useEffect } from "react";
 import { businessService, bookingService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { User, Settings, Copy, LogOut } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { BookingCard } from "./BookingCard";
+import { ChangeStatusModal } from "./ChangeStatusModal";
 
 // Types
 interface Booking {
@@ -27,6 +27,13 @@ interface Booking {
     _id: string;
     name: string;
   };
+  branch?: {
+    _id: string;
+    address?: {
+      city?: string;
+      street?: string;
+    };
+  };
   price?: {
     amount: number;
   };
@@ -37,16 +44,29 @@ interface Booking {
 interface Business {
   businessName: string;
   bookingLink: string;
+  branches?: Array<{
+    _id: string;
+    address?: {
+      city?: string;
+      street?: string;
+    };
+  }>;
+  services?: Array<{
+    _id: string;
+    name: string;
+  }>;
+  specialists?: Array<{
+    _id: string;
+    name: string;
+  }>;
 }
 
 interface FilterValues {
   branch: string;
   service: string;
   specialist: string;
-  date: string;
-  status: string;
   timeRange: { start: string; end: string };
-  priceRange: { min: string; max: string };
+  status: string;
 }
 
 export function DashboardPage() {
@@ -58,14 +78,13 @@ export function DashboardPage() {
     branch: "all",
     service: "all",
     specialist: "all",
-    date: "all",
-    status: "all",
     timeRange: { start: "", end: "" },
-    priceRange: { min: "", max: "" },
+    status: "all",
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -90,10 +109,24 @@ export function DashboardPage() {
     }
   };
 
-  const copyBookingLink = () => {
-    if (business?.bookingLink) {
-      const link = `${window.location.origin}/book/${business.bookingLink}`;
-      navigator.clipboard.writeText(link);
+  const handleChangeStatus = (bookingId: string) => {
+    const booking = bookings.find((b) => b._id === bookingId);
+    if (booking) {
+      setSelectedBooking(booking);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleUpdateStatus = async (
+    bookingId: string,
+    newStatus: string,
+  ) => {
+    try {
+      await bookingService.updateBookingStatus(bookingId, newStatus);
+      await fetchBookings();
+    } catch (error) {
+      console.error("Failed to update booking status:", error);
+      throw error;
     }
   };
 
@@ -139,6 +172,11 @@ export function DashboardPage() {
       dateMatch = bookingDate === selectedDateStr;
     }
 
+    // Branch filter
+    const branchMatch =
+      filters.branch === "all" ||
+      booking.branch?._id === filters.branch;
+
     // Status filter
     const statusMatch =
       filters.status === "all" || booking.status === filters.status;
@@ -172,58 +210,20 @@ export function DashboardPage() {
       timeMatch = bookingTime <= endTime;
     }
 
-    // Price range filter
-    let priceMatch = true;
-    const price = booking.price?.amount || 0;
-    if (filters.priceRange.min && filters.priceRange.max) {
-      priceMatch =
-        price >= parseFloat(filters.priceRange.min) &&
-        price <= parseFloat(filters.priceRange.max);
-    } else if (filters.priceRange.min) {
-      priceMatch = price >= parseFloat(filters.priceRange.min);
-    } else if (filters.priceRange.max) {
-      priceMatch = price <= parseFloat(filters.priceRange.max);
-    }
-
     return (
       dateMatch &&
+      branchMatch &&
       statusMatch &&
       serviceMatch &&
       specialistMatch &&
-      timeMatch &&
-      priceMatch
+      timeMatch
     );
   });
 
-  // Extract unique services and specialists
-  const uniqueServices = [
-    ...new Map(
-      bookings.filter((b) => b.service).map((b) => [b.service!._id, b.service]),
-    ).values(),
-  ];
-
-  const uniqueSpecialists = [
-    ...new Map(
-      bookings
-        .filter((b) => b.specialist)
-        .map((b) => [b.specialist!._id, b.specialist]),
-    ).values(),
-  ];
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  // Extract unique branches, services and specialists from business data
+  const branches = business?.branches || [];
+  const services = business?.services || [];
+  const specialists = business?.specialists || [];
 
   const handleFilterChange = (newFilters: Partial<FilterValues>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
@@ -245,28 +245,30 @@ export function DashboardPage() {
           {/* Filter Component - Fixed */}
           <div className="flex-shrink-0">
             <Filter
-              branchOptions={[{ label: "All Branches", value: "all" }]}
+              branchOptions={[
+                { label: "All Branches", value: "all" },
+                ...branches.map((b) => ({
+                  label: b.address?.city || b.address?.street || "Branch",
+                  value: b._id,
+                })),
+              ]}
               serviceOptions={[
                 { label: "All Services", value: "all" },
-                ...uniqueServices.map((s) => ({ label: s!.name, value: s!._id })),
+                ...services.map((s) => ({ label: s.name, value: s._id })),
               ]}
               specialistOptions={[
                 { label: "All Specialists", value: "all" },
-                ...uniqueSpecialists.map((s) => ({
-                  label: s!.name,
-                  value: s!._id,
+                ...specialists.map((s) => ({
+                  label: s.name,
+                  value: s._id,
                 })),
               ]}
-              dateOptions={[
-                { label: "All Dates", value: "all" },
-                { label: "Today", value: "today" },
-                { label: "Tomorrow", value: "tomorrow" },
-              ]}
-              onBook={(filterValues) => {
+              onFilterChange={(filterValues) => {
                 handleFilterChange({
+                  branch: filterValues.branch || "all",
                   service: filterValues.service || "all",
                   specialist: filterValues.specialist || "all",
-                  date: filterValues.date || "all",
+                  timeRange: filterValues.timeRange || { start: "", end: "" },
                 });
               }}
             />
@@ -277,178 +279,45 @@ export function DashboardPage() {
             {/* Header - Fixed */}
             <div className="flex-shrink-0 p-6 border-b border-gray-100">
               <h2 className="text-2xl font-light text-gray-700">
-                Bookings List
+                Bookings
               </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''}
+                {selectedDate && (
+                  <span className="ml-2 text-teal-600">
+                    on {selectedDate.toLocaleDateString()}
+                  </span>
+                )}
+              </p>
             </div>
 
-            {/* Table Container - Scrollable */}
-            <div className="flex-1 overflow-auto min-h-0">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-white z-10">
-                  <tr className="border-b border-gray-100">
-                    <th className="px-6 py-4 text-left text-sm font-normal text-gray-500">
-                      Client
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-normal text-gray-500">
-                      Service
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-normal text-gray-500">
-                      Specialist
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-normal text-gray-500">
-                      Date
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-normal text-gray-500">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredBookings.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center">
-                        <p className="text-gray-500 font-normal text-sm">
-                          No bookings found
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {selectedDate
-                            ? "Try selecting a different date"
-                            : "No bookings match your filters"}
-                        </p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredBookings
-                      .sort((a, b) => a.startTime.localeCompare(b.startTime))
-                      .map((booking) => (
-                        <tr
-                          key={booking._id}
-                          className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-                        >
-                          {/* Client */}
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <User className="w-5 h-5 text-gray-500" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-normal text-gray-900 truncate">
-                                  {booking.customerInfo?.firstName}{" "}
-                                  {booking.customerInfo?.lastName}
-                                </p>
-                                {booking.isGuestBooking && (
-                                  <p className="text-xs text-gray-400">Guest</p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Service */}
-                          <td className="px-6 py-4">
-                            <div className="min-w-0">
-                              <p className="text-sm font-normal text-gray-900 truncate">
-                                {booking.service?.name || "Service"}
-                              </p>
-                              {booking.notes && (
-                                <p className="text-xs text-gray-400 truncate">
-                                  {booking.notes}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Specialist */}
-                          <td className="px-6 py-4">
-                            <div className="min-w-0">
-                              <p className="text-sm font-normal text-gray-900 truncate">
-                                {booking.specialist?.name || "Specialist"}
-                              </p>
-                              {booking.customerInfo?.phone && (
-                                <p className="text-xs text-gray-400">
-                                  {booking.customerInfo.phone}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Date */}
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-normal text-gray-900 whitespace-nowrap">
-                              {new Date(booking.bookingDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                },
-                              )}{" "}
-                              at {booking.startTime}
-                            </p>
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-6 py-4">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-normal capitalize ${
-                                booking.status === "confirmed"
-                                  ? "bg-green-100 text-green-700"
-                                  : booking.status === "pending"
-                                    ? "bg-orange-100 text-orange-700"
-                                    : booking.status === "completed"
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-gray-100 text-gray-700"
-                              }`}
-                            >
-                              {booking.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination - Fixed */}
-            {filteredBookings.length > 0 && (
-              <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-                <p className="text-sm text-gray-500">
-                  1 - {Math.min(5, filteredBookings.length)} of{" "}
-                  {filteredBookings.length}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+            {/* Cards Container - Scrollable */}
+            <div className="flex-1 overflow-auto min-h-0 p-6">
+              {filteredBookings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p className="text-gray-500 font-normal text-sm">
+                    No bookings found
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {selectedDate
+                      ? "Try selecting a different date"
+                      : "No bookings match your filters"}
+                  </p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-4">
+                  {filteredBookings
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+                    .map((booking) => (
+                      <BookingCard
+                        key={booking._id}
+                        booking={booking}
+                        onChangeStatus={handleChangeStatus}
+                      />
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -494,6 +363,17 @@ export function DashboardPage() {
           </div>
         </aside>
       </div>
+
+      {/* Change Status Modal */}
+      <ChangeStatusModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedBooking(null);
+        }}
+        booking={selectedBooking}
+        onUpdateStatus={handleUpdateStatus}
+      />
     </div>
   );
 }

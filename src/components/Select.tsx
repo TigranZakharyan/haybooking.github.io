@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { type LucideIcon, ChevronDown, Check } from "lucide-react";
 import type { TOption } from "@/types";
 
