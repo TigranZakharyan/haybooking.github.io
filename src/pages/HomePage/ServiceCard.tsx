@@ -9,12 +9,14 @@ interface ServiceCardProps {
   priceFrom: number;
   currency?: string;
   buttonText?: string;
+  logo: {url: string} | undefined;
   onButtonClick?: () => void;
   className?: string;
 }
 
 export function ServiceCard({
   title,
+  logo,
   address,
   specialists,
   services,
@@ -30,7 +32,7 @@ export function ServiceCard({
       {/* Image */}
       <div className="h-48 w-full overflow-hidden">
         <div className="w-full h-full flex items-center justify-center text-7xl text-white bg-[linear-gradient(to_bottom_right,rgba(179,149,149,0.5),rgba(179,149,149,1))]">
-          <span>{title[0].toUpperCase()}</span>
+          <span>{logo ? <img src={logo.url} alt="" className="w-full h-full object-cover" /> : title[0].toUpperCase()}</span>
         </div>
       </div>
 

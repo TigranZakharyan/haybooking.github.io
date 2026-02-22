@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, ChangeEvent } from "react";
+import { useState, useMemo, useEffect, type ChangeEvent } from "react";
 import { Button, Input, Select } from "@/components";
 import { Card } from "../../components/Card";
 import { SectionTitle } from "../../components/SectionTitle";
@@ -27,7 +27,7 @@ export function BusinessTab() {
 
   const handleChange =
     (field: keyof Business) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
 
       setFormData((prev) => ({ ...prev, [field]: value }));

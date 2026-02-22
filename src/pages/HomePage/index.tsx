@@ -133,6 +133,7 @@ export function HomePage() {
                 key={business._id}
                 title={business.businessName}
                 address={business.address}
+                logo={business.logo}
                 specialists={business.specialists?.length || 0}
                 services={business.services?.length || 0}
                 priceFrom={business.services?.[0]?.price?.amount || 0}

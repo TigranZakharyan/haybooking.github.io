@@ -282,7 +282,7 @@ export const branchesService = {
   },
   createBranch: async (businessId, data) => {
     const response = await api.post(`/branches/${businessId}`, data);
-    return response.branch;
+    return response.data.branch;
   },
   deleteBranch: async (branchId) => {
     await api.delete(`/branches/${branchId}`);

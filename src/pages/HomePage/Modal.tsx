@@ -238,6 +238,15 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
     }
   }, [business.branches]);
 
+  // Reset specialist when branch changes
+  useEffect(() => {
+    setSelectedSpecialist(null);
+    setSelectedService(null);
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setAvailableSlots([]);
+  }, [selectedBranch]);
+
   // ── Data fetching ───────────────────────────────────────────────────────────
 
   const fetchSlots = async () => {
@@ -261,16 +270,28 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const filteredSpecialists: Specialist[] = (business.specialists ?? []).filter(s => {
-    if (!s.services?.length) return true;
-    return s.services.some(svc => {
+  // Filter specialists by branch AND service
+  const filteredSpecialists: Specialist[] = (business.specialists ?? []).filter(specialist => {
+    // First check if specialist belongs to selected branch
+    if (selectedBranch && specialist.branch !== selectedBranch._id) {
+      return false;
+    }
+    
+    // Then check if they offer the selected service
+    if (!selectedService) return true;
+    
+    if (!specialist.services?.length) return false;
+    
+    return specialist.services.some(svc => {
       const id = typeof svc === 'string' ? svc : svc._id;
-      return id === selectedService?._id;
+      return id === selectedService._id;
     });
   });
 
   const selectBranch = (branch: any) => {
     setSelectedBranch(branch);
+    setSelectedSpecialist(null); // Clear specialist when branch changes
+    setSelectedService(null); // Clear service when branch changes
     setStep(2);
   };
 
@@ -393,6 +414,11 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
 
   // Get current working hours from selected branch
   const currentBranchWorkingHours = selectedBranch?.workingHours || business.workingHours;
+
+  // Filter services by branch
+  const branchServices = (business.services ?? []).filter(
+    (service: any) => service.branch === selectedBranch?._id
+  );
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -534,11 +560,11 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-primary">Select Service</h3>
 
-              {!business.services?.length ? (
-                <p className="text-center py-8 text-gray-500">No services have been added yet.</p>
+              {!branchServices.length ? (
+                <p className="text-center py-8 text-gray-500">No services available at this branch.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                  {business.services.map((service: any) => {
+                  {branchServices.map((service: any) => {
                     const selected = selectedService?._id === service._id;
                     return (
                       <div
@@ -584,7 +610,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                   <h3 className="text-base sm:text-lg font-semibold mb-3 text-primary">Select Specialist</h3>
                   <div className="space-y-2 mb-6">
                     {filteredSpecialists.length === 0 ? (
-                      <p className="text-center py-6 text-gray-500 text-sm">No specialists available for this service</p>
+                      <p className="text-center py-6 text-gray-500 text-sm">No specialists available for this service at this branch</p>
                     ) : filteredSpecialists.map(specialist => {
                       const selected = selectedSpecialist?._id === specialist._id;
                       return (
