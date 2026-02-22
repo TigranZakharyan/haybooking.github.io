@@ -3,7 +3,7 @@ import { useState } from "react";
 
 type BookingCalendarProps = {
   selectedDate: Date | null;
-  onDateSelect: (date: Date) => void;
+  onDateSelect: (date: Date | null) => void;
   getBookingCount: (date: Date) => number;
   showGoToToday?: boolean;
   showShowAll?: boolean;
@@ -29,7 +29,15 @@ export function Calendar({
 
   const goToPrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const goToNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
-  const goToToday = () => setCurrentMonth(new Date());
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentMonth(today);
+    onDateSelect(today);
+  };
+
+  const showAllBookings = () => {
+    onDateSelect(null);
+  };
 
   const today = new Date();
   const isToday = (date: Date) => date.toDateString() === today.toDateString();
@@ -134,13 +142,17 @@ export function Calendar({
       <div className="grid grid-cols-7 gap-1">{days}</div>
 
       {/* Footer */}
-      <div className="flex justify-between mt-4 pt-3 border-t border-gray-100">
+      <div className="flex justify-between gap-2 mt-4 pt-3 border-t border-gray-100">
         {showGoToToday && (
-          <Button variant="liberty" className="bg-primary" onClick={goToToday}>
+          <Button variant="liberty" className="bg-primary flex-1" onClick={goToToday}>
             Today
           </Button>
         )}
-        {showShowAll && <Button>Show All</Button>}
+        {showShowAll && (
+          <Button variant="liberty" className="bg-gray-600 flex-1" onClick={showAllBookings}>
+            Show All
+          </Button>
+        )}
       </div>
     </div>
   );

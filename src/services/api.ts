@@ -179,13 +179,13 @@ export const bookingService = {
   // Get customer bookings
   getMyBookings: async (params) => {
     const response = await api.get("/bookings/my-bookings", { params });
-    return response;
+    return response.data;
   },
 
   // Get business bookings
   getBusinessBookings: async (params) => {
     const response = await api.get("/bookings/business-bookings", { params });
-    return response;
+    return response.data;
   },
 
   // Get availability
@@ -197,20 +197,20 @@ export const bookingService = {
   // Update booking status (business)
   updateBookingStatus: async (id, status) => {
     const response = await api.put(`/bookings/${id}/status`, { status });
-    return response.booking;
+    return response.data.booking;
   },
 
   // Cancel booking (customer)
   cancelBooking: async (id, reason) => {
     const response = await api.put(`/bookings/${id}/cancel`, { reason });
-    return response.booking;
+    return response.data.booking;
   },
 
   // NEW: Add this method - Validate Custom Time
   validateCustomTime: async (data) => {
     try {
       const response = await api.post("/bookings/validate-custom-time", data);
-      return response;
+      return response.data; // { valid: boolean, message?: string }
     } catch (error) {
       // Re-throw with proper error structure
       throw error;

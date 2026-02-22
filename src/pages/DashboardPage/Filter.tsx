@@ -161,7 +161,7 @@ export function Filter({
         <Divider />
 
         {/* Added relative here so the dropdown centers correctly against this container */}
-        <div style={{ margin: 4, borderRadius: 9999 }} className="bg-teal-800 relative">
+        <div className="bg-teal-800 relative rounded-full">
           <FilterItem
             icon={<Calendar size={15} />}
             placeholder="Select Date"
@@ -171,15 +171,6 @@ export function Filter({
             active
           />
         </div>
-
-        <button
-          onClick={handleBook}
-          style={{ margin: 4 }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-teal-800 hover:bg-teal-700 active:bg-teal-900 text-white text-sm font-semibold rounded-full transition-colors duration-150 whitespace-nowrap"
-        >
-          <Check size={13} strokeWidth={3} />
-          BOOK NOW
-        </button>
       </div>
     </div>
   );
