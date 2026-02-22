@@ -7,12 +7,9 @@ import type { TUpdateProfile, TUser } from "@/types";
 import { authService } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 
-export function ProfileTab({
-  user,
-}: {
-  user: TUser;
-}) {
-  const { refreshUser } = useAuth()
+export function ProfileTab() {
+  const { user, refreshUser } = useAuth() as { user: TUser, refreshUser: () => void };
+
   const [formData, setFormData] = useState<TUpdateProfile>({
     firstName: user.firstName || "",
     lastName: user.lastName || "",

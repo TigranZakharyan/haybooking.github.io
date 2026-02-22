@@ -3,11 +3,14 @@ import { SwitchTabs } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { ProfileTab } from "./ProfileTab";
 import { SecurityTab } from "./SecurityTab";
+import { BusinessTab } from "./BusinessTab";
 import { Avatar } from "./ui/Avatar";
+
+const tabs = ["business", "profile", "security"];
 
 export function SettingsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState(tabs[0]);
 
   if (!user) return null;
 
@@ -25,7 +28,7 @@ export function SettingsPage() {
             </p>
 
             <SwitchTabs
-              tabs={["profile", "security"]}
+              tabs={tabs}
               activeTab={activeTab}
               onChange={setActiveTab}
             />
@@ -37,9 +40,9 @@ export function SettingsPage() {
 
         {/* Tab content */}
         {activeTab === "profile" ? (
-          <ProfileTab
-            user={user}
-          />
+          <ProfileTab />
+        ) : activeTab === "business" ? (
+          <BusinessTab />
         ) : (
           <SecurityTab />
         )}

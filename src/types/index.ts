@@ -114,6 +114,8 @@ export interface Business {
   _id: string;
   businessName: string;
   bookingLink: string;
+  businessType: string;
+  description?: string;
   phone: string;
   address: Address;
   owner?: BusinessOwner;
@@ -121,6 +123,9 @@ export interface Business {
   specialists?: Specialist[];
   workingHours?: WorkingHour[];
   settings?: BusinessSettings;
+  logo?: {
+    url: string
+  }
 }
 
 export interface CustomerInfo {
