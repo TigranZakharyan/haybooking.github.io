@@ -12,6 +12,7 @@ import {
   X,
   MapPin,
 } from "lucide-react";
+import { ProfileAvatar } from "@/components";
 
 const NAV_ITEMS = [
   { label: "Dashboard", Icon: Home, to: "/dashboard" },
@@ -23,7 +24,7 @@ const NAV_ITEMS = [
 ];
 
 export function DashboardLayout() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -173,9 +174,10 @@ export function DashboardLayout() {
             </div>
 
             {/* Avatar */}
-            <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm bg-primary text-white select-none">
-              {initials}
-            </div>
+            <ProfileAvatar 
+              initials={initials}
+              onLogoutClick={logout}
+            />
           </header>
 
           {/* Content — only this scrolls */}

@@ -1,11 +1,12 @@
-import { Container } from "@/components";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Container, ProfileAvatar } from "@/components";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { CircleDollarSign, UserCircle2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function UserLayout() {
   const location = useLocation()
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const textColor = location.pathname === '/signin' || location.pathname === "/signup" ? "text-white" : 'text-primary'
   const bgColor = location.pathname === '/signin' || location.pathname === "/signup" ? "bg-white" : 'bg-primary'
   return (
@@ -48,6 +49,15 @@ export function UserLayout() {
                 <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
               </Link>
             )}
+            {
+              user && (
+                <ProfileAvatar 
+                  initials={user?.firstName[0].toUpperCase() + user?.lastName[0].toUpperCase()}
+                  onLogoutClick={logout}
+                  onSettingsClick={user.role === "business" ? () => navigate("/dashboard/settings") : () => navigate("/")}
+                />
+              )
+            }
           </nav>
         </Container>
       </header>

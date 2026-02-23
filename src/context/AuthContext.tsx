@@ -12,6 +12,7 @@ import type { TUser } from "@/types";
 interface AuthContextType {
   user: TUser | null;
   loading: boolean;
+  logout: () => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -31,12 +32,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem("token")
+    setUser(null)
+    window.location.href = "/"
+  }
+
   useEffect(() => {
     refreshUser();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
