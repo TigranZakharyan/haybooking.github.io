@@ -1,9 +1,9 @@
-import type { TTabOption } from "@/types";
+import type { TOption } from "@/types";
 
 interface TabsProps<T extends string> {
-  tabs: TTabOption<T>[];
+  tabs: TOption[];
   activeTab: T;
-  onChange: (id: T) => void;
+  onChange: (value: string) => void;
   className?: string;
 }
 
@@ -16,11 +16,11 @@ export function Tabs<T extends string>({
   return (
     <div className={`flex w-full border-b border-gray-200 ${className}`}>
       {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
+        const isActive = activeTab === tab.value;
         return (
           <button
-            key={tab.id}
-            onClick={() => onChange(tab.id)}
+            key={tab.value}
+            onClick={() => onChange(tab.value)}
             type="button" 
             className={`flex-1 py-3 text-sm font-semibold transition-all duration-200 relative
               ${isActive ? "text-liberty" : "text-gray-400 hover:text-gray-600"}

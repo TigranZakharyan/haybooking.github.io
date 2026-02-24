@@ -1,11 +1,34 @@
 import type {
+  TBooking,
+  TBookingStatus,
+  TBranch,
+  TBusiness,
   TBusinessType,
-  TCredentials,
-  TRegisterBusinessCreds,
-  TRegisterCustomerCreds,
-  TUpdatePassword,
-  TUpdateProfile,
+  TCreateBooking,
+  TCreateBranch,
+  TCreateService,
+  TCreateSpecialist,
+  TGetAvailablityParams,
+  TLoginCredentials,
+  TLoginResponse,
+  TPagination,
+  TRegisterBusinessCredentials,
+  TRegisterCustomerCredentials,
+  TSearchBusinessBookingsParams,
+  TSearchBusinessParams,
+  TSearchMyBookingsParams,
+  TService,
+  TSpecialist,
+  TUpdateBooking,
+  TUpdateBranch,
+  TUpdateBusiness,
+  TUpdatePasswordForm,
+  TUpdateProfileForm,
+  TUpdateService,
+  TUpdateSpecialist,
   TUser,
+  TValidateCustomTime,
+  TWorkingHour,
 } from "@/types";
 import axios from "axios";
 
@@ -48,15 +71,15 @@ export const authService = {
     const response = await api.post("/auth/send-verification", { phone });
     return response.data;
   },
-  login: async (credential: TCredentials): Promise<{token: string}> => {
-    const response = await api.post<{ token: string }>("/auth/login", credential);
+  login: async (credential: TLoginCredentials): Promise<TLoginResponse> => {
+    const response = await api.post("/auth/login", credential);
     return response.data;
   },
-  registerCustomer: async (credential: TRegisterCustomerCreds) => {
+  registerCustomer: async (credential: TRegisterCustomerCredentials) => {
     const response = await api.post("/auth/register", credential);
     return response.data;
   },
-  registerBusiness: async (credential: TRegisterBusinessCreds) => {
+  registerBusiness: async (credential: TRegisterBusinessCredentials) => {
     const response = await api.post("/auth/register", credential);
     return response.data;
   },
@@ -64,34 +87,35 @@ export const authService = {
     const response = await api.get<{ user: TUser }>("/auth/me");
     return response.data
   },
-  updateProfile: async (data: TUpdateProfile): Promise<TUser> => {
+  updateProfile: async (data: TUpdateProfileForm): Promise<TUser> => {
     const response = await api.put<{ user: TUser }>('/auth/profile', data);
     return response.data.user;
   },
-  changePassword: async (data: TUpdatePassword): Promise<{ status: string }> => {
-    return await api.put<{ message: string }>('/auth/password', data);
+  changePassword: async (data: TUpdatePasswordForm): Promise<{ status: string }> => {
+    const response = await api.put<{ status: string }>('/auth/password', data);
+    return response.data;
   },
 };
 
 // Business Services
 export const businessService = {
-  getMyBusiness: async () => {
+  getMyBusiness: async (): Promise<TBusiness> => {
     const response = await api.get('/businesses/my-business');
     return response.data.business;
   },
-  updateMyBusiness: async (data) => {
+  updateMyBusiness: async (data: TUpdateBusiness): Promise<TBusiness> => {
     const response = await api.put('/businesses/my-business', data);
     return response.data.business;
   },
-  getBusinessByLink: async (bookingLink) => {
+  getBusinessByLink: async (bookingLink: string): Promise<TBusiness> => {
     const response = await api.get(`/businesses/link/${bookingLink}`);
     return response.data.business;
   },
-  getStats: async () => {
-    const response = await api.get('/businesses/stats');
-    return response.data.stats;
-  },
-  updateWorkingHours: async (workingHours) => {
+  // getStats: async () => {
+  //   const response = await api.get('/businesses/stats');
+  //   return response.data.stats;
+  // },
+  updateWorkingHours: async (workingHours: TWorkingHour[]): Promise<TBusiness> => {
     const response = await api.put('/businesses/working-hours', { workingHours });
     return response.data.business;
   },
@@ -99,7 +123,7 @@ export const businessService = {
 
 // Service Services
 export const serviceService = {
-  createService: async (data) => {
+  createService: async (data: TCreateService) => {
     const response = await api.post('/services', data);
     return response.data.service;
   },
@@ -107,22 +131,22 @@ export const serviceService = {
     const response = await api.get('/services');
     return response.data.services;
   },
-  getService: async (id) => {
+  getService: async (id: string): Promise<TService> => {
     const response = await api.get(`/services/${id}`);
     return response.data.service;
   },
-  updateService: async (id, data) => {
+  updateService: async (id: string, data: TUpdateService): Promise<TService> => {
     const response = await api.put(`/services/${id}`, data);
     return response.data.service;
   },
-  deleteService: async (id) => {
+  deleteService: async (id: string) => {
     return await api.delete(`/services/${id}`);
   },
 };
 
 // Specialist Services
 export const specialistService = {
-  createSpecialist: async (data) => {
+  createSpecialist: async (data: TCreateSpecialist): Promise<TSpecialist> => {
     const response = await api.post('/specialists', data);
     return response.data.specialist;
   },
@@ -130,19 +154,19 @@ export const specialistService = {
     const response = await api.get('/specialists');
     return response.data.specialists;
   },
-  getSpecialist: async (id) => {
+  getSpecialist: async (id: string) => {
     const response = await api.get(`/specialists/${id}`);
     return response.data.specialist;
   },
-  getSpecialistsByBusinessId: async (businessId) => {
+  getSpecialistsByBusinessId: async (businessId: string) => {
     const response = await api.get(`/specialists/business/${businessId}`);
     return response.data.specialists || response.data;
   },
-  updateSpecialist: async (id, data) => {
+  updateSpecialist: async (id: string, data: TUpdateSpecialist) => {
     const response = await api.put(`/specialists/${id}`, data);
     return response.data.specialist;
   },
-  deleteSpecialist: async (id) => {
+  deleteSpecialist: async (id: string) => {
     return await api.delete(`/specialists/${id}`);
   },
 };
@@ -156,19 +180,19 @@ export const bookingService = {
   },
 
   // Create booking (with or without auth)
-  createBooking: async (data) => {
+  createBooking: async (data: TCreateBooking): Promise<TBooking>  => {
     const response = await api.post("/bookings", data);
     return response.data.booking;
   },
 
   // Update booking (customer)
-  updateBooking: async (id: string, updateData) => {
+  updateBooking: async (id: string, updateData: TUpdateBooking): Promise<TBooking> => {
     const response = await api.put(`/bookings/${id}`, updateData);
     return response.data.booking;
   },
 
   // Update booking (business)
-  updateBookingByBusiness: async (id: string, updateData) => {
+  updateBookingByBusiness: async (id: string, updateData: TUpdateBooking) => {
     const response = await api.put(
       `/bookings/${id}/business-update`,
       updateData,
@@ -177,42 +201,41 @@ export const bookingService = {
   },
 
   // Get customer bookings
-  getMyBookings: async (params: { status?: string, page?: string, limit?: number }) => {
+  getMyBookings: async (params: TSearchMyBookingsParams): Promise<TBooking[]> => {
     const response = await api.get("/bookings/my-bookings", { params });
     return response.data.bookings;
   },
 
   // Get business bookings
-  getBusinessBookings: async (params) => {
+  getBusinessBookings: async (params: TSearchBusinessBookingsParams) => {
     const response = await api.get("/bookings/business-bookings", { params });
     return response.data;
   },
 
   // Get availability
-  getAvailability: async (params) => {
+  getAvailability: async (params: TGetAvailablityParams) => {
     const response = await api.get("/bookings/availability", { params });
     return response.data;
   },
 
   // Update booking status (business)
-  updateBookingStatus: async (id, status) => {
+  updateBookingStatus: async (id: string, status: TBookingStatus): Promise<TBooking> => {
     const response = await api.put(`/bookings/${id}/status`, { status });
     return response.data.booking;
   },
 
   // Cancel booking (customer)
-  cancelBooking: async (id, reason) => {
-    const response = await api.put(`/bookings/${id}/cancel`, { reason });
+  cancelBooking: async (id: string) => {
+    const response = await api.put(`/bookings/${id}/cancel`);
     return response.data.booking;
   },
 
   // NEW: Add this method - Validate Custom Time
-  validateCustomTime: async (data) => {
+  validateCustomTime: async (data: TValidateCustomTime) => {
     try {
       const response = await api.post("/bookings/validate-custom-time", data);
-      return response.data; // { valid: boolean, message?: string }
+      return response.data;
     } catch (error) {
-      // Re-throw with proper error structure
       throw error;
     }
   },
@@ -220,11 +243,11 @@ export const bookingService = {
 
 // // Search Services
 export const searchService = {
-  searchBusinesses: async (params) => {
+  searchBusinesses: async (params: TSearchBusinessParams): Promise<{pagination: TPagination, businesses: TBusiness[]}> => {
     const response = await api.get("/search", { params });
     return response.data;
   },
-  getCities: async () => {
+  getCities: async (): Promise<string[]> => {
     const response = await api.get("/search/cities");
     return response.data.cities;
   },
@@ -237,7 +260,7 @@ export const searchService = {
 
 // Upload service
 export const uploadService = {
-  uploadBusinessLogo: async (formData) => {
+  uploadBusinessLogo: async (formData: FormData) => {
     const response = await api.post('/images/business-logo', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -252,39 +275,39 @@ export const uploadService = {
   deleteBusinessLogo: async () => {
     return await api.delete('/images/business-logo');
   },
-  uploadServiceImage: async (serviceId, formData) => {
+  uploadServiceImage: async (serviceId: string, formData: FormData) => {
     const response = await api.post(`/images/service-image/${serviceId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     // backend returns { image, serviceName }
     return response.data.image;
   },
-  uploadSpecialistPhoto: async (specialistId, formData) => {
+  uploadSpecialistPhoto: async (specialistId: string, formData: FormData) => {
     const response = await api.post(`/images/specialist-photo/${specialistId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     // backend returns { photo, specialistName }
     return response.data.photo;
   },
-  deleteServiceImage: async (serviceId) => {
+  deleteServiceImage: async (serviceId: string) => {
     return await api.delete(`/images/service-image/${serviceId}`);
   },
-  deleteSpecialistPhoto: async (specialistId) => {
+  deleteSpecialistPhoto: async (specialistId: string) => {
     return await api.delete(`/images/specialist-photo/${specialistId}`);
   },
 };
 
 
 export const branchesService = {
-  updateMyBranch: async (branchId, data) => {
+  updateMyBranch: async (branchId: string, data: TUpdateBranch): Promise<TBranch> => {
     const response = await api.put(`/branches/${branchId}`, data);
-    return response;
+    return response.data.branch;
   },
-  createBranch: async (businessId, data) => {
+  createBranch: async (businessId: string, data: TCreateBranch): Promise<TBranch> => {
     const response = await api.post(`/branches/${businessId}`, data);
     return response.data.branch;
   },
-  deleteBranch: async (branchId) => {
+  deleteBranch: async (branchId: string) => {
     await api.delete(`/branches/${branchId}`);
   }
 }

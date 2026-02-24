@@ -1,12 +1,12 @@
 import { MapPin, Phone, Edit, Trash2, Home, Plus } from "lucide-react";
 import { Card, Button } from "@/components";
-import type { Branch } from "@/types";
+import type { TBranch } from "@/types";
 
 interface BranchListProps {
-  branches: Branch[];
-  selectedBranch: Branch | null;
-  onSelectBranch: (branch: Branch) => void;
-  onEdit: (branch: Branch) => void;
+  branches: TBranch[];
+  selectedBranch: TBranch | null;
+  onSelectBranch: (branch: TBranch) => void;
+  onEdit: (branch: TBranch) => void;
   onDelete: (branchId: string) => void;
   onAddNew: () => void;
 }
@@ -30,7 +30,7 @@ export const BranchList = ({
           </p>
           <Button onClick={onAddNew}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Your First Branch
+            Add Your First TBranch
           </Button>
         </div>
       </Card>
@@ -73,12 +73,10 @@ export const BranchList = ({
                   {branch.address.state && `, ${branch.address.state}`}
                   {branch.address.zipCode && ` ${branch.address.zipCode}`}
                 </p>
-                {branch.address.phones && branch.address.phones.length > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Phone className="w-4 h-4" />
-                    {branch.address.phones.join(", ")}
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Phone className="w-4 h-4" />
+                  {branch.phones.join(", ")}
+                </div>
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0 ml-4">

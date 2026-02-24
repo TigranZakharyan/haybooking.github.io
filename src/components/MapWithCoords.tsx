@@ -1,24 +1,16 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, MapPinHouse } from "lucide-react"; // Added MapPinHouse
+import { MapPin, MapPinHouse } from "lucide-react";
 import { renderToString } from "react-dom/server";
-
-export interface MapPoint {
-  id: string;
-  lat: number;
-  lng: number;
-  isBase?: boolean;
-  label?: string;
-}
+import type { TMapPoint } from "@/types";
 
 interface MapProps {
-  points: MapPoint[];
-  selectedPoint?: MapPoint;
-  height?: string;
+  points: TMapPoint[];
+  selectedPoint?: TMapPoint;
 }
 
-export function MapWithCoords({ points, selectedPoint, height = "500px" }: MapProps) {
+export function MapWithCoords({ points, selectedPoint }: MapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);

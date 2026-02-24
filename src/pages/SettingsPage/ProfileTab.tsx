@@ -3,14 +3,14 @@ import { Button, Input } from "@/components";
 import { Edit2 } from "lucide-react";
 import { Card } from "../../components/Card";
 import { SectionTitle } from "../../components/SectionTitle";
-import type { TUpdateProfile, TUser } from "@/types";
+import type { TUpdateProfileForm, TUser } from "@/types";
 import { authService } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 
 export function ProfileTab() {
   const { user, refreshUser } = useAuth() as { user: TUser, refreshUser: () => void };
 
-  const [formData, setFormData] = useState<TUpdateProfile>({
+  const [formData, setFormData] = useState<TUpdateProfileForm>({
     firstName: user.firstName || "",
     lastName: user.lastName || "",
     email: user.email || "",
@@ -18,11 +18,11 @@ export function ProfileTab() {
   });
 
   const [errors, setErrors] = useState<
-    Partial<Record<keyof TUpdateProfile, string>>
+    Partial<Record<keyof TUpdateProfileForm, string>>
   >({});
 
   const handleChange =
-    (field: keyof TUpdateProfile) =>
+    (field: keyof TUpdateProfileForm) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
 
@@ -42,7 +42,7 @@ export function ProfileTab() {
   }, [formData, user]);
 
   const validate = () => {
-    const newErrors: Partial<Record<keyof TUpdateProfile, string>> = {};
+    const newErrors: Partial<Record<keyof TUpdateProfileForm, string>> = {};
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";

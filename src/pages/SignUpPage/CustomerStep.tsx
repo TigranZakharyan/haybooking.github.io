@@ -4,6 +4,7 @@ import { Input, Button } from "@/components";
 import { authService } from "@/services/api";
 import { formatPhone, isValidEmail } from "@/services/validation";
 import { useNavigate } from "react-router-dom";
+import type { TRegisterCustomerCredentials } from "@/types";
 
 type CustomerStepProps = {
   phone: string;
@@ -43,14 +44,14 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
     setIsSubmitting(true);
 
     try {
-      const registerData = {
+      const registerData: TRegisterCustomerCredentials = {
         phone: formatPhone(phone),
         verificationCode: code,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
         password,
-        role: "customer" as const,
+        role: "customer",
       };
 
       await authService.registerCustomer(registerData);

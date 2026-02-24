@@ -1,18 +1,29 @@
 import { MapPin, Phone, Clock, X, Trash2, Plus } from "lucide-react";
-import { Card, Button, Input, SectionTitle, Select } from "@/components";
+import { Card, Button, Input, Select } from "@/components";
 import { SwitchTabs } from "@/components/SwitchTabs";
-import type { Branch, NewBranch, WorkingHoursUI } from "@/types";
+import type { TBranch, TCreateBranch, TWorkingHour } from "@/types";
 import { cities, countries, weekdays } from "@/constants";
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 interface BranchFormProps {
-  form: NewBranch;
-  setForm: (form: NewBranch) => void;
-  editingBranch: Branch | null;
+  form: TCreateBranch;
+  setForm: (form: TCreateBranch) => void;
+  editingBranch: TBranch | null;
   saving: boolean;
   onSave: () => void;
   onCancel: () => void;
 }
+
+interface FormErrors {
+  street?: string;
+  country?: string;
+  city?: string;
+  phones?: string[];
+  workingHours?: string;
+}
+
+const DEFAULT_BREAK_START = "12:00";
+const DEFAULT_BREAK_END = "13:00";
 
 export const BranchForm = ({
   form,
@@ -23,138 +34,183 @@ export const BranchForm = ({
   onCancel,
 }: BranchFormProps) => {
   const [activeTab, setActiveTab] = useState<string>("location");
-  const [errors, setErrors] = useState<{
-    street?: string;
-    country?: string;
-    city?: string;
-    phones?: string[];
-    workingHours?: string;
-  }>({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  const validateForm = () => {
-    const newErrors: typeof errors = {};
+  // Memoized city options based on selected country
+  const cityOptions = useMemo(() => 
+    cities[form.address.country] || [], 
+    [form.address.country]
+  );
+
+  const validateForm = useCallback((): boolean => {
+    const newErrors: FormErrors = {};
     let firstErrorTab: string | null = null;
 
     // Validate Location tab
     if (!form.address.street.trim()) {
       newErrors.street = "Street address is required";
-      if (!firstErrorTab) firstErrorTab = "location";
+      firstErrorTab ??= "location";
     }
     if (!form.address.country) {
       newErrors.country = "Country is required";
-      if (!firstErrorTab) firstErrorTab = "location";
+      firstErrorTab ??= "location";
     }
     if (!form.address.city) {
       newErrors.city = "City is required";
-      if (!firstErrorTab) firstErrorTab = "location";
+      firstErrorTab ??= "location";
     }
 
     // Validate Phones tab
     const phoneErrors: string[] = [];
-    let hasValidPhone = false;
+    const hasValidPhone = form.phones.some(phone => phone.trim());
+
     form.phones.forEach((phone, index) => {
-      if (!phone.trim()) {
-        phoneErrors[index] = "Phone number is required";
-      } else {
-        hasValidPhone = true;
-        phoneErrors[index] = "";
-      }
+      phoneErrors[index] = !phone.trim() ? "Phone number is required" : "";
     });
 
     if (!hasValidPhone) {
       newErrors.phones = phoneErrors;
-      if (!firstErrorTab) firstErrorTab = "phones";
-    } else if (phoneErrors.some(err => err)) {
+      firstErrorTab ??= "phones";
+    } else if (phoneErrors.some(Boolean)) {
       newErrors.phones = phoneErrors;
-      if (!firstErrorTab) firstErrorTab = "phones";
+      firstErrorTab ??= "phones";
     }
 
     // Validate Working Hours tab
-    if (form.workingHours && form.workingHours.length > 0) {
+    if (form.workingHours?.length) {
       const hasOpenDay = form.workingHours.some(wh => wh.isOpen);
-      const invalidHours = form.workingHours.some(wh => {
-        if (!wh.isOpen) return false;
-        return !wh.openTime || !wh.closeTime;
-      });
+      const invalidHours = form.workingHours.some(wh => 
+        wh.isOpen && (!wh.openTime || !wh.closeTime)
+      );
+      const invalidBreakHours = form.workingHours.some(wh => 
+        wh.isOpen && wh.hasBreak && (!wh.breakStart || !wh.breakEnd)
+      );
 
       if (!hasOpenDay) {
         newErrors.workingHours = "At least one day must be open";
-        if (!firstErrorTab) firstErrorTab = "hours";
+        firstErrorTab ??= "hours";
       } else if (invalidHours) {
         newErrors.workingHours = "Please set opening and closing times for all open days";
-        if (!firstErrorTab) firstErrorTab = "hours";
+        firstErrorTab ??= "hours";
+      } else if (invalidBreakHours) {
+        newErrors.workingHours = "Please set break start and end times for all days with breaks";
+        firstErrorTab ??= "hours";
       }
     }
 
     setErrors(newErrors);
 
-    // Navigate to first tab with error
     if (firstErrorTab) {
       setActiveTab(firstErrorTab);
     }
 
     return Object.keys(newErrors).length === 0;
-  };
+  }, [form]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (validateForm()) {
       onSave();
     }
-  };
+  }, [validateForm, onSave]);
 
-  const addPhone = () => {
+  // Phone handlers
+  const addPhone = useCallback(() => {
     setForm({ ...form, phones: [...form.phones, ""] });
-    // Clear phone errors when adding new phone
     if (errors.phones) {
-      setErrors({ ...errors, phones: undefined });
+      setErrors(prev => ({ ...prev, phones: undefined }));
     }
-  };
+  }, [form, errors.phones, setForm]);
 
-  const updatePhone = (index: number, value: string) => {
+  const updatePhone = useCallback((index: number, value: string) => {
     const updated = [...form.phones];
     updated[index] = value;
     setForm({ ...form, phones: updated });
     
-    // Clear error for this phone when user types
     if (errors.phones?.[index]) {
-      const updatedErrors = [...(errors.phones || [])];
-      updatedErrors[index] = "";
-      setErrors({ ...errors, phones: updatedErrors });
+      setErrors(prev => ({
+        ...prev,
+        phones: prev.phones?.map((err, i) => i === index ? "" : err)
+      }));
     }
-  };
+  }, [form, errors.phones, setForm]);
 
-  const removePhone = (index: number) => {
+  const removePhone = useCallback((index: number) => {
     if (form.phones.length === 1) return;
     setForm({
       ...form,
       phones: form.phones.filter((_, i) => i !== index),
     });
-  };
+  }, [form, setForm]);
 
-  const updateWorkingHours = (
+  // Working hours handler
+  const updateWorkingHours = useCallback((
     index: number,
-    field: keyof WorkingHoursUI,
+    field: keyof TWorkingHour,
     value: any,
   ) => {
     const updated = [...form.workingHours];
-    updated[index] = { ...updated[index], [field]: value };
+    
+    if (field === 'hasBreak' && value === true) {
+      updated[index] = { 
+        ...updated[index], 
+        hasBreak: true,
+        breakStart: updated[index].breakStart || DEFAULT_BREAK_START,
+        breakEnd: updated[index].breakEnd || DEFAULT_BREAK_END
+      };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+    
     setForm({ ...form, workingHours: updated });
-  };
+    
+    if (errors.workingHours) {
+      setErrors(prev => ({ ...prev, workingHours: undefined }));
+    }
+  }, [form, errors.workingHours, setForm]);
+
+  // Address field handlers
+  const updateAddressField = useCallback((
+    field: keyof typeof form.address,
+    value: string
+  ) => {
+    setForm({
+      ...form,
+      address: { ...form.address, [field]: value },
+    });
+    
+    // Clear corresponding error
+    if (errors[field as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  }, [form, errors, setForm]);
+
+  const clearError = useCallback((field: keyof FormErrors) => {
+    setErrors(prev => ({ ...prev, [field]: undefined }));
+  }, []);
+
+  // Tab configurations
+  const tabs = useMemo(() => [
+    { id: "location", label: "Location", icon: MapPin },
+    { id: "phones", label: "Phones", icon: Phone },
+    { id: "hours", label: "Hours", icon: Clock },
+  ], []);
 
   return (
     <div className="max-w-5xl mx-auto">
       <Card>
         {/* Header */}
-        <div className="flex justify-center border-b mb-2 border-gray-200 relative">
+        <div className="justify-center border-b mb-2 border-gray-200 relative">
           <div className="flex flex-col items-center">
             <h2 className="text-2xl font-bold text-gray-900">
               {editingBranch ? "Edit Branch" : "Add New Branch"}
             </h2>
+            <div className="w-full my-2">
               <SwitchTabs
-                tabs={["location", "phones", "hours"]}
+                tabs={tabs.map(t => t.id)}
                 activeTab={activeTab}
                 onChange={setActiveTab}
               />
+            </div>
           </div>
 
           <button
@@ -189,16 +245,7 @@ export const BranchForm = ({
                   label="Street Address"
                   placeholder="e.g., 123 Main Street, Suite 100"
                   value={form.address.street}
-                  onChange={(e) => {
-                    setForm({
-                      ...form,
-                      address: { ...form.address, street: e.target.value },
-                    });
-                    // Clear error when user types
-                    if (errors.street) {
-                      setErrors({ ...errors, street: undefined });
-                    }
-                  }}
+                  onChange={(e) => updateAddressField("street", e.target.value)}
                   error={errors.street}
                   required
                 />
@@ -210,33 +257,22 @@ export const BranchForm = ({
                     placeholder="Select Country"
                     value={form.address.country}
                     onChange={(value) => {
+                      updateAddressField("country", value);
+                      // Reset city when country changes
                       setForm({
                         ...form,
-                        address: { ...form.address, country: value },
+                        address: { ...form.address, country: value, city: "" }
                       });
-                      // Clear error when user selects
-                      if (errors.country) {
-                        setErrors({ ...errors, country: undefined });
-                      }
                     }}
                     error={errors.country}
                     required
                   />
                   <Select
-                    options={cities[form.address.country] || []}
+                    options={cityOptions}
                     label="City"
                     placeholder="Select City"
                     value={form.address.city}
-                    onChange={(value) => {
-                      setForm({
-                        ...form,
-                        address: { ...form.address, city: value },
-                      });
-                      // Clear error when user selects
-                      if (errors.city) {
-                        setErrors({ ...errors, city: undefined });
-                      }
-                    }}
+                    onChange={(value) => updateAddressField("city", value)}
                     error={errors.city}
                     required
                   />
@@ -247,23 +283,13 @@ export const BranchForm = ({
                     label="State/Province"
                     placeholder="Optional"
                     value={form.address.state}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        address: { ...form.address, state: e.target.value },
-                      })
-                    }
+                    onChange={(e) => updateAddressField("state", e.target.value)}
                   />
                   <Input
                     label="Zip/Postal Code"
                     placeholder="e.g., 0010"
                     value={form.address.zipCode}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        address: { ...form.address, zipCode: e.target.value },
-                      })
-                    }
+                    onChange={(e) => updateAddressField("zipCode", e.target.value)}
                   />
                 </div>
               </div>
@@ -316,6 +342,7 @@ export const BranchForm = ({
                   variant="outline"
                   onClick={addPhone}
                   className="text-sm flex items-center gap-1.5"
+                  disabled={form.phones.length >= 5}
                 >
                   <Plus className="w-4 h-4" />
                   Add Phone
@@ -330,8 +357,9 @@ export const BranchForm = ({
                         placeholder="e.g., +374980905444"
                         value={phone}
                         onChange={(e) => updatePhone(i, e.target.value)}
-                        label={i === 0 ? "Primary" : `Phone ${i + 1}`}
+                        label={i === 0 ? "Primary Phone" : `Additional Phone ${i}`}
                         error={errors.phones?.[i]}
+                        required={i === 0}
                       />
                     </div>
                     {form.phones.length > 1 && (
@@ -400,11 +428,11 @@ export const BranchForm = ({
                 </div>
               )}
 
-              {form.workingHours && form.workingHours.length > 0 ? (
+              {form.workingHours?.length ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {form.workingHours.map((wh, i) => (
                     <div
-                      key={i}
+                      key={wh.dayOfWeek}
                       className={`border rounded-xl p-4 transition-all ${
                         wh.isOpen
                           ? "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
@@ -421,10 +449,7 @@ export const BranchForm = ({
                             checked={wh.isOpen}
                             onChange={(e) => {
                               updateWorkingHours(i, "isOpen", e.target.checked);
-                              // Clear working hours error when user makes changes
-                              if (errors.workingHours) {
-                                setErrors({ ...errors, workingHours: undefined });
-                              }
+                              clearError("workingHours");
                             }}
                             className="sr-only peer"
                           />
@@ -444,17 +469,10 @@ export const BranchForm = ({
                               </label>
                               <input
                                 type="time"
-                                value={wh.openTime}
+                                value={wh.openTime || ""}
                                 onChange={(e) => {
-                                  updateWorkingHours(
-                                    i,
-                                    "openTime",
-                                    e.target.value,
-                                  );
-                                  // Clear working hours error when user makes changes
-                                  if (errors.workingHours) {
-                                    setErrors({ ...errors, workingHours: undefined });
-                                  }
+                                  updateWorkingHours(i, "openTime", e.target.value);
+                                  clearError("workingHours");
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
@@ -466,17 +484,10 @@ export const BranchForm = ({
                               </label>
                               <input
                                 type="time"
-                                value={wh.closeTime}
+                                value={wh.closeTime || ""}
                                 onChange={(e) => {
-                                  updateWorkingHours(
-                                    i,
-                                    "closeTime",
-                                    e.target.value,
-                                  );
-                                  // Clear working hours error when user makes changes
-                                  if (errors.workingHours) {
-                                    setErrors({ ...errors, workingHours: undefined });
-                                  }
+                                  updateWorkingHours(i, "closeTime", e.target.value);
+                                  clearError("workingHours");
                                 }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
@@ -488,13 +499,10 @@ export const BranchForm = ({
                             <input
                               type="checkbox"
                               checked={wh.hasBreak}
-                              onChange={(e) =>
-                                updateWorkingHours(
-                                  i,
-                                  "hasBreak",
-                                  e.target.checked,
-                                )
-                              }
+                              onChange={(e) => {
+                                updateWorkingHours(i, "hasBreak", e.target.checked);
+                                clearError("workingHours");
+                              }}
                               className="h-4 w-4 text-blue-600 rounded border-gray-300 cursor-pointer focus:ring-2 focus:ring-blue-500"
                             />
                             <span className="text-sm text-gray-700 group-hover:text-gray-900">
@@ -510,15 +518,13 @@ export const BranchForm = ({
                                 </label>
                                 <input
                                   type="time"
-                                  value={wh.breakStart || "12:00"}
-                                  onChange={(e) =>
-                                    updateWorkingHours(
-                                      i,
-                                      "breakStart",
-                                      e.target.value,
-                                    )
-                                  }
+                                  value={wh.breakStart || DEFAULT_BREAK_START}
+                                  onChange={(e) => {
+                                    updateWorkingHours(i, "breakStart", e.target.value);
+                                    clearError("workingHours");
+                                  }}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  required
                                 />
                               </div>
                               <div>
@@ -527,15 +533,13 @@ export const BranchForm = ({
                                 </label>
                                 <input
                                   type="time"
-                                  value={wh.breakEnd || "13:00"}
-                                  onChange={(e) =>
-                                    updateWorkingHours(
-                                      i,
-                                      "breakEnd",
-                                      e.target.value,
-                                    )
-                                  }
+                                  value={wh.breakEnd || DEFAULT_BREAK_END}
+                                  onChange={(e) => {
+                                    updateWorkingHours(i, "breakEnd", e.target.value);
+                                    clearError("workingHours");
+                                  }}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  required
                                 />
                               </div>
                             </div>

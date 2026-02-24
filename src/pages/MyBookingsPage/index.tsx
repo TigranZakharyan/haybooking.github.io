@@ -1,18 +1,24 @@
 import { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, User, Edit3, X } from "lucide-react";
-import { BookingModal, Button, Card, Container, SwitchTabs } from "@/components";
+import {
+  BookingModal,
+  Button,
+  Card,
+  Container,
+  SwitchTabs,
+} from "@/components";
 import type { TBooking, TBookingStatus } from "@/types";
 import { bookingService, businessService } from "@/services/api";
 
 type FilterType = "all" | TBookingStatus;
 
-const tabs: FilterType[] = ["all", "pending", "completed", "cancelled"]
+const tabs: FilterType[] = ["all", "pending", "completed", "cancelled"];
 
 export function MyBookingsPage() {
   const [bookings, setBookings] = useState<TBooking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedBooking, setSelectedBooking] = useState<TBooking | null>(null);
@@ -20,27 +26,29 @@ export function MyBookingsPage() {
   const [loadingBusiness, setLoadingBusiness] = useState<boolean>(false);
 
   const fetchBookings = async () => {
-    const response = await bookingService.getMyBookings({})
-    setBookings(response)
-    setLoading(false)
-  }
+    const response = await bookingService.getMyBookings({});
+    setBookings(response);
+    setLoading(false);
+  };
 
   // Mock data for demonstration
   useEffect(() => {
-    fetchBookings()
+    fetchBookings();
   }, []);
 
   const handleModify = async (bookingId: string) => {
     // Find the booking to modify
-    const booking = bookings.find(b => b._id === bookingId);
+    const booking = bookings.find((b) => b._id === bookingId);
     if (booking) {
       setSelectedBooking(booking);
       setIsModalOpen(true);
       setLoadingBusiness(true);
-      
+
       try {
         // Fetch full business data with all branches, services, and specialists
-        const businessData = await businessService.getBusinessByLink(booking.business.bookingLink);
+        const businessData = await businessService.getBusinessByLink(
+          booking.business.bookingLink,
+        );
         setFullBusinessData(businessData);
       } catch (error) {
         console.error("Failed to fetch business data:", error);
@@ -58,30 +66,26 @@ export function MyBookingsPage() {
     setFullBusinessData(null);
   };
 
-  const handleBookingConfirmed = async (data: any) => {
-    console.log("Booking updated:", data);
-    // Close modal
+  const handleBookingConfirmed = async () => {
     setIsModalOpen(false);
     setSelectedBooking(null);
     setFullBusinessData(null);
-    
+
     await fetchBookings();
   };
 
   const handleCancel = async (bookingId: string) => {
-    if (
-      window.confirm("Are you sure you want to cancel this booking?")
-    ) {
+    if (window.confirm("Are you sure you want to cancel this booking?")) {
       try {
         // API call to cancel booking
-        await bookingService.cancelBooking(bookingId, "");
-        
+        await bookingService.cancelBooking(bookingId);
+
         setBookings((prev) =>
           prev.map((booking) =>
             booking._id === bookingId
               ? { ...booking, status: "cancelled" as const }
-              : booking
-          )
+              : booking,
+          ),
         );
       } catch (error) {
         console.error("Failed to cancel booking:", error);
@@ -146,10 +150,10 @@ export function MyBookingsPage() {
       {/* Filter Tabs */}
       <div className="my-6">
         <SwitchTabs
-        tabs={tabs}
-        activeTab={activeFilter}
-        onChange={setActiveFilter}
-      />
+          tabs={tabs}
+          activeTab={activeFilter}
+          onChange={(value) => setActiveFilter(value as FilterType)}
+        />
       </div>
 
       {/* Bookings List */}
@@ -186,7 +190,9 @@ export function MyBookingsPage() {
                   <h3 className="text-xl font-bold text-gray-900 mb-1">
                     {booking.services.map((e) => e.name).join(" ")}
                   </h3>
-                  <p className="text-gray-600">{booking.business.businessName}</p>
+                  <p className="text-gray-600">
+                    {booking.business.businessName}
+                  </p>
                 </div>
 
                 {/* Booking Details Grid */}
@@ -292,4 +298,4 @@ export function MyBookingsPage() {
       )}
     </Container>
   );
-};
+}

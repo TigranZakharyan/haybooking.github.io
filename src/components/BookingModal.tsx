@@ -1,18 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, Phone, Mail, Clock, DollarSign, X } from 'lucide-react';
 import { bookingService } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { formatPhone, isValidPhone, isValidEmail } from '@/services/validation';
-import type { ModalProps, TService, Specialist, CustomerInfo, TimeSlot, CalendarDate } from '@/types';
+import type { TCustomerInfo, TService, TSpecialist } from '@/types';
 import { months, weekdays } from '@/constants';
 
-// ── Extended ModalProps to support edit mode ──────────────────────────────────
-interface ExtendedModalProps extends ModalProps {
-  editBooking?: any; // The booking object to edit
+interface ExtendedModalProps {
+  editBooking?: any;
   mode?: 'create' | 'edit';
 }
 
-// ── Step definitions ──────────────────────────────────────────────────────────
 const STEPS = [
   { num: 1, label: 'Select Branch',        short: 'Branch'  },
   { num: 2, label: 'Service & Specialist', short: 'Service' },
@@ -36,12 +34,12 @@ function getErrorMessage(err: unknown, fallback: string): string {
 // ── Form validation ───────────────────────────────────────────────────────────
 
 function validateInfoForm(
-  customerInfo: CustomerInfo,
+  customerInfo: TCustomerInfo,
   isValidEmail: (email: string) => boolean,
   isValidPhone: (phone: string) => boolean,
-): Partial<CustomerInfo> {
-  const errors: Partial<CustomerInfo> = {};
-  if (!customerInfo.fullName.trim())     errors.fullName = 'Full name is required';
+): Partial<TCustomerInfo> {
+  const errors: Partial<TCustomerInfo> = {};
+  if (!customerInfo.firstName.trim())     errors.firstName = 'Full name is required';
   if (!isValidEmail(customerInfo.email)) errors.email    = 'Enter a valid email address';
   if (!isValidPhone(customerInfo.phone)) errors.phone    = 'Enter a valid phone number (8–15 digits)';
   return errors;
@@ -106,9 +104,6 @@ export function serviceIcon(name: string): string {
   if (n.includes('nail') || n.includes('manicure'))                      return '💅';
   return '✦';
 }
-
-// ── Scroll Picker ─────────────────────────────────────────────────────────────
-import React, { useEffect, useRef, useCallback } from 'react';
 
 interface ScrollPickerProps {
   length: number;
@@ -260,7 +255,7 @@ export const BookingModal = ({ business, onClose, onConfirmed, editBooking, mode
   const [selectedBranch, setSelectedBranch] = useState<any>(initialData?.branch || null);
 
   const [selectedService,    setSelectedService]    = useState<TService | null>(initialData?.service || null);
-  const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | null>(initialData?.specialist || null);
+  const [selectedSpecialist, setSelectedSpecialist] = useState<TSpecialist | null>(initialData?.specialist || null);
   const [selectedDate,       setSelectedDate]       = useState<string | null>(initialData?.date || null);
   const [selectedTime,       setSelectedTime]       = useState<TimeSlot | null>(initialData?.time || null);
 
@@ -272,7 +267,7 @@ export const BookingModal = ({ business, onClose, onConfirmed, editBooking, mode
     initialData?.date ? new Date(initialData.date) : new Date()
   );
 
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(
+  const [customerInfo, setCustomerInfo] = useState<TCustomerInfo>(
     initialData?.customerInfo || {
       fullName: user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : '',
       email:    user?.email ?? '',
@@ -280,7 +275,7 @@ export const BookingModal = ({ business, onClose, onConfirmed, editBooking, mode
       notes:    '',
     }
   );
-  const [infoErrors, setInfoErrors] = useState<Partial<CustomerInfo>>({});
+  const [infoErrors, setInfoErrors] = useState<Partial<TCustomerInfo>>({});
 
   const [verificationCode, setVerificationCode] = useState('');
   const [sentCode,         setSentCode]         = useState('');
@@ -444,7 +439,7 @@ export const BookingModal = ({ business, onClose, onConfirmed, editBooking, mode
     setCustomTimeError('');
   };
 
-  const handleCustomerFieldChange = (key: keyof CustomerInfo, raw: string) => {
+  const handleCustomerFieldChange = (key: keyof TCustomerInfo, raw: string) => {
     const value = key === 'phone' ? formatPhone(raw) : raw;
     setCustomerInfo(prev => ({ ...prev, [key]: value }));
     setInfoErrors(prev => ({ ...prev, [key]: undefined }));

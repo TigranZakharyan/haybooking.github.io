@@ -2,64 +2,9 @@ import { Calendar } from "@/pages/DashboardPage/Calendar";
 import { Filter } from "@/pages/DashboardPage/Filter";
 import { useState, useEffect } from "react";
 import { businessService, bookingService } from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
 import { BookingCard } from "./BookingCard";
 import { ChangeStatusModal } from "./ChangeStatusModal";
-
-// Types
-interface Booking {
-  _id: string;
-  bookingDate: string | Date;
-  startTime: string;
-  endTime: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
-  customerInfo?: {
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-    email?: string;
-  };
-  service?: {
-    _id: string;
-    name: string;
-  };
-  specialist?: {
-    _id: string;
-    name: string;
-  };
-  branch?: {
-    _id: string;
-    address?: {
-      city?: string;
-      street?: string;
-    };
-  };
-  price?: {
-    amount: number;
-  };
-  notes?: string;
-  isGuestBooking?: boolean;
-}
-
-interface Business {
-  businessName: string;
-  bookingLink: string;
-  branches?: Array<{
-    _id: string;
-    address?: {
-      city?: string;
-      street?: string;
-    };
-  }>;
-  services?: Array<{
-    _id: string;
-    name: string;
-  }>;
-  specialists?: Array<{
-    _id: string;
-    name: string;
-  }>;
-}
+import type { TBooking, TBookingStatus, TBusiness } from "@/types";
 
 interface FilterValues {
   branch: string;
@@ -71,8 +16,8 @@ interface FilterValues {
 
 export function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [business, setBusiness] = useState<TBusiness | null>(null);
+  const [bookings, setBookings] = useState<TBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterValues>({
     branch: "all",
@@ -82,9 +27,7 @@ export function DashboardPage() {
     status: "all",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-
-  const { user } = useAuth();
+  const [selectedBooking, setSelectedBooking] = useState<TBooking | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -119,7 +62,7 @@ export function DashboardPage() {
 
   const handleUpdateStatus = async (
     bookingId: string,
-    newStatus: string,
+    newStatus: TBookingStatus,
   ) => {
     try {
       await bookingService.updateBookingStatus(bookingId, newStatus);
@@ -140,7 +83,7 @@ export function DashboardPage() {
   };
 
   // Get bookings for a specific date
-  const getBookingsForDate = (date: Date): Booking[] => {
+  const getBookingsForDate = (date: Date): TBooking[] => {
     if (!date) return [];
 
     const targetDateStr = normalizeDate(date);
@@ -174,24 +117,20 @@ export function DashboardPage() {
 
     // Branch filter
     const branchMatch =
-      filters.branch === "all" ||
-      booking.branch?._id === filters.branch;
+      filters.branch === "all" || booking.branch?._id === filters.branch;
 
     // Status filter
     const statusMatch =
       filters.status === "all" || booking.status === filters.status;
-
     // Service filter
     const serviceMatch =
       filters.service === "all" ||
-      booking.service?._id === filters.service ||
-      booking.service === filters.service;
+      booking.services.find((e) => e._id === filters.service);
 
     // Specialist filter
     const specialistMatch =
       filters.specialist === "all" ||
-      booking.specialist?._id === filters.specialist ||
-      booking.specialist === filters.specialist;
+      booking.specialist?._id === filters.specialist;
 
     // Time range filter
     let timeMatch = true;
@@ -278,11 +217,10 @@ export function DashboardPage() {
           <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm min-h-0">
             {/* Header - Fixed */}
             <div className="flex-shrink-0 p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-light text-gray-700">
-                Bookings
-              </h2>
+              <h2 className="text-2xl font-light text-gray-700">Bookings</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''}
+                {filteredBookings.length} booking
+                {filteredBookings.length !== 1 ? "s" : ""}
                 {selectedDate && (
                   <span className="ml-2 text-teal-600">
                     on {selectedDate.toLocaleDateString()}
@@ -354,26 +292,22 @@ export function DashboardPage() {
                 {bookings.filter((b) => b.status === "pending").length}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Confirmed</span>
-              <span className="font-semibold text-green-600">
-                {bookings.filter((b) => b.status === "confirmed").length}
-              </span>
-            </div>
           </div>
         </aside>
       </div>
 
       {/* Change Status Modal */}
-      <ChangeStatusModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedBooking(null);
-        }}
-        booking={selectedBooking}
-        onUpdateStatus={handleUpdateStatus}
-      />
+      {isModalOpen && selectedBooking && (
+        <ChangeStatusModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedBooking(null);
+          }}
+          booking={selectedBooking}
+          onUpdateStatus={handleUpdateStatus}
+        />
+      )}
     </div>
   );
 }

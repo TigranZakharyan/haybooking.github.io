@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Container, Input, Select, BookingModal } from "@/components";
 import { businessService, searchService } from '@/services/api';
-import type { Business, TBusinessType } from '@/types';
+import type { TBusiness, TBusinessType } from '@/types';
 import { ServiceCard } from './ServiceCard'
 
 interface Filters {
@@ -11,7 +11,7 @@ interface Filters {
 }
 
 export function HomePage() {
-  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [businesses, setBusinesses] = useState<TBusiness[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [types, setTypes] = useState<TBusinessType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ export function HomePage() {
     city: '',
     type: 'all',
   });
-  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [selectedBusiness, setSelectedBusiness] = useState<TBusiness | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -55,9 +55,8 @@ export function HomePage() {
     }
   };
 
-  const handleBookingClick = async (business: Business) => {
+  const handleBookingClick = async (business: TBusiness) => {
     const fetchBusinessDetails = await businessService.getBusinessByLink(business.bookingLink)
-    console.log('Fetched business details:', fetchBusinessDetails);
     setSelectedBusiness(fetchBusinessDetails);
   };
 
@@ -65,12 +64,7 @@ export function HomePage() {
     setSelectedBusiness(null);
   };
 
-  const handleConfirmed = (payload: {
-    booking: unknown;
-    selectedService: unknown;
-    selectedSpecialist: unknown;
-    customerInfo: unknown;
-  }) => {
+  const handleConfirmed = () => {
     setSelectedBusiness(null);
   };
 
@@ -129,9 +123,8 @@ export function HomePage() {
           ) : (
             businesses.map((business) => (
               <ServiceCard
-                key={business._id}
+                key={business.id}
                 title={business.businessName}
-                address={business.address}
                 logo={business.logo}
                 specialists={business.specialists?.length || 0}
                 services={business.services?.length || 0}

@@ -1,4 +1,6 @@
-export const countries = [
+import type { TOption } from "@/types";
+
+export const countries: TOption[] = [
   { label: "Afghanistan", value: "Afghanistan" },
   { label: "Albania", value: "Albania" },
   { label: "Algeria", value: "Algeria" },

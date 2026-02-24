@@ -1,9 +1,8 @@
 import { Button } from "@/components";
-import { MapPin, Users, Briefcase, DollarSign } from "lucide-react";
+import { Users, Briefcase, DollarSign } from "lucide-react";
 
 interface ServiceCardProps {
   title: string;
-  address: any;
   specialists: number;
   services: number;
   priceFrom: number;
@@ -17,7 +16,6 @@ interface ServiceCardProps {
 export function ServiceCard({
   title,
   logo,
-  address,
   specialists,
   services,
   priceFrom,
@@ -41,12 +39,6 @@ export function ServiceCard({
         {/* Title & Badge */}
         <div className="mb-3">
           <h3 className="text-lg font-semibold text-white">{title}</h3>
-        </div>
-
-        {/* Address */}
-        <div className="flex items-center gap-2 text-sm mb-2 opacity-90">
-          <MapPin size={16} />
-          <span>{address}</span>
         </div>
 
         {/* Specialists */}

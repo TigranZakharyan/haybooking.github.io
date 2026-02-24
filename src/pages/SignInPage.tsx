@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Phone } from "lucide-react";
 import { Input, DividerWithText, Tabs, Button } from "@/components";
 import { authService } from "@/services/api";
-import type { TCredentials, TTabOption } from "@/types";
+import type { TLoginCredentials, TOption } from "@/types";
 import { formatPhone, isValidEmail, isValidPhone } from "@/services/validation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -15,9 +15,9 @@ interface FormErrors {
   password?: string;
 }
 
-const tabOptions: TTabOption<LoginMethod>[] = [
-  { id: "email", label: "Email" },
-  { id: "phone", label: "Phone Number" },
+const tabOptions: TOption[] = [
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone Number" },
 ];
 
 export function SignInPage() {
@@ -56,7 +56,7 @@ export function SignInPage() {
 
     if (!validate()) return;
 
-    const credential: TCredentials =
+    const credential: TLoginCredentials =
       loginMethod === "email"
         ? { email, password }
         : { phone: formatPhone(phone), password };
@@ -64,8 +64,8 @@ export function SignInPage() {
     try {
       setServerError("");
       setLoading(true);
-      const response = await authService.login(credential);
-      localStorage.setItem("token", response.token);
+      const { token } = await authService.login(credential);
+      localStorage.setItem("token", token);
       auth.refreshUser();
       navigate("/dashboard");
     } catch (err: any) {
@@ -87,8 +87,8 @@ export function SignInPage() {
           <Tabs
             tabs={tabOptions}
             activeTab={loginMethod}
-            onChange={(id: LoginMethod) => {
-              setLoginMethod(id);
+            onChange={(id) => {
+              setLoginMethod(id as LoginMethod);
               setErrors({});
               setServerError("");
             }}

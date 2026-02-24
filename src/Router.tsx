@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { UserLayout, DashboardLayout } from "@/layouts";
-import { HomePage, SignInPage, SignUpPage, DashboardPage, PricingPage, SettingsPage, AnalyticsPage, SpecialistsPage, ServicesPage, BranchesPage, MyBookingsPage } from "@/pages";
+import { HomePage, SignInPage, SignUpPage, DashboardPage, PricingPage, SettingsPage, AnalyticsPage, SpecialistsPage, ServicesPage, BranchesPage, MyBookingsPage, CustomerSettingsPage } from "@/pages";
 
 const router = createBrowserRouter([
   {
@@ -11,7 +11,8 @@ const router = createBrowserRouter([
       { path: "/signin", element: <SignInPage /> },
       { path: "/signup", element: <SignUpPage /> },
       { path: "/pricing", element: <PricingPage /> },
-      { path: "my-bookings", element: <MyBookingsPage /> },
+      { path: "/my-bookings", element: <MyBookingsPage /> },
+      { path: "/settings", element: <CustomerSettingsPage /> },
     ],
   },
   {

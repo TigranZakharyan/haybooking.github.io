@@ -5,28 +5,28 @@ import { SectionTitle } from "../../components/SectionTitle";
 import { Edit2, Plus } from "lucide-react";
 import { businessService, searchService, uploadService } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
-import type { Business, TBusinessType } from "@/types";
+import type { TBusiness, TBusinessType, TUpdateBusiness } from "@/types";
 
 export function BusinessTab() {
   const {
     user: { business },
-  } = useAuth() as unknown as { user: { business: Business } };
+  } = useAuth() as unknown as { user: { business: TBusiness } };
 
   const [types, setTypes] = useState<TBusinessType[]>([]);
 
   // Initialize with the full business object so required fields exist
   // (e.g. _id, bookingLink, address) and satisfy the Business type.
-  const [formData, setFormData] = useState<Business>(() => business);
+  const [formData, setFormData] = useState<TBusiness>(() => business);
 
   const [previewLogo, setPreviewLogo] = useState<{ url: string } | undefined>(
     business.logo,
   );
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [logoLoading, setLogoLoading] = useState(false);
 
   const handleChange =
-    (field: keyof Business) =>
+    (field: string) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
 
@@ -87,7 +87,7 @@ export function BusinessTab() {
     const isValid = validate();
     if (!isValid) return;
 
-    const payload = {
+    const payload: TUpdateBusiness = {
       businessName: formData.businessName,
       phone: formData.phone,
       businessType: formData.businessType,
@@ -179,10 +179,10 @@ export function BusinessTab() {
             variant="primary"
             options={types}
             value={formData.businessType as unknown as string}
-            onChange={(value: string) =>
+            onChange={(value) =>
               setFormData((prev) => ({
                 ...prev,
-                businessType: value as unknown as TBusinessType,
+                businessType: value
               }))
             }
             error={errors.businessType}

@@ -1,16 +1,11 @@
 import { useState, useEffect } from "react";
 import { businessService, specialistService, uploadService } from "@/services/api";
-import { Plus, Trash2, Edit, Eye, EyeOff } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button, Input } from "@/components";
 import { SectionTitle, Select, Card } from "@/components";
-import type { Branch, TService, Specialist } from "@/types";
+import { SpecialistCard } from "./SpecialistCard";
+import type { TBranch, TCreateSpecialist, TBusiness, TSpecialist } from "@/types";
 
-interface NewSpecialist {
-  name: string;
-  branch: string;
-  services: string[];
-  isActive: boolean;
-}
 
 interface ValidationErrors {
   specialistName: string;
@@ -19,17 +14,17 @@ interface ValidationErrors {
 }
 
 export const SpecialistsPage = () => {
-  const [specialists, setSpecialists] = useState<Specialist[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [services, setServices] = useState<TService[]>([]);
+  const [specialists, setSpecialists] = useState<TSpecialist[]>([]);
+  const [branches, setBranches] = useState<TBranch[]>([]);
+  const [services, setServices] = useState<TBusiness["services"]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [creatingSpecialist, setCreatingSpecialist] = useState<boolean>(false);
-  const [editingSpecialist, setEditingSpecialist] = useState<Specialist | null>(null);
+  const [editingSpecialist, setEditingSpecialist] = useState<TSpecialist | null>(null);
   const [specialistImageUploading, setSpecialistImageUploading] = useState<
     Record<string, boolean>
   >({});
 
-  const [newSpecialist, setNewSpecialist] = useState<NewSpecialist>({
+  const [newSpecialist, setNewSpecialist] = useState<TCreateSpecialist>({
     name: "",
     branch: "",
     services: [],
@@ -82,7 +77,7 @@ export const SpecialistsPage = () => {
 
       // Set default branch
       const baseBranch =
-        businessData.branches?.find((b: Branch) => b.isBaseBranch)?._id ||
+        businessData.branches?.find((b: TBranch) => b.isBaseBranch)?._id ||
         businessData.branches?.[0]?._id ||
         "";
 
@@ -98,7 +93,7 @@ export const SpecialistsPage = () => {
 
   const handleSpecialistImageChange = async (
     specialistId: string,
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -112,17 +107,23 @@ export const SpecialistsPage = () => {
 
     setSpecialistImageUploading((prev) => ({ ...prev, [specialistId]: true }));
     try {
-      const image = await uploadService.uploadSpecialistPhoto(specialistId, formData);
+      const image = await uploadService.uploadSpecialistPhoto(
+        specialistId,
+        formData
+      );
 
       if (image) {
         setSpecialists((prev) =>
-          prev.map((s) => (s._id === specialistId ? { ...s, image } : s)),
+          prev.map((s) => (s._id === specialistId ? { ...s, image } : s))
         );
       }
     } catch (err: any) {
       console.error("Failed to upload specialist image:", err);
     } finally {
-      setSpecialistImageUploading((prev) => ({ ...prev, [specialistId]: false }));
+      setSpecialistImageUploading((prev) => ({
+        ...prev,
+        [specialistId]: false,
+      }));
     }
   };
 
@@ -131,12 +132,15 @@ export const SpecialistsPage = () => {
     try {
       await uploadService.deleteSpecialistPhoto(specialistId);
       setSpecialists((prev) =>
-        prev.map((s) => (s._id === specialistId ? { ...s, image: null } : s)),
+        prev.map((s) => (s._id === specialistId ? { ...s, image: null } : s))
       );
     } catch (err: any) {
       console.error("Failed to delete specialist image:", err);
     } finally {
-      setSpecialistImageUploading((prev) => ({ ...prev, [specialistId]: false }));
+      setSpecialistImageUploading((prev) => ({
+        ...prev,
+        [specialistId]: false,
+      }));
     }
   };
 
@@ -157,12 +161,12 @@ export const SpecialistsPage = () => {
 
     setCreatingSpecialist(true);
     try {
-      const createdSpecialist = await specialistService.createSpecialist(newSpecialist);
+      const createdSpecialist = await specialistService.createSpecialist(
+        newSpecialist
+      );
 
-      // Add new specialist to state locally
       setSpecialists((prev) => [...prev, createdSpecialist]);
 
-      // Reset form with current base branch
       const baseBranch =
         branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
       setNewSpecialist({
@@ -183,12 +187,12 @@ export const SpecialistsPage = () => {
     }
   };
 
-  const handleEditSpecialist = (specialist: Specialist) => {
+  const handleEditSpecialist = (specialist: TSpecialist) => {
     setEditingSpecialist(specialist);
     setNewSpecialist({
       name: specialist.name,
       branch: specialist.branch._id,
-      services: specialist.services,
+      services: specialist.services.map((e) => e._id),
       isActive: specialist.isActive !== undefined ? specialist.isActive : true,
     });
 
@@ -221,14 +225,14 @@ export const SpecialistsPage = () => {
     try {
       const updatedSpecialist = await specialistService.updateSpecialist(
         editingSpecialist._id,
-        newSpecialist,
+        newSpecialist
       );
 
       // Update specialist in state locally
       setSpecialists((prev) =>
         prev.map((s) =>
-          s._id === editingSpecialist._id ? updatedSpecialist : s,
-        ),
+          s._id === editingSpecialist._id ? updatedSpecialist : s
+        )
       );
 
       // Reset form with current base branch
@@ -273,7 +277,7 @@ export const SpecialistsPage = () => {
   const handleDeleteSpecialist = async (id: string) => {
     try {
       await specialistService.deleteSpecialist(id);
-      
+
       // Remove specialist from state locally
       setSpecialists((prev) => prev.filter((s) => s._id !== id));
     } catch (error) {
@@ -283,15 +287,15 @@ export const SpecialistsPage = () => {
 
   const handleToggleSpecialistActive = async (
     specialistId: string,
-    currentStatus: boolean,
+    currentStatus: boolean
   ) => {
     const newStatus = !currentStatus;
-    
+
     // Optimistically update UI
     setSpecialists((prev) =>
       prev.map((s) =>
-        s._id === specialistId ? { ...s, isActive: newStatus } : s,
-      ),
+        s._id === specialistId ? { ...s, isActive: newStatus } : s
+      )
     );
 
     try {
@@ -300,12 +304,12 @@ export const SpecialistsPage = () => {
       });
     } catch (error) {
       console.error("Failed to toggle specialist status:", error);
-      
+
       // Revert on error
       setSpecialists((prev) =>
         prev.map((s) =>
-          s._id === specialistId ? { ...s, isActive: currentStatus } : s,
-        ),
+          s._id === specialistId ? { ...s, isActive: currentStatus } : s
+        )
       );
     }
   };
@@ -315,12 +319,12 @@ export const SpecialistsPage = () => {
       const services = prev.services.includes(serviceId)
         ? prev.services.filter((id) => id !== serviceId)
         : [...prev.services, serviceId];
-      
+
       setValidationErrors((prevErrors) => ({
         ...prevErrors,
         specialistServices: validateSpecialistServices(services),
       }));
-      
+
       return { ...prev, services };
     });
   };
@@ -333,7 +337,9 @@ export const SpecialistsPage = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20"></div>
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent absolute top-0 left-0"></div>
           </div>
-          <p className="text-gray-600 mt-4 font-medium">Loading team members...</p>
+          <p className="text-gray-600 mt-4 font-medium">
+            Loading team members...
+          </p>
         </div>
       </Card>
     );
@@ -343,7 +349,6 @@ export const SpecialistsPage = () => {
     value: b._id,
     label: `${b.address.country}, ${b.address.city}, ${b.address.street}`,
   }));
-  console.log(specialists)
   // Filter services by selected branch
   const availableServices = services.filter(
     (service) => service.branch === newSpecialist.branch && service.isActive
@@ -359,148 +364,26 @@ export const SpecialistsPage = () => {
             subtitle="Manage your team members and specialists"
           />
           <div className="grid gap-4">
-            {specialists.map((specialist) => {
-              const imageUrl =
-                specialist.photo?.url || null;
-              const isUploading = specialistImageUploading[specialist._id];
-              return (
-                <div
-                  key={specialist._id}
-                  className={`flex items-start justify-between p-4 rounded-xl transition-colors duration-200 ${
-                    editingSpecialist?._id === specialist._id
-                      ? "bg-blue-50 border-2 border-blue-300"
-                      : "bg-primary/5 hover:bg-primary/10"
-                  } ${!specialist.isActive ? "opacity-60" : ""}`}
-                >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {/* Specialist Image */}
-                    <label
-                      htmlFor={`specialist-image-${specialist._id}`}
-                      className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition flex-shrink-0"
-                    >
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={specialist.name}
-                          className="h-full w-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-gray-400 text-xl leading-none">
-                          +
-                        </span>
-                      )}
-                      <input
-                        id={`specialist-image-${specialist._id}`}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          handleSpecialistImageChange(specialist._id, e)
-                        }
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      {isUploading && (
-                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-full">
-                          <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      )}
-                      {imageUrl && !isUploading && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeleteSpecialistImage(specialist._id);
-                          }}
-                          className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-white border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
-                          title="Remove image"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
-                    </label>
-
-                    {/* Specialist Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h5
-                          className={`font-semibold text-black text-lg ${!specialist.isActive ? "text-gray-500" : ""}`}
-                        >
-                          {specialist.name}
-                        </h5>
-                        {!specialist.isActive && (
-                          <span className="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">
-                            INACTIVE
-                          </span>
-                        )}
-                      </div>
-
-                      <div
-                        className={`text-sm mb-2 ${!specialist.isActive ? "text-gray-400" : "text-gray-600"}`}
-                      >
-                        {specialist.services.map((service) => service.name).join(", ")}
-                      </div>
-
-                      <div
-                        className={`text-xs ${!specialist.isActive ? "text-gray-400" : "text-gray-500"}`}
-                      >
-                        <p>
-                          Branch: {specialist.branch.address.country},{" "}
-                          {specialist.branch.address.city},{" "}
-                          {specialist.branch.address.street}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 flex-shrink-0 ml-4">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleToggleSpecialistActive(specialist._id, specialist.isActive)
-                      }
-                      className={`p-2 rounded-lg transition-colors ${
-                        specialist.isActive
-                          ? "text-green-600 hover:bg-green-50"
-                          : "text-gray-500 hover:bg-gray-100"
-                      }`}
-                      aria-label={
-                        specialist.isActive
-                          ? `Deactivate ${specialist.name}`
-                          : `Activate ${specialist.name}`
-                      }
-                      title={
-                        specialist.isActive
-                          ? "Click to deactivate"
-                          : "Click to activate"
-                      }
-                    >
-                      {specialist.isActive ? (
-                        <Eye size={20} />
-                      ) : (
-                        <EyeOff color="red" size={20} />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleEditSpecialist(specialist)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      aria-label={`Edit ${specialist.name}`}
-                    >
-                      <Edit size={20} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSpecialist(specialist._id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      aria-label={`Delete ${specialist.name}`}
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {specialists.map((specialist) => (
+              <SpecialistCard
+                key={specialist._id}
+                specialist={specialist}
+                isEditing={editingSpecialist?._id === specialist._id}
+                isUploading={specialistImageUploading[specialist._id] || false}
+                onImageChange={(e) =>
+                  handleSpecialistImageChange(specialist._id, e)
+                }
+                onImageDelete={() => handleDeleteSpecialistImage(specialist._id)}
+                onToggleActive={() =>
+                  handleToggleSpecialistActive(
+                    specialist._id,
+                    specialist.isActive
+                  )
+                }
+                onEdit={() => handleEditSpecialist(specialist)}
+                onDelete={() => handleDeleteSpecialist(specialist._id)}
+              />
+            ))}
           </div>
         </Card>
       )}
@@ -509,7 +392,9 @@ export const SpecialistsPage = () => {
       <Card>
         <div id="edit-specialist">
           <SectionTitle
-            title={editingSpecialist ? "Edit Team Member" : "Add New Team Member"}
+            title={
+              editingSpecialist ? "Edit Team Member" : "Add New Team Member"
+            }
             subtitle={
               editingSpecialist
                 ? "Update team member details"
@@ -542,10 +427,16 @@ export const SpecialistsPage = () => {
               <Select
                 options={branchOptions}
                 label="Branch"
+                required
+                variant="primary"
                 className="w-full"
                 value={newSpecialist.branch}
                 onChange={(value) => {
-                  setNewSpecialist({ ...newSpecialist, branch: value, services: [] });
+                  setNewSpecialist({
+                    ...newSpecialist,
+                    branch: value,
+                    services: [],
+                  });
                   setValidationErrors((prev) => ({
                     ...prev,
                     specialistBranch: validateSpecialistBranch(value),
@@ -571,7 +462,8 @@ export const SpecialistsPage = () => {
             </label>
             {newSpecialist.branch && availableServices.length === 0 && (
               <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">
-                No active services available for the selected branch. Please add services first.
+                No active services available for the selected branch. Please add
+                services first.
               </div>
             )}
             {newSpecialist.branch && availableServices.length > 0 && (
@@ -634,7 +526,9 @@ export const SpecialistsPage = () => {
                   Team Member Active
                 </span>
                 <p className="text-xs text-gray-600 mt-1">
-                  When unchecked, this team member will be hidden and cannot be assigned to bookings. Useful for temporarily disabling team members without deleting them.
+                  When unchecked, this team member will be hidden and cannot be
+                  assigned to bookings. Useful for temporarily disabling team
+                  members without deleting them.
                 </p>
               </div>
             </label>
@@ -644,7 +538,9 @@ export const SpecialistsPage = () => {
           <div className="flex gap-2 pt-2">
             <Button
               variant="default"
-              onClick={editingSpecialist ? handleUpdateSpecialist : handleAddSpecialist}
+              onClick={
+                editingSpecialist ? handleUpdateSpecialist : handleAddSpecialist
+              }
               disabled={creatingSpecialist}
               className="flex-1 flex items-center justify-center gap-2"
             >
@@ -657,7 +553,9 @@ export const SpecialistsPage = () => {
                 <>
                   <Plus className="w-4 h-4" />
                   <span>
-                    {editingSpecialist ? "Update Team Member" : "Add Team Member"}
+                    {editingSpecialist
+                      ? "Update Team Member"
+                      : "Add Team Member"}
                   </span>
                 </>
               )}

@@ -1,22 +1,16 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Button, Select } from "@/components";
+import type { TBooking, TBookingStatus } from "@/types";
+import { statusOptions } from "@/constants";
 
 interface ChangeStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  booking: {
-    _id: string;
-    customerInfo?: {
-      firstName?: string;
-      lastName?: string;
-    };
-    status: string;
-    startTime: string;
-  } | null;
+  booking: TBooking;
   onUpdateStatus: (
     bookingId: string,
-    newStatus: string,
+    newStatus: TBookingStatus,
     reason?: string
   ) => Promise<void>;
 }
@@ -27,17 +21,13 @@ export function ChangeStatusModal({
   booking,
   onUpdateStatus,
 }: ChangeStatusModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  
+  if (!isOpen || !booking) return null;
+  
+  const [selectedStatus, setSelectedStatus] = useState<TBookingStatus | ''>(booking.status);
   const [reason, setReason] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  if (!isOpen || !booking) return null;
-
-  const statusOptions = [
-    { label: "Pending", value: "pending" },
-    { label: "Completed", value: "completed" },
-    { label: "Cancelled", value: "cancelled" },
-  ];
 
   const handleSubmit = async () => {
     if (!selectedStatus) return;
@@ -46,7 +36,7 @@ export function ChangeStatusModal({
     try {
       await onUpdateStatus(booking._id, selectedStatus, reason);
       onClose();
-      setSelectedStatus("");
+      setSelectedStatus('');
       setReason("");
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -56,7 +46,7 @@ export function ChangeStatusModal({
   };
 
   const handleCancel = () => {
-    setSelectedStatus("");
+    setSelectedStatus('');
     setReason("");
     onClose();
   };
@@ -115,7 +105,7 @@ export function ChangeStatusModal({
             placeholder="Select Status *"
             options={statusOptions}
             value={selectedStatus}
-            onChange={(value) => setSelectedStatus(value)}
+            onChange={(value) => setSelectedStatus(value as TBookingStatus)}
             error={!selectedStatus ? "Status is required" : undefined}
           />
         </div>

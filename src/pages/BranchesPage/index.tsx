@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { branchesService, businessService } from "@/services/api";
 import { Plus } from "lucide-react";
 import { Button, Card } from "@/components";
-import type { Branch, NewBranch } from "@/types";
+import type { TBranch, TCreateBranch } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { BranchList } from "./BranchList";
 import { BranchMap } from "./BranchMap";
@@ -12,14 +12,14 @@ import { weekdays } from "@/constants/calendar.ts";
 export const BranchesPage = () => {
   const { user } = useAuth();
 
-  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branches, setBranches] = useState<TBranch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
-  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<TBranch | null>(null);
+  const [editingBranch, setEditingBranch] = useState<TBranch | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const emptyBranch: NewBranch = {
+  const emptyBranch: TCreateBranch = {
     address: {
       street: "",
       city: "",
@@ -38,7 +38,7 @@ export const BranchesPage = () => {
     isBaseBranch: false,
   };
 
-  const [form, setForm] = useState<NewBranch | Branch>(emptyBranch);
+  const [form, setForm] = useState<TCreateBranch | TBranch>(emptyBranch);
 
   useEffect(() => {
     fetchBranches();
@@ -79,7 +79,7 @@ export const BranchesPage = () => {
     }
   };
 
-  const handleEdit = (branch: Branch) => {
+  const handleEdit = (branch: TBranch) => {
     setEditingBranch(branch);
     setShowForm(true);
 
@@ -149,13 +149,13 @@ export const BranchesPage = () => {
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add Branch
+          Add TBranch
         </Button>
       </div>
 
       {/* Two Column Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[minmax(300px,1fr)_2fr] gap-5 overflow-hidden">
-        {/* Left Column - Branch List */}
+        {/* Left Column - TBranch List */}
         <BranchList
           branches={branches}
           selectedBranch={selectedBranch}

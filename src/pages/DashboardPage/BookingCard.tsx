@@ -32,7 +32,6 @@ interface BookingCardProps {
 }
 
 export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
-  console.log(booking)
   const getStatusColor = (status: string): string => {
     switch (status) {
       case "confirmed":
@@ -95,7 +94,7 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
         <div className="text-sm text-gray-700">
           <span>Services: </span>
           <ul className="font-medium list-disc list-inside">
-            {booking.services?.map((service) => <li>{service.name}</li>)}
+            {booking.services?.map((service) => <li key={service._id}>{service.name}</li>)}
           </ul>
         </div>
         <div className="text-sm text-gray-600">

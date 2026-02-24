@@ -1,24 +1,11 @@
 import { useState, useEffect } from "react";
 import { businessService, serviceService, uploadService } from "@/services/api";
-import { Plus, Trash2, Edit, Eye, EyeOff } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button, Input } from "@/components";
 import { NumberInput, SectionTitle, Select, Card } from "@/components";
-import type { Branch, TService } from "@/types";
-
-interface Price {
-  amount: number;
-}
-
-interface NewService {
-  name: string;
-  duration: number;
-  branch: string;
-  price: Price;
-  description: string;
-  timeInterval: number;
-  allowSpecificTimes: boolean;
-  isActive: boolean;
-}
+import { ServiceCard } from "./ServiceCard";
+import type { TBranch, TCreateService, TService } from "@/types";
+import { currencies } from "@/constants/currencies";
 
 interface ValidationErrors {
   serviceName: string;
@@ -26,9 +13,20 @@ interface ValidationErrors {
   servicePrice: string;
 }
 
+const initialService: TCreateService = {
+  name: "",
+  duration: 60,
+  branch: "",
+  price: { amount: 0, currency: currencies[0].value },
+  description: "",
+  timeInterval: 30,
+  allowSpecificTimes: false,
+  isActive: true,
+};
+
 export const ServicesPage = () => {
   const [services, setServices] = useState<TService[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branches, setBranches] = useState<TBranch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [creatingService, setCreatingService] = useState<boolean>(false);
   const [editingService, setEditingService] = useState<TService | null>(null);
@@ -36,16 +34,7 @@ export const ServicesPage = () => {
     Record<string, boolean>
   >({});
 
-  const [newService, setNewService] = useState<NewService>({
-    name: "",
-    duration: 60,
-    branch: "",
-    price: { amount: 0 },
-    description: "",
-    timeInterval: 30,
-    allowSpecificTimes: false,
-    isActive: true,
-  });
+  const [newService, setNewService] = useState<TCreateService>(initialService);
 
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({
     serviceName: "",
@@ -92,7 +81,7 @@ export const ServicesPage = () => {
 
       // Set default branch
       const baseBranch =
-        businessData.branches?.find((b: Branch) => b.isBaseBranch)?._id ||
+        businessData.branches?.find((b: TBranch) => b.isBaseBranch)?._id ||
         businessData.branches?.[0]?._id ||
         "";
 
@@ -141,7 +130,7 @@ export const ServicesPage = () => {
     try {
       await uploadService.deleteServiceImage(serviceId);
       setServices((prev) =>
-        prev.map((s) => (s._id === serviceId ? { ...s, image: null } : s)),
+        prev.map((s) => (s._id === serviceId ? { ...s, image: {key: '', url: ''} } : s)),
       );
     } catch (err: any) {
       console.error("Failed to delete service image:", err);
@@ -176,14 +165,8 @@ export const ServicesPage = () => {
       const baseBranch =
         branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
       setNewService({
-        name: "",
-        duration: 60,
+        ...initialService,
         branch: baseBranch,
-        price: { amount: 0 },
-        description: "",
-        timeInterval: 30,
-        allowSpecificTimes: false,
-        isActive: true,
       });
       setValidationErrors({
         serviceName: "",
@@ -244,23 +227,15 @@ export const ServicesPage = () => {
 
       // Update service in state locally
       setServices((prev) =>
-        prev.map((s) =>
-          s._id === editingService._id ? updatedService : s,
-        ),
+        prev.map((s) => (s._id === editingService._id ? updatedService : s)),
       );
 
       // Reset form with current base branch
       const baseBranch =
         branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
       setNewService({
-        name: "",
-        duration: 60,
+        ...initialService,
         branch: baseBranch,
-        price: { amount: 0 },
-        description: "",
-        timeInterval: 30,
-        allowSpecificTimes: false,
-        isActive: true,
       });
       setEditingService(null);
       setValidationErrors({
@@ -280,14 +255,8 @@ export const ServicesPage = () => {
       branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
     setEditingService(null);
     setNewService({
-      name: "",
-      duration: 60,
+      ...initialService,
       branch: baseBranch,
-      price: { amount: 0 },
-      description: "",
-      timeInterval: 30,
-      allowSpecificTimes: false,
-      isActive: true,
     });
     setValidationErrors({
       serviceName: "",
@@ -299,7 +268,7 @@ export const ServicesPage = () => {
   const handleDeleteService = async (id: string) => {
     try {
       await serviceService.deleteService(id);
-      
+
       // Remove service from state locally
       setServices((prev) => prev.filter((s) => s._id !== id));
     } catch (error) {
@@ -312,7 +281,7 @@ export const ServicesPage = () => {
     currentStatus: boolean,
   ) => {
     const newStatus = !currentStatus;
-    
+
     // Optimistically update UI
     setServices((prev) =>
       prev.map((s) =>
@@ -326,7 +295,7 @@ export const ServicesPage = () => {
       });
     } catch (error) {
       console.error("Failed to toggle service status:", error);
-      
+
       // Revert on error
       setServices((prev) =>
         prev.map((s) =>
@@ -349,7 +318,7 @@ export const ServicesPage = () => {
       </Card>
     );
   }
-  console.log(branches, services)
+
   const branchOptions = branches.map((b) => ({
     value: b._id,
     label: `${b.address.country}, ${b.address.city}, ${b.address.street}`,
@@ -365,162 +334,21 @@ export const ServicesPage = () => {
             subtitle="Manage your service offerings and pricing"
           />
           <div className="grid gap-4">
-            {services.map((service) => {
-              const imageUrl =
-                service.image?.cdnUrl || service.image?.url || null;
-              const isUploading = serviceImageUploading[service._id];
-              return (
-                <div
-                  key={service._id}
-                  className={`flex items-start justify-between p-4 rounded-xl transition-colors duration-200 ${
-                    editingService?._id === service._id
-                      ? "bg-blue-50 border-2 border-blue-300"
-                      : "bg-primary/5 hover:bg-primary/10"
-                  } ${!service.isActive ? "opacity-60" : ""}`}
-                >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {/* Service Image */}
-                    <label
-                      htmlFor={`service-image-${service._id}`}
-                      className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition flex-shrink-0"
-                    >
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={service.name}
-                          className="h-full w-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-gray-400 text-xl leading-none">
-                          +
-                        </span>
-                      )}
-                      <input
-                        id={`service-image-${service._id}`}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          handleServiceImageChange(service._id, e)
-                        }
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      {isUploading && (
-                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-full">
-                          <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      )}
-                      {imageUrl && !isUploading && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeleteServiceImage(service._id);
-                          }}
-                          className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-white border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
-                          title="Remove image"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
-                    </label>
-
-                    {/* Service Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h5
-                          className={`font-semibold text-black text-lg ${!service.isActive ? "text-gray-500" : ""}`}
-                        >
-                          {service.name}
-                        </h5>
-                        {!service.isActive && (
-                          <span className="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">
-                            INACTIVE
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-700 mb-2">
-                        <span>{service.duration} min</span>
-                        <span>•</span>
-                        <span className="font-medium">
-                          ${service.price?.amount?.toFixed(2) ?? "0.00"}
-                        </span>
-                      </div>
-
-                      {service.description && (
-                        <p
-                          className={`text-sm mb-2 ${!service.isActive ? "text-gray-400" : "text-gray-600"}`}
-                        >
-                          {service.description}
-                        </p>
-                      )}
-
-                      <div
-                        className={`text-xs ${!service.isActive ? "text-gray-400" : "text-gray-500"}`}
-                      >
-                        <p>
-                          Interval: {service.timeInterval || 30} min • Specific
-                          Times: {service.allowSpecificTimes ? "Yes" : "No"}
-                        </p>
-                        <p className="mt-1">
-                          Branch: {service.branch.address.country},{" "}
-                          {service.branch.address.city},{" "}
-                          {service.branch.address.street}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 flex-shrink-0 ml-4">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleToggleServiceActive(service._id, service.isActive)
-                      }
-                      className={`p-2 rounded-lg transition-colors ${
-                        service.isActive
-                          ? "text-green-600 hover:bg-green-50"
-                          : "text-gray-500 hover:bg-gray-100"
-                      }`}
-                      aria-label={
-                        service.isActive
-                          ? `Deactivate ${service.name}`
-                          : `Activate ${service.name}`
-                      }
-                      title={
-                        service.isActive
-                          ? "Click to deactivate"
-                          : "Click to activate"
-                      }
-                    >
-                      {service.isActive ? (
-                        <Eye size={20} />
-                      ) : (
-                        <EyeOff color="red" size={20} />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleEditService(service)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      aria-label={`Edit ${service.name}`}
-                    >
-                      <Edit size={20} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteService(service._id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      aria-label={`Delete ${service.name}`}
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {services.map((service) => (
+              <ServiceCard
+                key={service._id}
+                service={service}
+                isEditing={editingService?._id === service._id}
+                isUploading={serviceImageUploading[service._id] || false}
+                onImageChange={(e) => handleServiceImageChange(service._id, e)}
+                onImageDelete={() => handleDeleteServiceImage(service._id)}
+                onToggleActive={() =>
+                  handleToggleServiceActive(service._id, service.isActive)
+                }
+                onEdit={() => handleEditService(service)}
+                onDelete={() => handleDeleteService(service._id)}
+              />
+            ))}
           </div>
         </Card>
       )}
@@ -559,12 +387,11 @@ export const ServicesPage = () => {
           {/* Duration and Price */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 tracking-wide">
-                Duration (minutes) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
+              <Input
                 value={newService.duration}
+                label="Duration (minutes)"
+                variant="primary"
+                required
                 onChange={(e) => {
                   const value = e.target.value;
                   const cleaned = value.replace(/[^\d.]/g, "");
@@ -590,27 +417,17 @@ export const ServicesPage = () => {
                     e.preventDefault();
                   }
                 }}
-                className={`w-full px-4 py-2.5 border rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  validationErrors.serviceDuration
-                    ? "border-red-300 bg-red-50"
-                    : "border-gray-300"
-                }`}
+                error={validationErrors.serviceDuration}
                 placeholder="60"
               />
-              {validationErrors.serviceDuration && (
-                <p className="mt-1.5 text-sm text-red-600">
-                  {validationErrors.serviceDuration}
-                </p>
-              )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2 tracking-wide">
-                Price (USD) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
+            <div className="flex gap-6">
+              <Input
+                variant="primary"
+                label="Price"
                 inputMode="decimal"
+                required
                 value={newService.price.amount || "0"}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -620,7 +437,10 @@ export const ServicesPage = () => {
                     parts[0].replace(/^0+(?=\d)/, "") +
                     (parts[1] ? "." + parts[1].slice(0, 2) : "");
                   const amount = formatted ? parseFloat(formatted) : 0;
-                  setNewService({ ...newService, price: { amount } });
+                  setNewService({
+                    ...newService,
+                    price: { ...newService.price, amount: Number(value) },
+                  });
                   setValidationErrors((prev) => ({
                     ...prev,
                     servicePrice: validateServicePrice(amount),
@@ -637,18 +457,21 @@ export const ServicesPage = () => {
                     e.preventDefault();
                   }
                 }}
-                className={`w-full px-4 py-2.5 border rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  validationErrors.servicePrice
-                    ? "border-red-300 bg-red-50"
-                    : "border-gray-300"
-                }`}
+                error={validationErrors.servicePrice}
                 placeholder="0.00"
               />
-              {validationErrors.servicePrice && (
-                <p className="mt-1.5 text-sm text-red-600">
-                  {validationErrors.servicePrice}
-                </p>
-              )}
+              <Select
+                label="Currency"
+                variant="primary"
+                options={currencies}
+                value={newService.price.currency}
+                onChange={(e) =>
+                  setNewService({
+                    ...newService,
+                    price: { ...newService.price, currency: e },
+                  })
+                }
+              />
             </div>
           </div>
 
@@ -656,6 +479,8 @@ export const ServicesPage = () => {
           {branchOptions.length > 0 && (
             <div>
               <Select
+                variant="primary"
+                required
                 options={branchOptions}
                 label="Select Branch"
                 className="w-full"
