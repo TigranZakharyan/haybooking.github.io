@@ -58,7 +58,7 @@ export function DashboardLayout() {
           </div>
 
           <span
-            className={`text-xl font-semibold text-primary font-serif whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+            className={`text-xl text-business font-semibold font-serif whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
               ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}
             `}
           >

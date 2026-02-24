@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Container, Input, Select } from "@/components";
-import { Modal } from './Modal';
+import { Button, Container, Input, Select, BookingModal } from "@/components";
 import { businessService, searchService } from '@/services/api';
 import type { Business, TBusinessType } from '@/types';
 import { ServiceCard } from './ServiceCard'
@@ -147,7 +146,7 @@ export function HomePage() {
 
       {/* Booking Modal */}
       {selectedBusiness && (
-        <Modal
+        <BookingModal
           business={selectedBusiness}
           onClose={handleCloseModal}
           onConfirmed={handleConfirmed}

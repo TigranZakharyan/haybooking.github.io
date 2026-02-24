@@ -17,7 +17,7 @@ export function UserLayout() {
           {/* Logo Section */}
           <Link to="/" className="flex items-center justify-center gap-3">
             <img src="/logo.png" className="w-10 h-10 md:w-12 md:h-12" alt="Logo" />
-            <h1 className="text-xl font-bold md:text-primary">Haybooking</h1>
+            <h1 className="text-xl font-bold text-business">Haybooking</h1>
           </Link>
 
           {/* Navigation Links */}

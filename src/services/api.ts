@@ -162,13 +162,13 @@ export const bookingService = {
   },
 
   // Update booking (customer)
-  updateBooking: async (id, updateData) => {
+  updateBooking: async (id: string, updateData) => {
     const response = await api.put(`/bookings/${id}`, updateData);
     return response.data.booking;
   },
 
   // Update booking (business)
-  updateBookingByBusiness: async (id, updateData) => {
+  updateBookingByBusiness: async (id: string, updateData) => {
     const response = await api.put(
       `/bookings/${id}/business-update`,
       updateData,
@@ -177,9 +177,9 @@ export const bookingService = {
   },
 
   // Get customer bookings
-  getMyBookings: async (params) => {
+  getMyBookings: async (params: { status?: string, page?: string, limit?: number }) => {
     const response = await api.get("/bookings/my-bookings", { params });
-    return response.data;
+    return response.data.bookings;
   },
 
   // Get business bookings

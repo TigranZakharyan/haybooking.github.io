@@ -209,18 +209,6 @@ export interface Image {
   url?: string;
 }
 
-export type TService = {
-  _id: string;
-  name: string;
-  duration: number;
-  price: Price;
-  description?: string;
-  timeInterval?: number;
-  allowSpecificTimes?: boolean;
-  isActive: boolean;
-  branch: Branch;
-  image?: Image | null;
-}
 
 export interface WorkingHoursUI {
   dayOfWeek: number;
@@ -240,4 +228,128 @@ export interface NewBranch {
   phones: Branch["address"]["phones"];
   workingHours: WorkingHoursUI[];
   isBaseBranch: Branch["isBaseBranch"];
+}
+
+export type TBookingStatus = "pending" | "completed" | "cancelled";
+
+
+
+// ---------- Common Types ----------
+
+export interface TPrice {
+  amount: number;
+  currency: string;
+}
+
+export interface TImage {
+  url: string;
+  key: string;
+}
+
+export interface TRating {
+  average: number;
+  count: number;
+}
+
+// ---------- Customer Info ----------
+
+export interface TCustomerInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+// ---------- Business ----------
+
+export interface TBusiness {
+  _id: string;
+  id: string;
+  owner: string;
+  businessName: string;
+  businessType: string;
+  description: string;
+  phone: string;
+  isActive: boolean;
+  bookingLink: string;
+  logo: TImage;
+  rating: TRating;
+  settings: {
+    allowOnlineBooking: boolean;
+    requireApproval: boolean;
+    bookingBufferMinutes: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+// ---------- Service ----------
+
+export interface TService {
+  _id: string;
+  business: string;
+  branch: string;
+  name: string;
+  description: string;
+  duration: number;
+  isActive: boolean;
+  availableForOnlineBooking: boolean;
+  timeInterval: number;
+  allowSpecificTimes: boolean;
+  unavailability: unknown[]; // adjust if you have structure
+  price: TPrice;
+  image: TImage;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+// ---------- Specialist ----------
+
+export interface TSpecialist {
+  _id: string;
+  business: string;
+  branch: string;
+  name: string;
+  specialties: string[];
+  services: string[];
+  isActive: boolean;
+  serviceAvailability: unknown[];
+  unavailability: unknown[];
+  workingHours: unknown[];
+  timeOff: unknown[];
+  rating: TRating;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+// ---------- Main Booking ----------
+
+export interface TBooking {
+  _id: string;
+  customerInfo: TCustomerInfo;
+  price: TPrice;
+
+  business: TBusiness;
+  branch: TBranch;
+  customer: string;
+
+  services: TService[];
+  specialist: TSpecialist;
+
+  totalDuration: number;
+
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+
+  status: TBookingStatus;
+  notes: string;
+  reminderSent: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }

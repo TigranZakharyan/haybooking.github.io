@@ -6,6 +6,12 @@ import { formatPhone, isValidPhone, isValidEmail } from '@/services/validation';
 import type { ModalProps, TService, Specialist, CustomerInfo, TimeSlot, CalendarDate } from '@/types';
 import { months, weekdays } from '@/constants';
 
+// ── Extended ModalProps to support edit mode ──────────────────────────────────
+interface ExtendedModalProps extends ModalProps {
+  editBooking?: any; // The booking object to edit
+  mode?: 'create' | 'edit';
+}
+
 // ── Step definitions ──────────────────────────────────────────────────────────
 const STEPS = [
   { num: 1, label: 'Select Branch',        short: 'Branch'  },
@@ -76,7 +82,10 @@ function canGoToStep(
     selectedTime:       TimeSlot | null;
     sentCode:           string;
   },
+  mode: 'create' | 'edit' = 'create',
 ): boolean {
+  // In edit mode, skip phone verification
+  if (mode === 'edit' && num === 5) return false;
   if (num <= 1) return true;
   if (num === 2) return !!selectedBranch;
   if (num === 3) return !!(selectedService && selectedSpecialist);
@@ -99,110 +108,178 @@ export function serviceIcon(name: string): string {
 }
 
 // ── Scroll Picker ─────────────────────────────────────────────────────────────
+import React, { useEffect, useRef, useCallback } from 'react';
+
 interface ScrollPickerProps {
-  length:    number;
-  value:     string;
-  onChange:  (v: string) => void;
-  scrollRef: React.RefObject<HTMLDivElement>;
+  length: number;
+  value: string;
+  onChange: (v: string) => void;
 }
 
-const ScrollPicker = ({ length, value, onChange, scrollRef }: ScrollPickerProps) => {
+const ScrollPicker = ({ length, value, onChange }: ScrollPickerProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const itemHeight = 40; // Fixed height for reliable calculations
+
+  // Centralize the scroll-to-value logic
+  const scrollToValue = useCallback((val: string, behavior: ScrollBehavior = 'smooth') => {
+    if (scrollRef.current) {
+      const index = parseInt(val);
+      scrollRef.current.scrollTo({
+        top: index * itemHeight,
+        behavior,
+      });
+    }
+  }, []);
+
+  // Sync scroll position when the 'value' prop changes externally (e.g., arrow buttons)
+  useEffect(() => {
+    scrollToValue(value);
+  }, [value, scrollToValue]);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const scrollTop = scrollRef.current.scrollTop;
+    const index = Math.round(scrollTop / itemHeight);
+    const newValue = index.toString().padStart(2, '0');
+    
+    if (newValue !== value && index >= 0 && index < length) {
+      onChange(newValue);
+    }
+  };
+
   const step = (dir: number) => {
-    const c = value ? parseInt(value) : 0;
-    onChange(((c + dir + length) % length).toString().padStart(2, '0'));
+    const currentIndex = parseInt(value);
+    const nextIndex = (currentIndex + dir + length) % length;
+    onChange(nextIndex.toString().padStart(2, '0'));
   };
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Up arrow */}
+    <div className="flex flex-col items-center select-none">
+      {/* Up Button */}
       <button
-        type="button"
-        onClick={() => step(1)}
-        className="w-14 h-9 flex items-center justify-center text-white rounded-t-lg shadow-md bg-primary hover:opacity-90 transition-opacity"
+        onClick={() => step(-1)}
+        className="z-20 p-2 text-primary hover:scale-110 active:scale-95 transition-transform"
       >
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
         </svg>
       </button>
 
-      {/* Scroll window */}
-      <div className="relative w-14 h-20 overflow-hidden border-x-2 border-primary/30 bg-white shadow-inner">
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="w-full h-10 bg-primary/20 border-t-2 border-b-2 border-primary" />
-        </div>
+      {/* Picker Container */}
+      <div className="relative h-[120px] w-16 overflow-hidden">
+        {/* Selection Overlay (The Glass Box) */}
+        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-10 border-y border-primary/20 bg-primary/5 pointer-events-none" />
+        
         <div
           ref={scrollRef}
-          className="overflow-y-scroll h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ scrollSnapType: 'y mandatory' }}
-          onScroll={(e: React.UIEvent<HTMLDivElement>) =>
-            onChange(Math.round(e.currentTarget.scrollTop / 32).toString().padStart(2, '0'))
-          }
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+          style={{ 
+            scrollbarWidth: 'none', 
+            msOverflowStyle: 'none',
+            scrollPaddingBlock: '40px' // Keeps the active item centered
+          }}
         >
-          <div className="py-4">
-            {Array.from({ length }, (_, i) => {
-              const padded = i.toString().padStart(2, '0');
-              const active = value === padded;
-              return (
-                <div
-                  key={i}
-                  style={{ scrollSnapAlign: 'center' }}
-                  onClick={() => {
-                    onChange(padded);
-                    if (scrollRef.current) scrollRef.current.scrollTop = i * 32;
-                  }}
-                  className={`h-8 flex items-center justify-center text-lg font-bold cursor-pointer transition-all ${
-                    active ? 'bg-primary text-white scale-110' : 'text-gray-600 hover:bg-primary/10'
-                  }`}
-                >
-                  {padded}
-                </div>
-              );
-            })}
-          </div>
+          {/* Top Padding to allow first item to center */}
+          <div style={{ height: '40px' }} />
+          
+          {Array.from({ length }, (_, i) => {
+            const padded = i.toString().padStart(2, '0');
+            const isActive = value === padded;
+            return (
+              <div
+                key={i}
+                onClick={() => onChange(padded)}
+                className={`h-10 flex items-center justify-center text-xl font-medium transition-all duration-200 snap-center cursor-pointer
+                  ${isActive ? 'text-primary scale-125 font-bold' : 'text-gray-400 scale-100'}
+                `}
+              >
+                {padded}
+              </div>
+            );
+          })}
+
+          {/* Bottom Padding to allow last item to center */}
+          <div style={{ height: '40px' }} />
         </div>
       </div>
 
-      {/* Down arrow */}
+      {/* Down Button */}
       <button
-        type="button"
-        onClick={() => step(-1)}
-        className="w-14 h-9 flex items-center justify-center text-white rounded-b-lg shadow-md bg-secondary hover:opacity-90 transition-opacity"
+        onClick={() => step(1)}
+        className="z-20 p-2 text-primary hover:scale-110 active:scale-95 transition-transform"
       >
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
     </div>
   );
 };
 
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
-export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
+export const BookingModal = ({ business, onClose, onConfirmed, editBooking, mode = 'create' }: ExtendedModalProps) => {
   const { user } = useAuth();
+  const isEditMode = mode === 'edit' && !!editBooking;
 
-  const [step, setStep] = useState(1);
+  // Initialize state from editBooking if in edit mode
+  const initializeFromBooking = () => {
+    if (!isEditMode || !editBooking) return null;
+
+    const bookingDateObj = new Date(editBooking.bookingDate);
+    const dateString = `${bookingDateObj.getFullYear()}-${String(bookingDateObj.getMonth() + 1).padStart(2, '0')}-${String(bookingDateObj.getDate()).padStart(2, '0')}`;
+
+    return {
+      branch: editBooking.branch,
+      service: Array.isArray(editBooking.services) ? editBooking.services[0] : editBooking.services,
+      specialist: editBooking.specialist,
+      date: dateString,
+      time: {
+        startTime: editBooking.startTime,
+        endTime: editBooking.endTime,
+        isAvailable: true,
+        isCustomTime: false,
+        duration: editBooking.totalDuration,
+      },
+      customerInfo: {
+        fullName: `${editBooking.customerInfo.firstName} ${editBooking.customerInfo.lastName}`.trim(),
+        email: editBooking.customerInfo.email,
+        phone: editBooking.customerInfo.phone,
+        notes: editBooking.notes || '',
+      },
+    };
+  };
+
+  const initialData = initializeFromBooking();
+
+  const [step, setStep] = useState(isEditMode ? 2 : 1); // Skip branch selection in edit mode
 
   // Branch selection
-  const [selectedBranch, setSelectedBranch] = useState<any>(null);
+  const [selectedBranch, setSelectedBranch] = useState<any>(initialData?.branch || null);
 
-  const [selectedService,    setSelectedService]    = useState<TService | null>(null);
-  const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | null>(null);
-  const [selectedDate,       setSelectedDate]       = useState<string | null>(null);
-  const [selectedTime,       setSelectedTime]       = useState<TimeSlot | null>(null);
+  const [selectedService,    setSelectedService]    = useState<TService | null>(initialData?.service || null);
+  const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | null>(initialData?.specialist || null);
+  const [selectedDate,       setSelectedDate]       = useState<string | null>(initialData?.date || null);
+  const [selectedTime,       setSelectedTime]       = useState<TimeSlot | null>(initialData?.time || null);
 
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots,   setLoadingSlots]   = useState(false);
   const [slotsError,     setSlotsError]     = useState<string | null>(null);
 
-  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [calendarDate, setCalendarDate] = useState(
+    initialData?.date ? new Date(initialData.date) : new Date()
+  );
 
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    fullName: user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : '',
-    email:    user?.email ?? '',
-    phone:    user?.phone ?? '',
-    notes:    '',
-  });
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(
+    initialData?.customerInfo || {
+      fullName: user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : '',
+      email:    user?.email ?? '',
+      phone:    user?.phone ?? '',
+      notes:    '',
+    }
+  );
   const [infoErrors, setInfoErrors] = useState<Partial<CustomerInfo>>({});
 
   const [verificationCode, setVerificationCode] = useState('');
@@ -211,8 +288,14 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
   const [isSendingCode,    setIsSendingCode]    = useState(false);
   const [isVerifyingCode,  setIsVerifyingCode]  = useState(false);
 
-  const [customHour,      setCustomHour]      = useState('');
-  const [customMinute,    setCustomMinute]    = useState('');
+  const [customHour,      setCustomHour]      = useState(() => {
+    const hour = initialData?.time?.startTime?.split(':')[0] || '';
+    return hour ? hour.padStart(2, '0') : '';
+  });
+  const [customMinute,    setCustomMinute]    = useState(() => {
+    const minute = initialData?.time?.startTime?.split(':')[1] || '';
+    return minute ? minute.padStart(2, '0') : '';
+  });
   const [customTimeError, setCustomTimeError] = useState('');
   const [validatingTime,  setValidatingTime]  = useState(false);
 
@@ -226,26 +309,55 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
     if (customMinute && minuteRef.current) minuteRef.current.scrollTop = parseInt(customMinute) * 32;
   }, [customMinute]);
 
+  // Set initial scroll position in edit mode
+  useEffect(() => {
+    if (isEditMode && initialData?.time?.startTime) {
+      const [h, m] = initialData.time.startTime.split(':');
+      if (hourRef.current && h) {
+        setTimeout(() => {
+          if (hourRef.current) hourRef.current.scrollTop = parseInt(h) * 32;
+        }, 100);
+      }
+      if (minuteRef.current && m) {
+        setTimeout(() => {
+          if (minuteRef.current) minuteRef.current.scrollTop = parseInt(m) * 32;
+        }, 100);
+      }
+    }
+  }, [isEditMode]);
+
+  // Also set scroll position when step changes to 3 (Date & Time step)
+  useEffect(() => {
+    if (step === 3 && customHour && customMinute) {
+      setTimeout(() => {
+        if (hourRef.current) hourRef.current.scrollTop = parseInt(customHour) * 32;
+        if (minuteRef.current) minuteRef.current.scrollTop = parseInt(customMinute) * 32;
+      }, 100);
+    }
+  }, [step]);
+
   useEffect(() => {
     if (selectedDate && selectedService && selectedSpecialist) fetchSlots();
   }, [selectedDate, selectedService, selectedSpecialist]);
 
-  // Auto-select branch if only one exists
+  // Auto-select branch if only one exists (only in create mode)
   useEffect(() => {
-    if (business.branches && business.branches.length === 1) {
+    if (!isEditMode && business.branches && business.branches.length === 1) {
       setSelectedBranch(business.branches[0]);
       setStep(2);
     }
-  }, [business.branches]);
+  }, [business.branches, isEditMode]);
 
-  // Reset specialist when branch changes
+  // Reset specialist when branch changes (only in create mode)
   useEffect(() => {
-    setSelectedSpecialist(null);
-    setSelectedService(null);
-    setSelectedDate(null);
-    setSelectedTime(null);
-    setAvailableSlots([]);
-  }, [selectedBranch]);
+    if (!isEditMode) {
+      setSelectedSpecialist(null);
+      setSelectedService(null);
+      setSelectedDate(null);
+      setSelectedTime(null);
+      setAvailableSlots([]);
+    }
+  }, [selectedBranch, isEditMode]);
 
   // ── Data fetching ───────────────────────────────────────────────────────────
 
@@ -290,14 +402,18 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
 
   const selectBranch = (branch: any) => {
     setSelectedBranch(branch);
-    setSelectedSpecialist(null); // Clear specialist when branch changes
-    setSelectedService(null); // Clear service when branch changes
+    if (!isEditMode) {
+      setSelectedSpecialist(null);
+      setSelectedService(null);
+    }
     setStep(2);
   };
 
   const selectService = (service: TService) => {
     setSelectedService(service);
-    setSelectedSpecialist(null);
+    if (!isEditMode) {
+      setSelectedSpecialist(null);
+    }
   };
 
   const selectSpecialist = (specialist: Specialist) => {
@@ -354,6 +470,13 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
     try { await confirmBooking(); } finally { setIsVerifyingCode(false); }
   };
 
+  const handleSaveEdit = async () => {
+    const errors = validateInfoForm(customerInfo, isValidEmail, isValidPhone);
+    if (Object.keys(errors).length) { setInfoErrors(errors); return; }
+    setIsVerifyingCode(true);
+    try { await updateBooking(); } finally { setIsVerifyingCode(false); }
+  };
+
   const confirmBooking = async () => {
     if (!selectedService || !selectedSpecialist || !selectedDate || !selectedTime) return;
     const names     = customerInfo.fullName.trim().split(' ');
@@ -371,6 +494,26 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
       isGuestBooking: !user,
     });
     onConfirmed?.({ booking, selectedService, selectedSpecialist, customerInfo });
+  };
+
+  const updateBooking = async () => {
+    if (!selectedService || !selectedSpecialist || !selectedDate || !selectedTime || !editBooking) return;
+    const names     = customerInfo.fullName.trim().split(' ');
+    const firstName = names[0];
+    const lastName  = names.slice(1).join(' ') || names[0];
+    
+    // Call your API to update the booking
+    const updatedBooking = await bookingService.updateBooking(editBooking._id, {
+      branchId:       selectedBranch?._id,
+      serviceId:      selectedService._id,
+      specialistId:   selectedSpecialist._id,
+      bookingDate:    selectedDate,
+      startTime:      selectedTime.startTime,
+      customerInfo:   { firstName, lastName, email: customerInfo.email, phone: customerInfo.phone },
+      notes:          customerInfo.notes,
+    });
+    
+    onConfirmed?.({ booking: updatedBooking, selectedService, selectedSpecialist, customerInfo });
   };
 
   const validateCustomTime = async () => {
@@ -403,7 +546,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
   };
 
   const stepGate = (num: number) =>
-    canGoToStep(num, { selectedBranch, selectedService, selectedSpecialist, selectedDate, selectedTime, sentCode });
+    canGoToStep(num, { selectedBranch, selectedService, selectedSpecialist, selectedDate, selectedTime, sentCode }, mode);
 
   const monthYearLabel = `${months[calendarDate.getMonth()]} ${calendarDate.getFullYear()}`;
   const changeMonth    = (dir: number) =>
@@ -420,6 +563,9 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
     (service: any) => service.branch === selectedBranch?._id
   );
 
+  // Filter steps for edit mode (skip phone verification)
+  const displaySteps = isEditMode ? STEPS.filter(s => s.num !== 5) : STEPS;
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -431,7 +577,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
           <div className="flex items-start justify-between p-5 sm:p-6">
             <div className="flex-1 min-w-0 pr-4">
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 tracking-wide uppercase">
-                {business.businessName}
+                {isEditMode ? `EDIT BOOKING - ${business.businessName}` : business.businessName}
               </h2>
               <div className="space-y-1.5 text-xs sm:text-sm text-white/85">
                 {[
@@ -453,7 +599,7 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
 
           {/* Step tabs */}
           <div className="flex border-t border-white/15">
-            {STEPS.map(({ num, label, short }) => {
+            {displaySteps.map(({ num, label, short }) => {
               const done   = num < step;
               const active = num === step;
               return (
@@ -479,8 +625,8 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
         {/* ── Body ───────────────────────────────────────────────────────── */}
         <div className="p-5 sm:p-6">
 
-          {/* ── Step 1: Branch Selection ───────────────────────────────── */}
-          {step === 1 && (
+          {/* ── Step 1: Branch Selection (hidden in edit mode) ───────────── */}
+          {step === 1 && !isEditMode && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-primary">Select Branch</h3>
               
@@ -644,9 +790,11 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
               )}
 
               <div className="flex gap-3 mt-2">
-                <button onClick={() => setStep(1)} className="flex-1 bg-white text-[#3D2B2B] border-2 border-gray-200 rounded-xl py-3 px-6 text-sm font-semibold hover:bg-primary/5 hover:border-primary/30 transition-colors">
-                  Back to Branches
-                </button>
+                {!isEditMode && (
+                  <button onClick={() => setStep(1)} className="flex-1 bg-white text-[#3D2B2B] border-2 border-gray-200 rounded-xl py-3 px-6 text-sm font-semibold hover:bg-primary/5 hover:border-primary/30 transition-colors">
+                    Back to Branches
+                  </button>
+                )}
                 <button
                   onClick={() => selectedService && selectedSpecialist && setStep(3)}
                   disabled={!(selectedService && selectedSpecialist)}
@@ -750,13 +898,25 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                       </div>
 
                       {/* Custom time picker */}
-                      {business.settings?.allowSpecificTimes && (
+                      {selectedService?.allowSpecificTimes && (
                         <div className="rounded-xl p-5 mb-4 bg-primary/5 border border-[#e5dada]">
                           <p className="text-center text-sm mb-4 text-secondary">— or enter a custom time —</p>
                           <div className="flex items-center justify-center gap-4 mb-4">
-                            <ScrollPicker length={24} value={customHour}   onChange={setCustomHour}   scrollRef={hourRef}   />
+                            <ScrollPicker 
+                              key={`hour-${isEditMode ? editBooking?._id : 'new'}`}
+                              length={24} 
+                              value={customHour} 
+                              onChange={setCustomHour} 
+                              scrollRef={hourRef} 
+                            />
                             <span className="text-3xl font-bold text-primary/50">:</span>
-                            <ScrollPicker length={60} value={customMinute} onChange={setCustomMinute} scrollRef={minuteRef} />
+                            <ScrollPicker 
+                              key={`minute-${isEditMode ? editBooking?._id : 'new'}`}
+                              length={60} 
+                              value={customMinute} 
+                              onChange={setCustomMinute} 
+                              scrollRef={minuteRef} 
+                            />
                             <div className="ml-2 px-4 py-2 bg-white rounded-xl shadow border-2 border-primary/30 font-mono text-xl font-bold min-w-[80px] text-center text-[#3D2B2B]">
                               {customHour && customMinute ? `${customHour}:${customMinute}` : <span className="text-gray-300">--:--</span>}
                             </div>
@@ -853,12 +1013,13 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                   />
                 </div>
 
-                {!sentCode ? (
+                {!isEditMode && !sentCode && (
                   <div className="rounded-xl p-3.5 text-sm bg-primary/5 border border-primary/30 text-[#3D2B2B]">
                     <p className="font-semibold mb-1">📱 Phone Verification Required</p>
                     <p className="text-secondary">We'll send a <strong>4-digit code</strong> to your phone to confirm your booking.</p>
                   </div>
-                ) : (
+                )}
+                {!isEditMode && sentCode && (
                   <div className="rounded-xl p-3.5 text-sm bg-green-50 border border-green-300 text-green-800">
                     <p className="font-semibold">✅ Code sent to <strong>{customerInfo.phone}</strong></p>
                   </div>
@@ -869,15 +1030,29 @@ export const Modal = ({ business, onClose, onConfirmed }: ModalProps) => {
                 <button onClick={() => setStep(3)} className="flex-1 bg-white text-[#3D2B2B] border-2 border-gray-200 rounded-xl py-3 px-6 text-sm font-semibold hover:bg-primary/5 hover:border-primary/30 transition-colors">
                   Back
                 </button>
-                <button onClick={sendVerificationCode} disabled={!!sentCode || isSendingCode} className="flex-1 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">
-                  {isSendingCode ? 'Sending...' : 'Next: Verify'}
-                </button>
+                {isEditMode ? (
+                  <button 
+                    onClick={handleSaveEdit} 
+                    disabled={isVerifyingCode}
+                    className="flex-1 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                  >
+                    {isVerifyingCode ? 'Updating...' : 'Save Changes'}
+                  </button>
+                ) : (
+                  <button 
+                    onClick={sendVerificationCode} 
+                    disabled={!!sentCode || isSendingCode} 
+                    className="flex-1 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                  >
+                    {isSendingCode ? 'Sending...' : 'Next: Verify'}
+                  </button>
+                )}
               </div>
             </div>
           )}
 
-          {/* ── Step 5: Phone Verification ──────────────────────────────── */}
-          {step === 5 && (
+          {/* ── Step 5: Phone Verification (hidden in edit mode) ─────────── */}
+          {step === 5 && !isEditMode && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-primary">Phone Verification</h3>
               <div className="space-y-4 mb-5">
