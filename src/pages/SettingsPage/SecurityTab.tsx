@@ -76,6 +76,7 @@ export function SecurityTab() {
           <Input
             label="Current Password"
             value={form.currentPassword}
+            placeholder="********"
             onChange={set("currentPassword")}
             variant="primary"
             isPassword
@@ -85,6 +86,7 @@ export function SecurityTab() {
             label="New Password"
             value={form.newPassword}
             onChange={set("newPassword")}
+            placeholder="********"
             variant="primary"
             isPassword
             error={
@@ -98,6 +100,7 @@ export function SecurityTab() {
             label="Confirm New Password"
             value={form.confirmPassword}
             onChange={set("confirmPassword")}
+            placeholder="********"
             variant="primary"
             isPassword
             error={!isMatchValid ? "Passwords do not match" : undefined}

@@ -132,7 +132,7 @@ export function BusinessTab() {
                 onChange={handleLogoChange}
               />
 
-              {previewLogo ? (
+              {previewLogo?.url ? (
                 <img
                   src={previewLogo.url}
                   alt="logo"
