@@ -1,21 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Button, Container, Input, Select, BookingModal } from "@/components";
+import { Button, Container, Input, Select, BookingModal, Pagination } from "@/components";
 import { businessService, searchService } from '@/services/api';
-import type { TBusiness, TBusinessType } from '@/types';
+import type { TBusiness, TBusinessType, TPagination, TSearchBusinessParams } from '@/types';
 import { ServiceCard } from './ServiceCard'
-
-interface Filters {
-  q: string;
-  city: string;
-  type: string;
-}
 
 export function HomePage() {
   const [businesses, setBusinesses] = useState<TBusiness[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [types, setTypes] = useState<TBusinessType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>({
+  const [pagination, setPagination] = useState<TPagination>()
+  const [filters, setFilters] = useState<TSearchBusinessParams>({
     q: '',
     city: '',
     type: 'all',
@@ -36,6 +31,7 @@ export function HomePage() {
       setCities(citiesData);
       setTypes(typesData);
       setBusinesses(businessesData.businesses);
+      setPagination(businessesData.pagination)
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -43,16 +39,23 @@ export function HomePage() {
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (page: number = 1) => {
     setLoading(true);
     try {
-      const result = await searchService.searchBusinesses(filters);
+      const result = await searchService.searchBusinesses({ ...filters, page });
+      console.log(result)
       setBusinesses(result.businesses);
+      setPagination(result.pagination);
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    handleSearch(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBookingClick = async (business: TBusiness) => {
@@ -106,7 +109,7 @@ export function HomePage() {
             onChange={(value) => setFilters({ ...filters, type: value as string })}
           />
           <Button
-            onClick={handleSearch}
+            onClick={() => handleSearch(1)}
             className="bg-primary text-white font-bold hover:bg-primary/95 shadow-xl"
           >
             {loading ? 'Searching...' : 'Search'}
@@ -114,7 +117,7 @@ export function HomePage() {
         </div>
 
         {/* Results */}
-        <div className="flex gap-12 flex-wrap">
+        <div className="flex gap-12 flex-wrap mb-8">
           {businesses.length === 0 ? (
             <div className="w-full text-center py-12">
               <p className="text-xl font-semibold text-gray-700">No businesses found.</p>
@@ -135,6 +138,9 @@ export function HomePage() {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {pagination && <Pagination pagination={pagination} onPageChange={handlePageChange} />}
       </Container>
 
       {/* Booking Modal */}

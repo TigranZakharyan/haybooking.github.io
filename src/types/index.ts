@@ -259,6 +259,7 @@ export type TSearchBusinessParams = {
   city?: string;
   page?: number;
   limit?: number;
+  type?: string;
 };
 
 export type TSearchBusinessBookingsParams = {
@@ -273,7 +274,7 @@ export type TSearchBusinessBookingsParams = {
 export type TSearchMyBookingsParams = {
   status?: TBookingStatus;
   page?: number;
-  limit?: string;
+  limit?: number;
 }
 
 export type TGetAvailablityParams = {

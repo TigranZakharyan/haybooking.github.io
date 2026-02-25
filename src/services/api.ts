@@ -201,9 +201,9 @@ export const bookingService = {
   },
 
   // Get customer bookings
-  getMyBookings: async (params: TSearchMyBookingsParams): Promise<TBooking[]> => {
+  getMyBookings: async (params: TSearchMyBookingsParams): Promise<{bookings: TBooking[], pagination: TPagination}> => {
     const response = await api.get("/bookings/my-bookings", { params });
-    return response.data.bookings;
+    return response.data;
   },
 
   // Get business bookings

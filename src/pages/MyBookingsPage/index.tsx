@@ -6,8 +6,9 @@ import {
   Card,
   Container,
   SwitchTabs,
+  Pagination,
 } from "@/components";
-import type { TBooking, TBookingStatus, TBusiness } from "@/types";
+import type { TBooking, TBookingStatus, TBusiness, TPagination } from "@/types";
 import { bookingService, businessService } from "@/services/api";
 
 type FilterType = "all" | TBookingStatus;
@@ -18,23 +19,42 @@ export function MyBookingsPage() {
   const [bookings, setBookings] = useState<TBooking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-
+  const [pagination, setPagination] = useState<TPagination>()
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedBooking, setSelectedBooking] = useState<TBooking | null>(null);
   const [fullBusinessData, setFullBusinessData] = useState<TBusiness | null>();
   const [loadingBusiness, setLoadingBusiness] = useState<boolean>(false);
 
-  const fetchBookings = async () => {
-    const response = await bookingService.getMyBookings({});
-    setBookings(response);
-    setLoading(false);
+  const fetchBookings = async (page: number = 1, status?: TBookingStatus) => {
+    setLoading(true);
+    try {
+      const response = await bookingService.getMyBookings({ page, status });
+      setBookings(response.bookings);
+      setPagination(response.pagination);
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Mock data for demonstration
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  useEffect(() => {
+    // Fetch bookings when filter changes
+    const status = activeFilter === "all" ? undefined : activeFilter;
+    fetchBookings(1, status);
+  }, [activeFilter]);
+
+  const handlePageChange = (page: number) => {
+    const status = activeFilter === "all" ? undefined : activeFilter;
+    fetchBookings(page, status);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleModify = async (bookingId: string) => {
     // Find the booking to modify
@@ -71,7 +91,9 @@ export function MyBookingsPage() {
     setSelectedBooking(null);
     setFullBusinessData(null);
 
-    await fetchBookings();
+    const currentPage = pagination?.page || 1;
+    const status = activeFilter === "all" ? undefined : activeFilter;
+    await fetchBookings(currentPage, status);
   };
 
   const handleCancel = async (bookingId: string) => {
@@ -120,12 +142,9 @@ export function MyBookingsPage() {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  const filteredBookings =
-    activeFilter === "all"
-      ? bookings
-      : bookings.filter((booking) => booking.status === activeFilter);
+  const filteredBookings = bookings;
 
-  if (loading) {
+  if (loading && bookings.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Card>
@@ -172,100 +191,110 @@ export function MyBookingsPage() {
           </div>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {filteredBookings.map((booking) => (
-            <Card key={booking._id}>
-              <div>
-                {/* Status Badge */}
-                <div className="mb-4">
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}
-                  >
-                    {getStatusLabel(booking.status)}
-                  </span>
-                </div>
-
-                {/* Service Info */}
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {booking.services.map((e) => e.name).join(" ")}
-                  </h3>
-                  <p className="text-gray-600">
-                    {booking.business.businessName}
-                  </p>
-                </div>
-
-                {/* Booking Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  {/* Specialist */}
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <User className="w-5 h-5 text-gray-400" />
-                    <span>{booking.specialist.name}</span>
-                  </div>
-
-                  {/* Date */}
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <Calendar className="w-5 h-5 text-gray-400" />
-                    <span>{formatDate(booking.bookingDate)}</span>
-                  </div>
-
-                  {/* Time */}
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <Clock className="w-5 h-5 text-gray-400" />
-                    <span>
-                      {booking.startTime} - {booking.endTime}
+        <>
+          <div className="space-y-4">
+            {filteredBookings.map((booking) => (
+              <Card key={booking._id}>
+                <div>
+                  {/* Status Badge */}
+                  <div className="mb-4">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}
+                    >
+                      {getStatusLabel(booking.status)}
                     </span>
                   </div>
 
-                  {/* Location */}
-                  <div className="flex items-center gap-3 text-gray-700">
-                    <MapPin className="w-5 h-5 text-gray-400" />
-                    <span>{booking.branch.address.street || "N/A"}</span>
-                  </div>
-                </div>
-
-                {/* Price and Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="text-2xl font-bold text-gray-900">
-                    ${booking.price.amount} {booking.price.currency}
+                  {/* Service Info */}
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                      {booking.services.map((e) => e.name).join(" ")}
+                    </h3>
+                    <p className="text-gray-600">
+                      {booking.business.businessName}
+                    </p>
                   </div>
 
-                  {booking.status === "pending" && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleModify(booking._id)}
-                        className="gap-2"
-                        variant="liberty"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Modify
-                      </Button>
-                      <Button
-                        onClick={() => handleCancel(booking._id)}
-                        className="gap-2 text-red-500"
-                      >
-                        <X className="w-4 h-4" />
-                        Cancel
-                      </Button>
+                  {/* Booking Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {/* Specialist */}
+                    <div className="flex items-center gap-3 text-gray-700">
+                      <User className="w-5 h-5 text-gray-400" />
+                      <span>{booking.specialist.name}</span>
                     </div>
-                  )}
 
-                  {booking.status === "cancelled" && (
-                    <span className="text-sm text-gray-500 italic">
-                      Booking cancelled
-                    </span>
-                  )}
+                    {/* Date */}
+                    <div className="flex items-center gap-3 text-gray-700">
+                      <Calendar className="w-5 h-5 text-gray-400" />
+                      <span>{formatDate(booking.bookingDate)}</span>
+                    </div>
 
-                  {booking.status === "completed" && (
-                    <span className="text-sm text-gray-500 italic">
-                      Booking completed
-                    </span>
-                  )}
+                    {/* Time */}
+                    <div className="flex items-center gap-3 text-gray-700">
+                      <Clock className="w-5 h-5 text-gray-400" />
+                      <span>
+                        {booking.startTime} - {booking.endTime}
+                      </span>
+                    </div>
+
+                    {/* Location */}
+                    <div className="flex items-center gap-3 text-gray-700">
+                      <MapPin className="w-5 h-5 text-gray-400" />
+                      <span>{booking.branch.address.street || "N/A"}</span>
+                    </div>
+                  </div>
+
+                  {/* Price and Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <div className="text-2xl font-bold text-gray-900">
+                      ${booking.price.amount} {booking.price.currency}
+                    </div>
+
+                    {booking.status === "pending" && (
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={() => handleModify(booking._id)}
+                          className="gap-2"
+                          variant="liberty"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Modify
+                        </Button>
+                        <Button
+                          onClick={() => handleCancel(booking._id)}
+                          className="gap-2 text-red-500"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+
+                    {booking.status === "cancelled" && (
+                      <span className="text-sm text-gray-500 italic">
+                        Booking cancelled
+                      </span>
+                    )}
+
+                    {booking.status === "completed" && (
+                      <span className="text-sm text-gray-500 italic">
+                        Booking completed
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {pagination && (
+            <Pagination 
+              pagination={pagination} 
+              onPageChange={handlePageChange} 
+            />
+          )}
+        </>
       )}
 
       {/* Edit Booking Modal */}
