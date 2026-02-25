@@ -9,7 +9,6 @@ export function UserLayout() {
   const { user, logout } = useAuth()
   const textColor = location.pathname === '/signin' || location.pathname === "/signup" ? "text-white" : 'text-primary'
   const bgColor = location.pathname === '/signin' || location.pathname === "/signup" ? "bg-white" : 'bg-primary'
-  console.log(user)
   return (
     <div className="h-full grid grid-rows-[auto_1fr_auto] bg-gray-50">
       {/* Header */}

@@ -173,7 +173,6 @@ export function CustomerSettingsPage() {
       });
       setIsEditingPassword(false);
     } catch {
-      console.log("error")
     }
   };
 

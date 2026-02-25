@@ -236,6 +236,7 @@ export type TCustomerInfo = {
   lastName: string;
   email: string;
   phone: string;
+  notes?: string;
 };
 
 export type TCreateBooking = {
@@ -247,8 +248,8 @@ export type TCreateBooking = {
   bookingDate: string;
   startTime: string;
   customerInfo: TCustomerInfo;
-  notes: string;
   verificationCode: string;
+  notes?: string;
 };
 
 export type TUpdateBooking = Omit<TCreateBooking, 'verificationCode'>

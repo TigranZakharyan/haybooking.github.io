@@ -7,7 +7,7 @@ import {
   Container,
   SwitchTabs,
 } from "@/components";
-import type { TBooking, TBookingStatus } from "@/types";
+import type { TBooking, TBookingStatus, TBusiness } from "@/types";
 import { bookingService, businessService } from "@/services/api";
 
 type FilterType = "all" | TBookingStatus;
@@ -22,7 +22,7 @@ export function MyBookingsPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedBooking, setSelectedBooking] = useState<TBooking | null>(null);
-  const [fullBusinessData, setFullBusinessData] = useState<any>(null);
+  const [fullBusinessData, setFullBusinessData] = useState<TBusiness | null>();
   const [loadingBusiness, setLoadingBusiness] = useState<boolean>(false);
 
   const fetchBookings = async () => {
