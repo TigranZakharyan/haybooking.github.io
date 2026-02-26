@@ -10,7 +10,7 @@ export function UserLayout() {
   const textColor = location.pathname === '/signin' || location.pathname === "/signup" ? "text-white" : 'text-primary'
   const bgColor = location.pathname === '/signin' || location.pathname === "/signup" ? "bg-white" : 'bg-primary'
   return (
-    <div className="h-full grid grid-rows-[auto_1fr_auto] bg-gray-50">
+    <div className="min-h-full h-auto grid grid-rows-[auto_1fr_auto] bg-gray-50">
       {/* Header */}
       <header className="py-8 relative z-2">
         <Container className="flex justify-between items-center">

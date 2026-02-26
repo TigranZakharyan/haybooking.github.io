@@ -109,7 +109,7 @@ export function BusinessPage() {
 
   return (
     <>
-      <div className="w-full">
+      <div className="w-full h-full">
         {/* Hero Image Section */}
         <div className="relative h-64 md:h-80 lg:h-96 w-full bg-gradient-to-br from-primary to-secondary">
           {business.logo?.url ? (
