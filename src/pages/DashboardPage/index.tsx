@@ -5,6 +5,8 @@ import { businessService, bookingService } from "../../services/api";
 import { BookingCard } from "./BookingCard";
 import { ChangeStatusModal } from "./ChangeStatusModal";
 import type { TBooking, TBookingStatus, TBusiness } from "@/types";
+import { Button } from "@/components";
+import { Link } from "react-router-dom";
 
 interface FilterValues {
   branch: string;
@@ -168,6 +170,16 @@ export function DashboardPage() {
     setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
+  const baseURL = window.location.protocol + "//" + window.location.hostname;
+
+  const handleCopyLink = (link: string) => {
+    try {
+      navigator.clipboard.writeText(link);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -176,11 +188,12 @@ export function DashboardPage() {
     );
   }
 
+
   return (
     <div className="h-full overflow-hidden">
-      <div className="h-full grid grid-cols-1 lg:grid-cols-[1fr_minmax(300px,350px)] gap-6">
+      <div className="h-full grid grid-cols-1 lg:grid-cols-[1fr_minmax(300px,350px)] gap-2">
         {/* Left Column - Filter and Bookings */}
-        <div className="h-full flex flex-col gap-6 min-h-0">
+        <div className="h-full flex flex-col gap-2 min-h-0">
           {/* Filter Component - Fixed */}
           <div className="flex-shrink-0">
             <Filter
@@ -211,6 +224,16 @@ export function DashboardPage() {
                 });
               }}
             />
+          </div>
+
+          <div className="flex justify-between items-center bg-primary/10 px-3 py-2 rounded-xl">
+            <div>
+              <h6>Booking Link:</h6>
+              <Link to={"/business/" + business?.bookingLink || "#"} replace className="text-liberty">
+                {baseURL}/business/{business?.bookingLink}
+              </Link>
+            </div>
+            <Button variant="liberty" onClick={() => handleCopyLink(`${baseURL}/business/${business?.bookingLink}`)}>Copy</Button>
           </div>
 
           {/* Bookings List - Scrollable */}
