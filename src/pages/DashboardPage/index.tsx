@@ -172,60 +172,62 @@ export function DashboardPage() {
       </div>
     );
   }
-  console.log(services)
+
   return (
     <div className="h-full overflow-hidden">
       <div className="h-full grid grid-cols-1 lg:grid-cols-[1fr_minmax(300px,350px)] gap-2">
         <div className="h-full flex flex-col gap-2 min-h-0">
           <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm min-h-0">
 
-            {/* HEADER WITH QUICK BOOKING BAR */}
-            <div className="flex flex-col gap-3 p-6 border-b border-gray-100">
+            {/* HEADER — title left, bar centered, spacer right */}
+            <div className="relative flex items-center gap-4 px-6 py-4 border-b border-gray-100">
 
-              {/* Top row: title + count */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-light text-gray-700">Bookings</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {filteredBookings.length} booking
-                    {filteredBookings.length !== 1 ? "s" : ""}
-                    {selectedDate && (
-                      <span className="ml-2 text-teal-600">
-                        on {selectedDate.toLocaleDateString()}
-                      </span>
-                    )}
-                  </p>
-                </div>
+              {/* Left: title */}
+              <div className="flex-shrink-0">
+                <h2 className="text-2xl font-light text-gray-700">Bookings</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {filteredBookings.length} booking
+                  {filteredBookings.length !== 1 ? "s" : ""}
+                  {selectedDate && (
+                    <span className="ml-2 text-teal-600">
+                      on {selectedDate.toLocaleDateString()}
+                    </span>
+                  )}
+                </p>
               </div>
 
-              {/* QuickBookingBar — full width, replaces Filter */}
+              {/* Center: QuickBookingBar */}
               {business && (
-                <QuickBookingBar
-                  business={business}
-                  branchOptions={[
-                    { label: "All Branches", value: "all" },
-                    ...branches.map((b) => ({
-                      label: b.address?.street || b.address?.city || "Branch",
-                      value: b._id,
-                    })),
-                  ]}
-                  serviceOptions={[
-                    { label: "All Services", value: "all" },
-                    ...services.map((s) => ({
-                      label: s.name,
-                      value: s._id,
-                    })),
-                  ]}
-                  specialistOptions={[
-                    { label: "All Specialists", value: "all" },
-                    ...specialists.map((s) => ({
-                      label: s.name,
-                      value: s._id,
-                    })),
-                  ]}
-                  onFilterChange={handleFilterChange}
-                  onBooked={fetchBookings}
-                />
+                <div className="flex-1 flex justify-center">
+                  <div className="w-full max-w-3xl">
+                    <QuickBookingBar
+                      business={business}
+                      branchOptions={[
+                        { label: "All Branches", value: "all" },
+                        ...branches.map((b) => ({
+                          label: b.address?.street || b.address?.city || "Branch",
+                          value: b._id,
+                        })),
+                      ]}
+                      serviceOptions={[
+                        { label: "All Services", value: "all" },
+                        ...services.map((s) => ({
+                          label: s.name,
+                          value: s._id,
+                        })),
+                      ]}
+                      specialistOptions={[
+                        { label: "All Specialists", value: "all" },
+                        ...specialists.map((s) => ({
+                          label: s.name,
+                          value: s._id,
+                        })),
+                      ]}
+                      onFilterChange={handleFilterChange}
+                      onBooked={fetchBookings}
+                    />
+                  </div>
+                </div>
               )}
             </div>
 
