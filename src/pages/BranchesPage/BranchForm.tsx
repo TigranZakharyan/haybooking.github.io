@@ -1,6 +1,7 @@
-import { MapPin, Phone, Clock, X, Trash2, Plus } from "lucide-react";
+import { MapPin, Phone, Clock, X, Trash2 } from "lucide-react";
 import { Card, Button, Input, Select } from "@/components";
 import { SwitchTabs } from "@/components/SwitchTabs";
+import { PhoneInput } from "@/components/PhoneInput";
 import type { TBranch, TCreateBranch, TWorkingHour } from "@/types";
 import { cities, countries, weekdays } from "@/constants";
 import { useState, useCallback, useMemo } from "react";
@@ -121,9 +122,9 @@ export const BranchForm = ({
     }
   }, [form, errors.phones, setForm]);
 
-  const updatePhone = useCallback((index: number, value: string) => {
+  const updatePhone = useCallback((index: number, value: string | null) => {
     const updated = [...form.phones];
-    updated[index] = value;
+    updated[index] = value || "";
     setForm({ ...form, phones: updated });
     
     if (errors.phones?.[index]) {
@@ -344,7 +345,6 @@ export const BranchForm = ({
                   className="text-sm flex items-center gap-1.5"
                   disabled={form.phones.length >= 5}
                 >
-                  <Plus className="w-4 h-4" />
                   Add Phone
                 </Button>
               </div>
@@ -353,13 +353,13 @@ export const BranchForm = ({
                 {form.phones.map((phone, i) => (
                   <div key={i} className="flex gap-2 items-start">
                     <div className="flex-1">
-                      <Input
-                        placeholder="e.g., +374980905444"
-                        value={phone}
-                        onChange={(e) => updatePhone(i, e.target.value)}
+                      <PhoneInput
                         label={i === 0 ? "Primary Phone" : `Additional Phone ${i}`}
+                        hint={i === 0 ? "Main contact number for this branch" : undefined}
                         error={errors.phones?.[i]}
                         required={i === 0}
+                        value={phone}
+                        onChange={(value) => updatePhone(i, value)}
                       />
                     </div>
                     {form.phones.length > 1 && (
@@ -392,7 +392,6 @@ export const BranchForm = ({
                     onClick={addPhone}
                     className="text-sm"
                   >
-                    <Plus className="w-4 h-4 mr-1.5" />
                     Add First Phone
                   </Button>
                 </div>

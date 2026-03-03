@@ -1,11 +1,18 @@
 import { useState, useEffect } from "react";
-import { businessService, specialistService, uploadService } from "@/services/api";
-import { Plus } from "lucide-react";
+import {
+  businessService,
+  specialistService,
+  uploadService,
+} from "@/services/api";
 import { Button, Input } from "@/components";
 import { SectionTitle, Select, Card } from "@/components";
 import { SpecialistCard } from "./SpecialistCard";
-import type { TBranch, TCreateSpecialist, TBusiness, TSpecialist } from "@/types";
-
+import type {
+  TBranch,
+  TCreateSpecialist,
+  TBusiness,
+  TSpecialist,
+} from "@/types";
 
 interface ValidationErrors {
   specialistName: string;
@@ -19,7 +26,8 @@ export const SpecialistsPage = () => {
   const [services, setServices] = useState<TBusiness["services"]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [creatingSpecialist, setCreatingSpecialist] = useState<boolean>(false);
-  const [editingSpecialist, setEditingSpecialist] = useState<TSpecialist | null>(null);
+  const [editingSpecialist, setEditingSpecialist] =
+    useState<TSpecialist | null>(null);
   const [specialistImageUploading, setSpecialistImageUploading] = useState<
     Record<string, boolean>
   >({});
@@ -93,7 +101,7 @@ export const SpecialistsPage = () => {
 
   const handleSpecialistImageChange = async (
     specialistId: string,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,14 +115,14 @@ export const SpecialistsPage = () => {
 
     setSpecialistImageUploading((prev) => ({ ...prev, [specialistId]: true }));
     try {
-      const image = await uploadService.uploadSpecialistPhoto(
+      const photo = await uploadService.uploadSpecialistPhoto(
         specialistId,
-        formData
+        formData,
       );
 
-      if (image) {
+      if (photo) {
         setSpecialists((prev) =>
-          prev.map((s) => (s._id === specialistId ? { ...s, image } : s))
+          prev.map((s) => (s._id === specialistId ? { ...s, photo } : s)),
         );
       }
     } catch (err: any) {
@@ -132,7 +140,12 @@ export const SpecialistsPage = () => {
     try {
       await uploadService.deleteSpecialistPhoto(specialistId);
       setSpecialists((prev) =>
-        prev.map((s) => (s._id === specialistId ? { ...s, image: null } : s))
+        prev.map((s) => (s._id === specialistId ? { ...s, photo: 
+          {
+            url: '',
+            key: ''
+          }
+         } : s)),
       );
     } catch (err: any) {
       console.error("Failed to delete specialist image:", err);
@@ -161,9 +174,8 @@ export const SpecialistsPage = () => {
 
     setCreatingSpecialist(true);
     try {
-      const createdSpecialist = await specialistService.createSpecialist(
-        newSpecialist
-      );
+      const createdSpecialist =
+        await specialistService.createSpecialist(newSpecialist);
 
       setSpecialists((prev) => [...prev, createdSpecialist]);
 
@@ -225,14 +237,14 @@ export const SpecialistsPage = () => {
     try {
       const updatedSpecialist = await specialistService.updateSpecialist(
         editingSpecialist._id,
-        newSpecialist
+        newSpecialist,
       );
 
       // Update specialist in state locally
       setSpecialists((prev) =>
         prev.map((s) =>
-          s._id === editingSpecialist._id ? updatedSpecialist : s
-        )
+          s._id === editingSpecialist._id ? updatedSpecialist : s,
+        ),
       );
 
       // Reset form with current base branch
@@ -287,15 +299,15 @@ export const SpecialistsPage = () => {
 
   const handleToggleSpecialistActive = async (
     specialistId: string,
-    currentStatus: boolean
+    currentStatus: boolean,
   ) => {
     const newStatus = !currentStatus;
 
     // Optimistically update UI
     setSpecialists((prev) =>
       prev.map((s) =>
-        s._id === specialistId ? { ...s, isActive: newStatus } : s
-      )
+        s._id === specialistId ? { ...s, isActive: newStatus } : s,
+      ),
     );
 
     try {
@@ -308,8 +320,8 @@ export const SpecialistsPage = () => {
       // Revert on error
       setSpecialists((prev) =>
         prev.map((s) =>
-          s._id === specialistId ? { ...s, isActive: currentStatus } : s
-        )
+          s._id === specialistId ? { ...s, isActive: currentStatus } : s,
+        ),
       );
     }
   };
@@ -351,14 +363,14 @@ export const SpecialistsPage = () => {
   }));
   // Filter services by selected branch
   const availableServices = services.filter(
-    (service) => service.branch === newSpecialist.branch && service.isActive
+    (service) => service.branch === newSpecialist.branch && service.isActive,
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex h-full gap-5">
       {/* Existing Specialists */}
       {specialists.length > 0 && (
-        <Card>
+        <Card className="flex-1">
           <SectionTitle
             title="Team Members"
             subtitle="Manage your team members and specialists"
@@ -373,11 +385,13 @@ export const SpecialistsPage = () => {
                 onImageChange={(e) =>
                   handleSpecialistImageChange(specialist._id, e)
                 }
-                onImageDelete={() => handleDeleteSpecialistImage(specialist._id)}
+                onImageDelete={() =>
+                  handleDeleteSpecialistImage(specialist._id)
+                }
                 onToggleActive={() =>
                   handleToggleSpecialistActive(
                     specialist._id,
-                    specialist.isActive
+                    specialist.isActive,
                   )
                 }
                 onEdit={() => handleEditSpecialist(specialist)}
@@ -389,7 +403,7 @@ export const SpecialistsPage = () => {
       )}
 
       {/* Add/Edit Specialist Form */}
-      <Card>
+      <Card className="flex flex-1 flex-col">
         <div id="edit-specialist">
           <SectionTitle
             title={
@@ -403,135 +417,139 @@ export const SpecialistsPage = () => {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 flex flex-col justify-between">
           {/* Specialist Name */}
-          <Input
-            required
-            label="Name"
-            variant="primary"
-            placeholder="e.g., John Doe"
-            value={newSpecialist.name}
-            onChange={(e) => {
-              setNewSpecialist({ ...newSpecialist, name: e.target.value });
-              setValidationErrors((prev) => ({
-                ...prev,
-                specialistName: validateSpecialistName(e.target.value),
-              }));
-            }}
-            error={validationErrors.specialistName}
-          />
+          <div className="space-y-4">
+            <Input
+              required
+              label="Name"
+              variant="primary"
+              placeholder="e.g., John Doe"
+              value={newSpecialist.name}
+              onChange={(e) => {
+                setNewSpecialist({ ...newSpecialist, name: e.target.value });
+                setValidationErrors((prev) => ({
+                  ...prev,
+                  specialistName: validateSpecialistName(e.target.value),
+                }));
+              }}
+              error={validationErrors.specialistName}
+            />
 
-          {/* Branch Selection */}
-          {branchOptions.length > 0 && (
+            {/* Branch Selection */}
+            {branchOptions.length > 0 && (
+              <div>
+                <Select
+                  options={branchOptions}
+                  label="Branch"
+                  required
+                  variant="primary"
+                  className="w-full"
+                  value={newSpecialist.branch}
+                  onChange={(value) => {
+                    setNewSpecialist({
+                      ...newSpecialist,
+                      branch: value,
+                      services: [],
+                    });
+                    setValidationErrors((prev) => ({
+                      ...prev,
+                      specialistBranch: validateSpecialistBranch(value),
+                      specialistServices: "",
+                    }));
+                  }}
+                />
+                {validationErrors.specialistBranch && (
+                  <p className="mt-1.5 text-sm text-red-600">
+                    {validationErrors.specialistBranch}
+                  </p>
+                )}
+                <p className="text-xs text-gray-600 mt-2">
+                  Select branch this team member will be assigned to
+                </p>
+              </div>
+            )}
+
+            {/* Services Selection */}
             <div>
-              <Select
-                options={branchOptions}
-                label="Branch"
-                required
-                variant="primary"
-                className="w-full"
-                value={newSpecialist.branch}
-                onChange={(value) => {
-                  setNewSpecialist({
-                    ...newSpecialist,
-                    branch: value,
-                    services: [],
-                  });
-                  setValidationErrors((prev) => ({
-                    ...prev,
-                    specialistBranch: validateSpecialistBranch(value),
-                    specialistServices: "",
-                  }));
-                }}
-              />
-              {validationErrors.specialistBranch && (
+              <label className="block text-sm font-medium mb-2 tracking-wide">
+                Services <span className="text-red-500">*</span>
+              </label>
+              {newSpecialist.branch && availableServices.length === 0 && (
+                <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">
+                  No active services available for the selected branch. Please
+                  add services first.
+                </div>
+              )}
+              {newSpecialist.branch && availableServices.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600 mb-3">
+                    Select services this team member will provide
+                  </p>
+                  <div className="space-y-2">
+                    {availableServices.map((service) => (
+                      <label
+                        key={service._id}
+                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                          newSpecialist.services.includes(service._id)
+                            ? "bg-blue-50 border-blue-300"
+                            : "bg-white border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={newSpecialist.services.includes(
+                              service._id,
+                            )}
+                            onChange={() => handleServiceToggle(service._id)}
+                            className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer"
+                          />
+                          <span className="text-sm font-medium text-gray-900">
+                            {service.name}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          ${service.price?.amount?.toFixed(2) ?? "0.00"}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {validationErrors.specialistServices && (
                 <p className="mt-1.5 text-sm text-red-600">
-                  {validationErrors.specialistBranch}
+                  {validationErrors.specialistServices}
                 </p>
               )}
-              <p className="text-xs text-gray-600 mt-2">
-                Select branch this team member will be assigned to
-              </p>
             </div>
-          )}
 
-          {/* Services Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-2 tracking-wide">
-              Services <span className="text-red-500">*</span>
-            </label>
-            {newSpecialist.branch && availableServices.length === 0 && (
-              <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-xl">
-                No active services available for the selected branch. Please add
-                services first.
-              </div>
-            )}
-            {newSpecialist.branch && availableServices.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-gray-600 mb-3">
-                  Select services this team member will provide
-                </p>
-                <div className="space-y-2">
-                  {availableServices.map((service) => (
-                    <label
-                      key={service._id}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                        newSpecialist.services.includes(service._id)
-                          ? "bg-blue-50 border-blue-300"
-                          : "bg-white border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <input
-                          type="checkbox"
-                          checked={newSpecialist.services.includes(service._id)}
-                          onChange={() => handleServiceToggle(service._id)}
-                          className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer"
-                        />
-                        <span className="text-sm font-medium text-gray-900">
-                          {service.name}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        ${service.price?.amount?.toFixed(2) ?? "0.00"}
-                      </span>
-                    </label>
-                  ))}
+            {/* Team Member Active */}
+            <div className="border border-gray-200 rounded-lg p-3 bg-white">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newSpecialist.isActive !== false}
+                  onChange={(e) =>
+                    setNewSpecialist({
+                      ...newSpecialist,
+                      isActive: e.target.checked,
+                    })
+                  }
+                  className="h-5 w-5 text-green-600 rounded border-gray-300 cursor-pointer mt-0.5"
+                />
+                <div>
+                  <span className="block text-sm font-semibold text-gray-900">
+                    Team Member Active
+                  </span>
+                  <p className="text-xs text-gray-600 mt-1">
+                    When unchecked, this team member will be hidden and cannot
+                    be assigned to bookings. Useful for temporarily disabling
+                    team members without deleting them.
+                  </p>
                 </div>
-              </div>
-            )}
-            {validationErrors.specialistServices && (
-              <p className="mt-1.5 text-sm text-red-600">
-                {validationErrors.specialistServices}
-              </p>
-            )}
-          </div>
-
-          {/* Team Member Active */}
-          <div className="border border-gray-200 rounded-lg p-3 bg-white">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={newSpecialist.isActive !== false}
-                onChange={(e) =>
-                  setNewSpecialist({
-                    ...newSpecialist,
-                    isActive: e.target.checked,
-                  })
-                }
-                className="h-5 w-5 text-green-600 rounded border-gray-300 cursor-pointer mt-0.5"
-              />
-              <div>
-                <span className="block text-sm font-semibold text-gray-900">
-                  Team Member Active
-                </span>
-                <p className="text-xs text-gray-600 mt-1">
-                  When unchecked, this team member will be hidden and cannot be
-                  assigned to bookings. Useful for temporarily disabling team
-                  members without deleting them.
-                </p>
-              </div>
-            </label>
+              </label>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -551,7 +569,6 @@ export const SpecialistsPage = () => {
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
                   <span>
                     {editingSpecialist
                       ? "Update Team Member"

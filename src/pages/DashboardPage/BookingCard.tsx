@@ -48,7 +48,7 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="bg-white border-2 border-primary rounded-lg p-4 hover:shadow-md transition-shadow">
       {/* Header - Time and Status */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">

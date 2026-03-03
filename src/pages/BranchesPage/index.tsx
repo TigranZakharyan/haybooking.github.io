@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { branchesService, businessService } from "@/services/api";
-import { Plus } from "lucide-react";
 import { Button, Card } from "@/components";
 import type { TBranch, TCreateBranch } from "@/types";
 import { useAuth } from "@/context/AuthContext";
@@ -148,14 +147,13 @@ export const BranchesPage = () => {
           onClick={handleAddNew}
           className="flex items-center gap-2"
         >
-          <Plus className="w-4 h-4" />
-          Add TBranch
+          Add Branch
         </Button>
       </div>
 
       {/* Two Column Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[minmax(300px,1fr)_2fr] gap-5 overflow-hidden">
-        {/* Left Column - TBranch List */}
+        {/* Left Column - Branch List */}
         <BranchList
           branches={branches}
           selectedBranch={selectedBranch}

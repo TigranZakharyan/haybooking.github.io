@@ -1,9 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MapPin, Phone, Mail, Clock, DollarSign, X } from "lucide-react";
+import { MapPin, Phone, Clock, DollarSign, X } from "lucide-react";
+import { PhoneInput } from "@/components/PhoneInput";
 import { bookingService } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { formatPhone, isValidPhone, isValidEmail } from "@/services/validation";
-import type { TBusiness, TCustomerInfo, TService, TSpecialist, TBooking } from "@/types";
+import type {
+  TBusiness,
+  TCustomerInfo,
+  TService,
+  TSpecialist,
+  TBooking,
+} from "@/types";
 import { months, weekdays } from "@/constants";
 
 interface Props {
@@ -12,6 +19,7 @@ interface Props {
   mode?: "create" | "edit";
   onClose: () => void;
   onConfirmed: (booking: TBooking) => void;
+  selectedBranch?: any;
 }
 
 const STEPS = [
@@ -100,16 +108,21 @@ function canGoToStep(
 
 // ── Service icon helper ───────────────────────────────────────────────────────
 
-export function serviceIcon(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes("tooth") || n.includes("fill") || n.includes("dental"))
-    return "🦷";
-  if (n.includes("scal") || n.includes("clean")) return "🔬";
-  if (n.includes("hair") || n.includes("cut")) return "✂️";
-  if (n.includes("color") || n.includes("dye")) return "🎨";
-  if (n.includes("massage") || n.includes("spa")) return "💆";
-  if (n.includes("nail") || n.includes("manicure")) return "💅";
-  return "✦";
+export function Icon({ url, name }: { url: string; name: string }) {
+  if (url) {
+    return <img src={url} className="w-8 h-8 rounded-full" />;
+  }
+  return (
+    <div className="w-8 h-8 rounded-full uppercase text-center flex items-center justify-center bg-primary">
+      <span className="font-bold text-white text-sm">
+        {name
+          .split(" ")
+          .slice(0, 2)
+          .map((e) => e[0])
+          .join("")}
+      </span>
+    </div>
+  );
 }
 
 interface ScrollPickerProps {
@@ -250,6 +263,7 @@ export const BookingModal = ({
   onConfirmed,
   editBooking,
   mode = "create",
+  selectedBranch: preSelectedBranch,
 }: Props) => {
   const { user } = useAuth();
   const isEditMode = mode === "edit" && !!editBooking;
@@ -287,12 +301,17 @@ export const BookingModal = ({
 
   const initialData = initializeFromBooking();
 
-  const [step, setStep] = useState(1); // Skip branch selection in edit mode
+  // Determine initial step - skip to step 2 if branch is pre-selected
+  const getInitialStep = () => {
+    if (preSelectedBranch) return 2;
+    return 1;
+  };
 
+  const [step, setStep] = useState(getInitialStep());
 
-  // Branch selection
+  // Branch selection - initialize with preSelectedBranch if provided
   const [selectedBranch, setSelectedBranch] = useState<any>(
-    initialData?.branch || null,
+    initialData?.branch || preSelectedBranch || null,
   );
 
   const [selectedService, setSelectedService] = useState<TService | null>(
@@ -390,11 +409,16 @@ export const BookingModal = ({
 
   // Auto-select branch if only one exists (only in create mode)
   useEffect(() => {
-    if (!isEditMode && business.branches && business.branches.length === 1) {
+    if (
+      !isEditMode &&
+      !preSelectedBranch &&
+      business.branches &&
+      business.branches.length === 1
+    ) {
       setSelectedBranch(business.branches[0]);
       setStep(2);
     }
-  }, [business.branches, isEditMode]);
+  }, [business.branches, isEditMode, preSelectedBranch]);
 
   // Reset specialist when branch changes (only in create mode)
   useEffect(() => {
@@ -434,24 +458,24 @@ export const BookingModal = ({
   // ── Handlers ────────────────────────────────────────────────────────────────
 
   // Filter specialists by branch AND service
-  const filteredSpecialists: TSpecialist[] = (business.specialists ?? []).filter(
-    (specialist) => {
-      // First check if specialist belongs to selected branch
-      if (selectedBranch && specialist.branch !== selectedBranch._id) {
-        return false;
-      }
+  const filteredSpecialists: TSpecialist[] = (
+    business.specialists ?? []
+  ).filter((specialist) => {
+    // First check if specialist belongs to selected branch
+    if (selectedBranch && specialist.branch !== selectedBranch._id) {
+      return false;
+    }
 
-      // Then check if they offer the selected service
-      if (!selectedService) return true;
+    // Then check if they offer the selected service
+    if (!selectedService) return true;
 
-      if (!specialist.services?.length) return false;
+    if (!specialist.services?.length) return false;
 
-      return specialist.services.some((svc) => {
-        const id = typeof svc === "string" ? svc : svc._id;
-        return id === selectedService._id;
-      });
-    },
-  );
+    return specialist.services.some((svc) => {
+      const id = typeof svc === "string" ? svc : svc._id;
+      return id === selectedService._id;
+    });
+  });
 
   const selectBranch = (branch: any) => {
     setSelectedBranch(branch);
@@ -504,6 +528,11 @@ export const BookingModal = ({
     const value = key === "phone" ? formatPhone(raw) : raw;
     setCustomerInfo((prev) => ({ ...prev, [key]: value }));
     setInfoErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const handlePhoneChange = (value: string | null) => {
+    setCustomerInfo((prev) => ({ ...prev, phone: value || "" }));
+    setInfoErrors((prev) => ({ ...prev, phone: undefined }));
   };
 
   const sendVerificationCode = async () => {
@@ -565,7 +594,7 @@ export const BookingModal = ({
     const firstName = customerInfo.firstName;
     const lastName = customerInfo.lastName;
     const booking = await bookingService.createBooking({
-      businessId: business._id,
+      businessId: business.id,
       branchId: selectedBranch?._id,
       serviceId: selectedService._id,
       specialistId: selectedSpecialist._id,
@@ -676,8 +705,7 @@ export const BookingModal = ({
   const today = new Date(new Date().setHours(0, 0, 0, 0));
 
   // Get current working hours from selected branch
-  const currentBranchWorkingHours =
-    selectedBranch?.workingHours || business.workingHours;
+  const currentBranchWorkingHours = selectedBranch?.workingHours;
 
   // Filter services by branch
   const branchServices = (business.services ?? []).filter(
@@ -712,12 +740,6 @@ export const BookingModal = ({
                   {
                     Icon: Phone,
                     text: selectedBranch?.phones?.[0] || business.phone,
-                  },
-                  {
-                    Icon: Mail,
-                    text:
-                      business.owner?.email ??
-                      `info@${business.businessName.toLowerCase().replace(/\s/g, "")}.com`,
                   },
                 ].map(({ Icon, text }, idx) => (
                   <div key={idx} className="flex items-center gap-2.5">
@@ -801,13 +823,12 @@ export const BookingModal = ({
                         ].join(" ")}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                            {branch.address?.city?.charAt(0) || "B"}
-                          </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-semibold text-sm text-[#3D2B2B]">
-                                {branch.address?.city || "Branch"}
+                                {branch.address?.street}{" "}
+                                {branch.address?.state &&
+                                  `, ${branch.address.state}`}
                               </p>
                               {branch.isBaseBranch && (
                                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
@@ -816,9 +837,7 @@ export const BookingModal = ({
                               )}
                             </div>
                             <p className="text-xs text-gray-600 mb-2">
-                              {branch.address?.street}, {branch.address?.city}
-                              {branch.address?.state &&
-                                `, ${branch.address.state}`}
+                              {branch.address?.city}
                             </p>
                             {branch.phones && branch.phones.length > 0 && (
                               <div className="flex items-center gap-1.5 text-xs text-primary">
@@ -886,10 +905,11 @@ export const BookingModal = ({
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg opacity-80">
-                              {serviceIcon(service.name)}
-                            </span>
-                            <h4 className="font-semibold text-base">
+                            <Icon
+                              url={service?.image?.url}
+                              name={service.name}
+                            />
+                            <h4 className="font-semibold text-base text-white">
                               {service.name}
                             </h4>
                           </div>
@@ -953,18 +973,14 @@ export const BookingModal = ({
                                 : "border-[#e5dada] bg-white hover:border-primary hover:bg-primary/5",
                             ].join(" ")}
                           >
-                            <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                              {specialist.name.charAt(0)}
-                            </div>
+                            <Icon
+                              url={specialist?.photo?.url}
+                              name={specialist.name}
+                            />
                             <div className="flex-1">
                               <p className="font-semibold text-sm text-[#3D2B2B]">
                                 {specialist.name}
                               </p>
-                              {specialist.title && (
-                                <p className="text-xs text-primary">
-                                  {specialist.title}
-                                </p>
-                              )}
                             </div>
                             {/* Custom radio */}
                             <div
@@ -1150,7 +1166,6 @@ export const BookingModal = ({
                               length={24}
                               value={customHour}
                               onChange={setCustomHour}
-                              scrollRef={hourRef}
                             />
                             <span className="text-3xl font-bold text-primary/50">
                               :
@@ -1160,7 +1175,6 @@ export const BookingModal = ({
                               length={60}
                               value={customMinute}
                               onChange={setCustomMinute}
-                              scrollRef={minuteRef}
                             />
                             <div className="ml-2 px-4 py-2 bg-white rounded-xl shadow border-2 border-primary/30 font-mono text-xl font-bold min-w-[80px] text-center text-[#3D2B2B]">
                               {customHour && customMinute ? (
@@ -1271,12 +1285,6 @@ export const BookingModal = ({
                       type: "email",
                       placeholder: "john@example.com",
                     },
-                    {
-                      key: "phone",
-                      label: "Phone Number",
-                      type: "tel",
-                      placeholder: "+1 (555) 123-4567",
-                    },
                   ] as const
                 ).map(({ key, label, type, placeholder }) => (
                   <div key={key}>
@@ -1304,6 +1312,18 @@ export const BookingModal = ({
                     )}
                   </div>
                 ))}
+                
+                {/* Phone Input with PhoneInput component */}
+                <div>
+                  <PhoneInput
+                    label="Phone Number"
+                    variant="primary"
+                    required
+                    onChange={handlePhoneChange}
+                    error={infoErrors.phone}
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 text-[#3D2B2B]">
                     Additional Notes (Optional)
@@ -1352,7 +1372,7 @@ export const BookingModal = ({
                 {isEditMode ? (
                   <button
                     onClick={handleSaveEdit}
-                    // disabled={isVerifyingCode}
+                    disabled={isVerifyingCode}
                     className="flex-1 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                   >
                     {isVerifyingCode ? "Updating..." : "Save Changes"}
@@ -1360,7 +1380,7 @@ export const BookingModal = ({
                 ) : (
                   <button
                     onClick={sendVerificationCode}
-                    // disabled={!!sentCode || isSendingCode}
+                    disabled={!!sentCode || isSendingCode}
                     className="flex-1 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                   >
                     {isSendingCode ? "Sending..." : "Next: Verify"}

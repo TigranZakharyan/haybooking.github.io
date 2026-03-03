@@ -247,16 +247,10 @@ export function Filter({
 
   return (
     <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        width: "100%",
-      }}
+      className="flex justify-center items-center"
     >
       <div
-        style={{ display: "flex", alignItems: "center" }}
-        className="bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow"
+        className="flex items-center bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow"
       >
         <FilterItem
           icon={<Building2 size={15} />}

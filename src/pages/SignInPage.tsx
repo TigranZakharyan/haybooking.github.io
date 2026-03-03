@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Phone } from "lucide-react";
-import { Input, DividerWithText, Tabs, Button } from "@/components";
+import { Lock } from "lucide-react";
+import { Input, DividerWithText, Button } from "@/components";
+import { PhoneInput } from "@/components/PhoneInput";
 import { authService } from "@/services/api";
-import type { TLoginCredentials, TOption } from "@/types";
-import { formatPhone, isValidEmail, isValidPhone } from "@/services/validation";
+import type { TLoginCredentials } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 
-type LoginMethod = "email" | "phone";
 
 interface FormErrors {
   email?: string;
@@ -15,17 +14,10 @@ interface FormErrors {
   password?: string;
 }
 
-const tabOptions: TOption[] = [
-  { value: "email", label: "Email" },
-  { value: "phone", label: "Phone Number" },
-];
-
 export function SignInPage() {
   const navigate = useNavigate();
   const auth = useAuth();
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>("email");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,19 +27,17 @@ export function SignInPage() {
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (loginMethod === "email") {
-      if (!email) newErrors.email = "Email is required";
-      else if (!isValidEmail(email)) newErrors.email = "Enter a valid email";
-    } else {
-      if (!phone) newErrors.phone = "Phone number is required";
-      else if (!isValidPhone(phone))
-        newErrors.phone = "Enter a valid phone number";
-    }
+    if (!phone) newErrors.phone = "Phone number is required";
 
     if (!password) newErrors.password = "Password is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePhoneChange = (value: string | null) => {
+    setPhone(value);
+    setErrors((prev) => ({ ...prev, phone: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,10 +46,7 @@ export function SignInPage() {
 
     if (!validate()) return;
 
-    const credential: TLoginCredentials =
-      loginMethod === "email"
-        ? { email, password }
-        : { phone: formatPhone(phone), password };
+    const credential: TLoginCredentials = { phone: phone!, password }
 
     try {
       setServerError("");
@@ -84,44 +71,13 @@ export function SignInPage() {
             <p className="text-liberty mt-2">Welcome Back!</p>
           </div>
 
-          <Tabs
-            tabs={tabOptions}
-            activeTab={loginMethod}
-            onChange={(id) => {
-              setLoginMethod(id as LoginMethod);
-              setErrors({});
-              setServerError("");
-            }}
-          />
-
           <form onSubmit={handleSubmit} className="space-y-4">
-            {loginMethod === "email" ? (
-              <Input
-                label="Email"
-                type="email"
-                icon={Mail}
-                placeholder="Your email"
-                value={email}
-                error={errors.email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setErrors((prev) => ({ ...prev, email: undefined }));
-                }}
-              />
-            ) : (
-              <Input
+              <PhoneInput
                 label="Phone Number"
-                icon={Phone}
-                placeholder="+1 (555) 000-0000"
-                value={phone}
+                required
+                onChange={handlePhoneChange}
                 error={errors.phone}
-                onChange={(e) => {
-                  setPhone(formatPhone(e.target.value));
-                  setErrors((prev) => ({ ...prev, phone: undefined }));
-                }}
               />
-            )}
-
             <Input
               label="Password"
               icon={Lock}

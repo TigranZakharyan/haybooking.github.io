@@ -1,4 +1,4 @@
-import { Card, MapWithCoords } from "@/components";
+import { Badge, Card, MapWithCoords } from "@/components";
 import type { TBranch } from "@/types";
 
 interface BranchMapProps {
@@ -46,11 +46,7 @@ export const BranchMap = ({ branches, selectedBranch }: BranchMapProps) => {
                     `, ${selectedBranch.address.state}`}
                 </p>
               </div>
-              {selectedBranch.isBaseBranch && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
-                  BASE BRANCH
-                </span>
-              )}
+              {selectedBranch.isBaseBranch && <Badge variant="info">Base Branch</Badge>}
             </div>
           </div>
         )}

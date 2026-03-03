@@ -36,7 +36,7 @@ export type TBusinessType = {
 };
 
 export type TAddress = {
-  coordinates: TCoordinates;
+  readonly coordinates: TCoordinates;
   street: string;
   city: string;
   state: string;

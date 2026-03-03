@@ -1,34 +1,31 @@
 import { Link } from "react-router-dom";
-import { Phone, User, Briefcase } from "lucide-react";
+import { User, Briefcase } from "lucide-react";
 import { useState } from "react";
-import { Input, DividerWithText, Button } from "@/components";
+import { DividerWithText, Button } from "@/components";
+import { PhoneInput } from "@/components/PhoneInput";
 import { CustomerStep } from "./CustomerStep";
 import { BusinessStep } from "./BusinessStep";
 import type { TRole } from "@/types";
-import { formatPhone, isValidPhone } from "@/services/validation";
 
 type Step = "phone" | "verify";
 
 export function SignUpPage() {
   const [step, setStep] = useState<Step>("phone");
   const [accountType, setAccountType] = useState<TRole>("customer");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [showPhoneError, setShowPhoneError] = useState(false);
 
-  // Format phone on change
-  const handlePhoneChange = (value: string) => {
-    const formatted = formatPhone(value);
-    setPhone(formatted);
-    if (showPhoneError && isValidPhone(formatted)) {
+  // Handle phone change from PhoneInput
+  const handlePhoneChange = (value: string | null) => {
+    setPhone(value);
+    if (showPhoneError && value) {
       setShowPhoneError(false); // hide error if now valid
     }
   };
 
-  const validPhone = isValidPhone(phone);
-
   const handleNext = () => {
-    if (!validPhone) {
+    if (!phone) {
       setShowPhoneError(true); // show error if phone invalid
       return;
     }
@@ -97,15 +94,12 @@ export function SignUpPage() {
               </div>
 
               {/* Phone */}
-              <Input
+              <PhoneInput
                 label="Phone Number"
                 required
-                icon={Phone}
-                placeholder="+37494623343"
-                value={phone}
-                onChange={(e) => handlePhoneChange(e.target.value)}
                 hint="Enter your phone number with country code"
-                error={showPhoneError && !validPhone ? "Phone number is invalid" : ""}
+                onChange={handlePhoneChange}
+                error={showPhoneError && !phone ? "Phone number is invalid" : ""}
               />
 
               {/* Info */}
@@ -132,14 +126,14 @@ export function SignUpPage() {
             <>
               {accountType === "customer" ? (
                 <CustomerStep
-                  phone={phone}
+                  phone={phone || ""}
                   code={code}
                   setCode={setCode}
                   onBack={() => setStep("phone")}
                 />
               ) : (
                 <BusinessStep
-                  phone={phone}
+                  phone={phone || ""}
                   code={code}
                   setCode={setCode}
                   onBack={() => setStep("phone")}

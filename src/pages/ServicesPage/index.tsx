@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { businessService, serviceService, uploadService } from "@/services/api";
-import { Plus } from "lucide-react";
 import { Button, Input } from "@/components";
 import { NumberInput, SectionTitle, Select, Card } from "@/components";
 import { ServiceCard } from "./ServiceCard";
@@ -325,10 +324,10 @@ export const ServicesPage = () => {
   }));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex h-full gap-5">
       {/* Existing Services */}
       {services.length > 0 && (
-        <Card>
+        <Card className="flex-1">
           <SectionTitle
             title="Your Services"
             subtitle="Manage your service offerings and pricing"
@@ -354,7 +353,7 @@ export const ServicesPage = () => {
       )}
 
       {/* Add/Edit Service Form */}
-      <Card>
+      <Card className="flex-1 overflow-auto">
         <div id="edit-service">
           <SectionTitle
             title={editingService ? "Edit Service" : "Add New Service"}
@@ -612,7 +611,6 @@ export const ServicesPage = () => {
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
                   <span>
                     {editingService ? "Update Service" : "Add Service"}
                   </span>

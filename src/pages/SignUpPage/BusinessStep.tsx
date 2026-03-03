@@ -6,10 +6,10 @@ import {
     Briefcase,
     Phone,
     CheckCircle,
-    Plus,
     Trash2,
 } from "lucide-react";
 import { Button, Input, Select } from "@/components";
+import { PhoneInput } from "@/components/PhoneInput";
 import { nanoid } from "nanoid";
 import { cities, countries } from "@/constants";
 import { formatPhone, isValidPhone, isValidEmail, isValidPasswordLength, isValidPasswordMatch } from "@/services/validation";
@@ -76,7 +76,7 @@ function makeBranch(): TBranchLocal {
             state: "",
             country: "",
             zipCode: "",
-            coordinates: { latitude: "", longitude: "" },
+            coordinates: { latitude: 0, longitude: 0 },
         },
         phones: [""],
         workingHours: [],
@@ -191,12 +191,11 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
         );
     };
 
-    const updatePhone = (branchId: string, phoneIndex: number, value: string) => {
-        const formatted = formatPhone(value);
+    const updatePhone = (branchId: string, phoneIndex: number, value: string | null) => {
         setBranches((prev) =>
             prev.map((b) => {
                 if (b.id !== branchId) return b;
-                const phones = b.phones.map((p, i) => (i === phoneIndex ? formatted : p));
+                const phones = b.phones.map((p, i) => (i === phoneIndex ? (value || "") : p));
                 return { ...b, phones };
             })
         );
@@ -524,18 +523,15 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
                                             {branch.phones.map((phoneValue, phoneIndex) => (
                                                 <div
                                                     key={phoneIndex}
-                                                    className="flex items-center gap-2"
+                                                    className="flex items-start gap-2"
                                                 >
                                                     <div className="flex-1">
-                                                        <Input
-                                                            icon={Phone}
-                                                            value={phoneValue}
-                                                            placeholder="+1 555 123 4567"
-                                                            onChange={(e) =>
+                                                        <PhoneInput
+                                                            onChange={(value) =>
                                                                 updatePhone(
                                                                     branch.id,
                                                                     phoneIndex,
-                                                                    e.target.value
+                                                                    value
                                                                 )
                                                             }
                                                             error={
@@ -566,7 +562,7 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
                                                 onClick={() => addPhone(branch.id)}
                                                 className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
                                             >
-                                                <Plus className="h-4 w-4" /> Add Phone Number
+                                                Add Phone Number
                                             </button>
                                         </div>
                                     </div>
@@ -581,7 +577,7 @@ export function BusinessStep({ phone, code, setCode, onBack }: BusinessStepProps
                         className="w-full flex items-center justify-center gap-2"
                         onClick={addBranch}
                     >
-                        <Plus className="h-4 w-4" /> Add Another Location / Branch
+                        Add Another Location / Branch
                     </Button>
 
                     {submitError && (

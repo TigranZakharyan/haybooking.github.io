@@ -35,32 +35,33 @@ export function BusinessPage() {
 
   const fetchBusiness = async () => {
     if (!bookingLink) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await businessService.getBusinessByLink(bookingLink);
       setBusiness(data);
-      
-      // Auto-select first branch if only one exists
-      if (data.branches?.length === 1) {
-        setSelectedBranchId(data.branches[0]._id);
-      }
     } catch (err) {
       setError(
         (err as any)?.response?.data?.message ||
-          "Failed to load business information"
+          "Failed to load business information",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBookingConfirmed = (booking: TBooking) => {
+  const handleBookingConfirmed = (_booking: TBooking) => {
     setShowBookingModal(false);
-    // You can show a success message or redirect
-    alert(`Booking confirmed! Booking ID: ${booking._id}`);
+  };
+
+  const handleBranchClick = (branchId: string) => {
+    const branch = business?.branches.find((b) => b._id === branchId);
+    if (branch) {
+      setSelectedBranchId(branchId);
+      setShowBookingModal(true);
+    }
   };
 
   if (loading) {
@@ -91,17 +92,15 @@ export function BusinessPage() {
   }
 
   // Convert branches to map points
-  const mapPoints: TMapPoint[] = business.branches.filter((branch) => branch.address.coordinates.latitude).map((branch) => ({
-    id: branch._id,
-    lat: branch.address.coordinates.latitude,
-    lng: branch.address.coordinates.longitude,
-    isBase: branch.isBaseBranch,
-    label: `${branch.address.city} - ${branch.address.street}`,
-  }));
-
-  const selectedMapPoint = selectedBranchId
-    ? mapPoints.find((p) => p.id === selectedBranchId)
-    : undefined;
+  const mapPoints: TMapPoint[] = business.branches
+    .filter((branch) => branch.address.coordinates.latitude)
+    .map((branch) => ({
+      id: branch._id,
+      lat: branch.address.coordinates.latitude,
+      lng: branch.address.coordinates.longitude,
+      isBase: branch.isBaseBranch,
+      label: `${branch.address.city} - ${branch.address.street}`,
+    }));
 
   const selectedBranch = selectedBranchId
     ? business.branches.find((b) => b._id === selectedBranchId)
@@ -124,7 +123,7 @@ export function BusinessPage() {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          
+
           {/* Business Name Overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
             <Container>
@@ -200,136 +199,97 @@ export function BusinessPage() {
             </div>
           </div>
 
-          {/* Services Section */}
-          {business.services.length > 0 && (
-            <div className="bg-white rounded-lg p-6 border border-gray-100">
-              <h2 className="text-xl font-bold text-primary mb-4">
-                Our Services
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {business.services.map((service) => (
-                  <div
-                    key={service._id}
-                    className="border border-gray-100 rounded-lg p-4 hover:border-primary/30 transition-colors"
-                  >
-                    {service.image?.url && (
-                      <img
-                        src={service.image.url}
-                        alt={service.name}
-                        className="w-full h-32 object-cover rounded-lg mb-3"
-                      />
-                    )}
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      {service.name}
-                    </h3>
-                    {service.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {service.description}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1 text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        {service.duration} min
-                      </span>
-                      <span className="flex items-center gap-1 font-bold text-primary">
-                        <DollarSign className="w-4 h-4" />
-                        {service.price.amount}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Branches & Map Section */}
           <div className="bg-white rounded-lg p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-primary mb-4">
-              Our Locations
-            </h2>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Branches List */}
-              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                {business.branches.map((branch) => {
-                  const isSelected = selectedBranchId === branch._id;
-                  const dayOfWeek = new Date().getDay();
-                  const todaySchedule = branch.workingHours.find(
-                    (wh) => wh.dayOfWeek === dayOfWeek
-                  );
+              <div>
+                <h2 className="text-xl font-bold text-primary mb-4">
+                  Select Branch
+                </h2>
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                  {business.branches.map((branch) => {
+                    const isSelected = selectedBranchId === branch._id;
+                    const dayOfWeek = new Date().getDay();
+                    const todaySchedule = branch.workingHours.find(
+                      (wh) => wh.dayOfWeek === dayOfWeek,
+                    );
 
-                  return (
-                    <div
-                      key={branch._id}
-                      onClick={() => setSelectedBranchId(branch._id)}
-                      className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary/5"
-                          : "border-gray-100 hover:border-primary/30"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold flex-shrink-0">
-                          {branch.address.city.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-gray-900">
+                    return (
+                      <div
+                        key={branch._id}
+                        onClick={() => handleBranchClick(branch._id)}
+                        className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/5"
+                            : "border-gray-100 hover:border-primary/30"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-gray-900">
+                                {branch.address.street}
+                                {branch.address.state &&
+                                  `, ${branch.address.state}`}
+                              </h3>
+                              {branch.isBaseBranch && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                                  Main Branch
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">
                               {branch.address.city}
-                            </h3>
-                            {branch.isBaseBranch && (
-                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                                Main Branch
-                              </span>
-                            )}
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            {branch.address.street}
-                            {branch.address.state && `, ${branch.address.state}`}
-                          </p>
                         </div>
+
+                        {/* Today's Hours */}
+                        {todaySchedule && (
+                          <div className="flex items-center gap-2 text-sm mb-2">
+                            <Clock className="w-4 h-4 text-primary" />
+                            <span className="text-gray-600">
+                              {weekdays[dayOfWeek]}:
+                            </span>
+                            <span
+                              className={
+                                todaySchedule.isOpen
+                                  ? "text-green-600 font-medium"
+                                  : "text-red-600 font-medium"
+                              }
+                            >
+                              {todaySchedule.isOpen
+                                ? `${todaySchedule.openTime} - ${todaySchedule.closeTime}`
+                                : "Closed"}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Contact */}
+                        {branch.phones && branch.phones.length > 0 && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Phone className="w-4 h-4" />
+                            <span>{branch.phones[0]}</span>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Today's Hours */}
-                      {todaySchedule && (
-                        <div className="flex items-center gap-2 text-sm mb-2">
-                          <Clock className="w-4 h-4 text-primary" />
-                          <span className="text-gray-600">
-                            {weekdays[dayOfWeek]}:
-                          </span>
-                          <span
-                            className={
-                              todaySchedule.isOpen
-                                ? "text-green-600 font-medium"
-                                : "text-red-600 font-medium"
-                            }
-                          >
-                            {todaySchedule.isOpen
-                              ? `${todaySchedule.openTime} - ${todaySchedule.closeTime}`
-                              : "Closed"}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Contact */}
-                      {branch.phones && branch.phones.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Phone className="w-4 h-4" />
-                          <span>{branch.phones[0]}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Map */}
-              <div className="h-[500px] rounded-lg overflow-hidden border border-gray-100">
-                <MapWithCoords
-                  points={mapPoints}
-                  selectedPoint={selectedMapPoint}
-                />
+              <div>
+                <h2 className="text-xl font-bold text-primary mb-4">
+                  Our Locations
+                </h2>
+                <div className="h-[500px] rounded-lg overflow-hidden border border-gray-100">
+                  <MapWithCoords
+                    points={mapPoints}
+                    selectedPoint={undefined}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -356,7 +316,7 @@ export function BusinessPage() {
                     {selectedBranch.workingHours.map((wh) => {
                       const dayName = weekdays[wh.dayOfWeek];
                       const isToday = wh.dayOfWeek === new Date().getDay();
-                      
+
                       return (
                         <tr
                           key={wh._id}
@@ -382,11 +342,13 @@ export function BusinessPage() {
                             {wh.isOpen ? (
                               <div className="text-gray-700">
                                 {wh.openTime} - {wh.closeTime}
-                                {wh.hasBreak && wh.breakStart && wh.breakEnd && (
-                                  <span className="ml-2 text-sm text-gray-500">
-                                    (Break: {wh.breakStart} - {wh.breakEnd})
-                                  </span>
-                                )}
+                                {wh.hasBreak &&
+                                  wh.breakStart &&
+                                  wh.breakEnd && (
+                                    <span className="ml-2 text-sm text-gray-500">
+                                      (Break: {wh.breakStart} - {wh.breakEnd})
+                                    </span>
+                                  )}
                               </div>
                             ) : (
                               <span className="text-red-600 font-medium">
@@ -402,41 +364,20 @@ export function BusinessPage() {
               </div>
             </div>
           )}
-
-          {/* Book Now Button */}
-          {business.settings.allowOnlineBooking && (
-            <div className="sticky max-w-2xl mx-auto bottom-6 z-10">
-              <div className="bg-white rounded-lg p-4 shadow-lg border border-primary/20">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Ready to book your appointment?
-                    </p>
-                    <p className="font-semibold text-gray-900">
-                      Choose your preferred service and time
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowBookingModal(true)}
-                    className="bg-primary text-white px-8 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 font-semibold whitespace-nowrap"
-                  >
-                    <Calendar className="w-5 h-5" />
-                    Book Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </Container>
       </div>
 
       {/* Booking Modal */}
-      {showBookingModal && (
+      {showBookingModal && business && (
         <BookingModal
           business={business}
           mode="create"
-          onClose={() => setShowBookingModal(false)}
+          onClose={() => {
+            setShowBookingModal(false);
+            setSelectedBranchId(null);
+          }}
           onConfirmed={handleBookingConfirmed}
+          selectedBranch={selectedBranch}
         />
       )}
     </>

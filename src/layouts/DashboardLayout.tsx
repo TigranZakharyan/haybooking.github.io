@@ -12,7 +12,7 @@ import {
   X,
   MapPin,
 } from "lucide-react";
-import { ProfileAvatar } from "@/components";
+import { ProfileAvatar, Tooltip } from "@/components";
 
 const NAV_ITEMS = [
   { label: "Dashboard", Icon: Home, to: "/dashboard" },
@@ -42,19 +42,29 @@ export function DashboardLayout() {
   }, [user]);
 
   if (!user) return null;
-  if(user.role !== "business") return <Navigate to="/" />;
+  if (user.role !== "business") return <Navigate to="/" />;
+
+  const baseURL = window.location.protocol + "//" + window.location.hostname;
+
+  const handleCopyLink = (link: string) => {
+    try {
+      navigator.clipboard.writeText(link);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     return (
-      <div className="flex flex-col h-full overflow-hidden px-3">
+      <div className="flex flex-col h-full overflow-hidden px-3 pb-4">
         {/* Logo */}
-        <Link
-          to="/"
-          onClick={onNavClick}
-          className="flex items-center h-16"
-        >
+        <Link to="/" onClick={onNavClick} className="flex items-center h-16">
           <div className="h-11 px-2 rounded-xl flex items-center justify-center shrink-0">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="w-8 h-8 object-contain"
+            />
           </div>
 
           <span
@@ -97,6 +107,18 @@ export function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
+        {/* Desktop Collapse */}
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className="hidden md:flex items-center justify-center w-8 h-8 mx-2 rounded-xl bg-white shadow-sm border border-black/5 hover:shadow-md transition-shadow duration-200"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <ChevronLeft
+            className={`w-4 h-4 text-gray-500 transition-transform duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+                  ${collapsed ? "rotate-180" : "rotate-0"}
+                  `}
+          />
+        </button>
       </div>
     );
   }
@@ -104,7 +126,6 @@ export function DashboardLayout() {
   return (
     <div className="h-screen flex items-start justify-center p-5 bg-[linear-gradient(145deg,#ded4d7c5_0%,#c2cbcdff_100%)]">
       <div className="w-full flex rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-40px)] relative">
-
         {/* Mobile Overlay */}
         {mobileOpen && (
           <div
@@ -142,11 +163,9 @@ export function DashboardLayout() {
 
         {/* Main Area */}
         <div className="flex flex-col flex-1 min-w-0 min-h-0 bg-white/30">
-
           {/* Header */}
           <header className="flex items-center justify-between px-6 h-16 shrink-0 border-b border-black/5 bg-white/40 backdrop-blur-lg">
             <div className="flex items-center gap-3">
-
               {/* Mobile Hamburger */}
               <button
                 onClick={() => setMobileOpen(true)}
@@ -155,29 +174,21 @@ export function DashboardLayout() {
                 <Menu className="w-5 h-5" />
               </button>
 
-              {/* Desktop Collapse */}
-              <button
-                onClick={() => setCollapsed((c) => !c)}
-                className="hidden md:flex items-center justify-center w-[34px] h-[34px] rounded-xl bg-white shadow-sm border border-black/5 hover:shadow-md transition-shadow duration-200"
-                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                <ChevronLeft
-                  className={`w-4 h-4 text-gray-500 transition-transform duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
-                  ${collapsed ? "rotate-180" : "rotate-0"}
-                  `}
-                />
-              </button>
-
-              <h1 className="text-[17px] font-semibold tracking-tight text-gray-800 font-serif truncate">
-                {user.business?.businessName}
-              </h1>
+              <Tooltip text="Copied!" position="bottom" onClick={() =>
+                    handleCopyLink(
+                      `${baseURL}/business/${user.business?.bookingLink}`,
+                    )
+                  }>
+                <span
+                  className="text-primary"
+                >
+                  {baseURL}/business/{user.business?.bookingLink}
+                </span>
+              </Tooltip>
             </div>
 
             {/* Avatar */}
-            <ProfileAvatar 
-              initials={initials}
-              onLogoutClick={logout}
-            />
+            <ProfileAvatar initials={initials} onLogoutClick={logout} />
           </header>
 
           {/* Content — only this scrolls */}

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, type ChangeEvent } from "react";
 import { Button, Input, Select } from "@/components";
+import { PhoneInput } from "@/components/PhoneInput";
 import { Card } from "../../components/Card";
 import { SectionTitle } from "../../components/SectionTitle";
 import { Edit2, Plus } from "lucide-react";
@@ -36,6 +37,15 @@ export function BusinessTab() {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     };
+
+  // Handle phone number change from PhoneInput
+  const handlePhoneChange = (value: string | null) => {
+    setFormData((prev) => ({ ...prev, phone: value || "" }));
+
+    if (errors.phone) {
+      setErrors((prev) => ({ ...prev, phone: undefined }));
+    }
+  };
 
   // 🔥 INSTANT LOGO UPLOAD
   const handleLogoChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -162,12 +172,13 @@ export function BusinessTab() {
               onChange={handleChange("businessName")}
               error={errors.businessName}
             />
-            <Input
+            <PhoneInput
               required
               label="Phone"
               variant="primary"
+              hint="Main contact number for your business"
               value={formData.phone}
-              onChange={handleChange("phone")}
+              onChange={handlePhoneChange}
               error={errors.phone}
             />
           </div>
