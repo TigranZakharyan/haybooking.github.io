@@ -1,5 +1,5 @@
 import { Calendar } from "@/pages/DashboardPage/Calendar";
-import { Filter } from "@/pages/DashboardPage/Filter";
+import { QuickBookingBar } from "@/pages/DashboardPage/QuickBookingBar";
 import { useState, useEffect } from "react";
 import { businessService, bookingService } from "../../services/api";
 import { BookingCard } from "./BookingCard";
@@ -150,8 +150,19 @@ export function DashboardPage() {
   const services = business?.services || [];
   const specialists = business?.specialists || [];
 
-  const handleFilterChange = (newFilters: Partial<FilterValues>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+  const handleFilterChange = (filterValues: {
+    branch: string | null;
+    service: string | null;
+    specialist: string | null;
+    timeRange: { start: string; end: string };
+  }) => {
+    setFilters((prev) => ({
+      ...prev,
+      branch: filterValues.branch || "all",
+      service: filterValues.service || "all",
+      specialist: filterValues.specialist || "all",
+      timeRange: filterValues.timeRange || { start: "", end: "" },
+    }));
   };
 
   if (loading) {
@@ -161,40 +172,40 @@ export function DashboardPage() {
       </div>
     );
   }
-
+  console.log(services)
   return (
     <div className="h-full overflow-hidden">
       <div className="h-full grid grid-cols-1 lg:grid-cols-[1fr_minmax(300px,350px)] gap-2">
         <div className="h-full flex flex-col gap-2 min-h-0">
           <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm min-h-0">
-            
-            {/* HEADER WITH CENTERED FILTER */}
-            <div className="relative flex items-center justify-between p-6 border-b border-gray-100">
-              
-              {/* Left */}
-              <div>
-                <h2 className="text-2xl font-light text-gray-700">Bookings</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {filteredBookings.length} booking
-                  {filteredBookings.length !== 1 ? "s" : ""}
-                  {selectedDate && (
-                    <span className="ml-2 text-teal-600">
-                      on {selectedDate.toLocaleDateString()}
-                    </span>
-                  )}
-                </p>
+
+            {/* HEADER WITH QUICK BOOKING BAR */}
+            <div className="flex flex-col gap-3 p-6 border-b border-gray-100">
+
+              {/* Top row: title + count */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-light text-gray-700">Bookings</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {filteredBookings.length} booking
+                    {filteredBookings.length !== 1 ? "s" : ""}
+                    {selectedDate && (
+                      <span className="ml-2 text-teal-600">
+                        on {selectedDate.toLocaleDateString()}
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
 
-              {/* Center Filter */}
-              <div className="absolute left-1/2 -translate-x-1/2">
-                <Filter
+              {/* QuickBookingBar — full width, replaces Filter */}
+              {business && (
+                <QuickBookingBar
+                  business={business}
                   branchOptions={[
                     { label: "All Branches", value: "all" },
                     ...branches.map((b) => ({
-                      label:
-                        b.address?.city ||
-                        b.address?.street ||
-                        "Branch",
+                      label: b.address?.street || b.address?.city || "Branch",
                       value: b._id,
                     })),
                   ]}
@@ -212,20 +223,10 @@ export function DashboardPage() {
                       value: s._id,
                     })),
                   ]}
-                  onFilterChange={(filterValues) => {
-                    handleFilterChange({
-                      branch: filterValues.branch || "all",
-                      service: filterValues.service || "all",
-                      specialist: filterValues.specialist || "all",
-                      timeRange:
-                        filterValues.timeRange || { start: "", end: "" },
-                    });
-                  }}
+                  onFilterChange={handleFilterChange}
+                  onBooked={fetchBookings}
                 />
-              </div>
-
-              {/* Right spacer to balance layout */}
-              <div className="w-[200px]" />
+              )}
             </div>
 
             {/* BOOKINGS LIST */}
@@ -244,9 +245,7 @@ export function DashboardPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredBookings
-                    .sort((a, b) =>
-                      a.startTime.localeCompare(b.startTime),
-                    )
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime))
                     .map((booking) => (
                       <BookingCard
                         key={booking._id}
@@ -285,9 +284,7 @@ export function DashboardPage() {
             </div>
             <div className="flex justify-between text-sm">
               <span>Filtered</span>
-              <span className="font-semibold">
-                {filteredBookings.length}
-              </span>
+              <span className="font-semibold">{filteredBookings.length}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Pending</span>
