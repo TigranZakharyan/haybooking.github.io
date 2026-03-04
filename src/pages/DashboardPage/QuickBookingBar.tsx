@@ -3,13 +3,13 @@ import { createPortal } from "react-dom";
 import {
   Building2, Briefcase, User2, CalendarDays, Clock,
   Check, ChevronDown, X, Zap, CheckCircle2, DollarSign,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { bookingService } from "@/services/api";
 import { months, weekdays } from "@/constants";
 import type { TBusiness, TService, TSpecialist, TBooking } from "@/types";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
+// ── Helpers (unchanged) ───────────────────────────────────────────────────────
 function getErrorMessage(err: unknown, fallback: string): string {
   return (
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -28,7 +28,6 @@ interface TimeSlot {
   duration?: number;
 }
 
-// Exact copy from BookingModal
 function generateCalendar(calendarDate: Date): (CalendarDate | null)[] {
   const year = calendarDate.getFullYear();
   const month = calendarDate.getMonth();
@@ -44,18 +43,17 @@ function generateCalendar(calendarDate: Date): (CalendarDate | null)[] {
 }
 
 function SpecialistIcon({ url, name }: { url: string; name: string }) {
-  if (url) return <img src={url} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />;
+  if (url) return <img src={url} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />;
   return (
-    <div className="w-6 h-6 rounded-full bg-teal-700 flex items-center justify-center flex-shrink-0">
-      <span className="text-white text-[10px] font-bold">
+    <div className="w-8 h-8 rounded-full bg-teal-700 flex items-center justify-center flex-shrink-0">
+      <span className="text-white text-xs font-bold">
         {name.split(" ").slice(0, 2).map(e => e[0]).join("")}
       </span>
     </div>
   );
 }
 
-// ── ScrollPicker — exact copy from BookingModal ───────────────────────────────
-
+// ── ScrollPicker (unchanged) ──────────────────────────────────────────────────
 const ScrollPicker = ({ length, value, onChange }: { length: number; value: string; onChange: (v: string) => void }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const itemHeight = 40;
@@ -115,8 +113,7 @@ const ScrollPicker = ({ length, value, onChange }: { length: number; value: stri
   );
 };
 
-// ── Shared portal dropdown shell ──────────────────────────────────────────────
-
+// ── Portal dropdown (desktop, unchanged) ─────────────────────────────────────
 function usePortalDropdown() {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -145,8 +142,7 @@ function usePortalDropdown() {
   return { open, setOpen, pos, btnRef, menuRef, openDropdown };
 }
 
-// ── BookingDropdownTrigger — the pill button in the bar ───────────────────────
-
+// ── All desktop sub-components (BookingTrigger, FilterDropdown, etc.) kept exactly ──
 const BookingTrigger = React.forwardRef<HTMLButtonElement, {
   icon: React.ReactNode;
   label: string;
@@ -177,11 +173,8 @@ const BookingTrigger = React.forwardRef<HTMLButtonElement, {
         {sublabel && <span className="text-[10px] text-gray-400 leading-tight truncate max-w-[120px]">{sublabel}</span>}
       </div>
       {done && onClear ? (
-        <span
-          role="button"
-          onClick={e => { e.stopPropagation(); onClear(); }}
-          className="ml-0.5 rounded-full hover:bg-gray-100 p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
-        >
+        <span role="button" onClick={e => { e.stopPropagation(); onClear(); }}
+          className="ml-0.5 rounded-full hover:bg-gray-100 p-0.5 text-gray-400 hover:text-gray-600 transition-colors">
           <X size={11} />
         </span>
       ) : (
@@ -191,8 +184,6 @@ const BookingTrigger = React.forwardRef<HTMLButtonElement, {
   );
 });
 
-// ── Filter dropdowns (for the left filter side) ───────────────────────────────
-
 interface FilterOption { label: string; value: string; }
 
 function FilterDropdown({ icon, placeholder, options, selected, onSelect, disabled }: {
@@ -201,7 +192,6 @@ function FilterDropdown({ icon, placeholder, options, selected, onSelect, disabl
 }) {
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   const label = selected ? options.find(o => o.value === selected)?.label ?? placeholder : placeholder;
-
   return (
     <>
       <button ref={btnRef} onClick={() => !disabled && openDropdown()} disabled={disabled}
@@ -235,7 +225,6 @@ function TimeRangeFilter({ timeRange, onChange }: {
   const [ls, setLs] = useState(timeRange.start);
   const [le, setLe] = useState(timeRange.end);
   const label = timeRange.start && timeRange.end ? `${timeRange.start}–${timeRange.end}` : timeRange.start ? `From ${timeRange.start}` : "Any Time";
-
   return (
     <>
       <button ref={btnRef} onClick={openDropdown}
@@ -274,29 +263,19 @@ function TimeRangeFilter({ timeRange, onChange }: {
   );
 }
 
-// ── Booking Dropdowns ─────────────────────────────────────────────────────────
-
-// Branch dropdown
 function BranchBookingDropdown({ branches, selected, onSelect, disabled }: {
   branches: any[]; selected: any; onSelect: (b: any) => void; disabled?: boolean;
 }) {
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   return (
     <>
-      <BookingTrigger
-        ref={btnRef}
-        icon={<Building2 size={14} />}
+      <BookingTrigger ref={btnRef} icon={<Building2 size={14} />}
         label={selected ? selected.address?.street || "Branch" : "Branch"}
         sublabel={selected ? selected.address?.city : undefined}
-        done={!!selected}
-        locked={disabled}
-        active={open}
-        onClick={openDropdown}
-        onClear={selected ? () => onSelect(null) : undefined}
-      />
+        done={!!selected} locked={disabled} active={open} onClick={openDropdown}
+        onClear={selected ? () => onSelect(null) : undefined} />
       {open && createPortal(
-        <div ref={menuRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
           {branches.map(b => (
             <button key={b._id} onClick={() => { onSelect(b); setOpen(false); }}
@@ -318,27 +297,19 @@ function BranchBookingDropdown({ branches, selected, onSelect, disabled }: {
   );
 }
 
-// Service dropdown
 function ServiceBookingDropdown({ services, selected, onSelect, disabled }: {
   services: TService[]; selected: TService | null; onSelect: (s: TService) => void; disabled?: boolean;
 }) {
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   return (
     <>
-      <BookingTrigger
-        ref={btnRef}
-        icon={<Briefcase size={14} />}
+      <BookingTrigger ref={btnRef} icon={<Briefcase size={14} />}
         label={selected ? selected.name : "Service"}
         sublabel={selected ? `${selected.duration}min · $${selected.price?.amount}` : undefined}
-        done={!!selected}
-        locked={disabled}
-        active={open}
-        onClick={openDropdown}
-        onClear={selected ? () => onSelect(null as any) : undefined}
-      />
+        done={!!selected} locked={disabled} active={open} onClick={openDropdown}
+        onClear={selected ? () => onSelect(null as any) : undefined} />
       {open && createPortal(
-        <div ref={menuRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
           {services.length === 0
             ? <p className="px-4 py-3 text-sm text-gray-400">No services at this branch</p>
@@ -362,26 +333,18 @@ function ServiceBookingDropdown({ services, selected, onSelect, disabled }: {
   );
 }
 
-// Specialist dropdown
 function SpecialistBookingDropdown({ specialists, selected, onSelect, disabled }: {
   specialists: TSpecialist[]; selected: TSpecialist | null; onSelect: (s: TSpecialist) => void; disabled?: boolean;
 }) {
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   return (
     <>
-      <BookingTrigger
-        ref={btnRef}
-        icon={<User2 size={14} />}
+      <BookingTrigger ref={btnRef} icon={<User2 size={14} />}
         label={selected ? selected.name : "Specialist"}
-        done={!!selected}
-        locked={disabled}
-        active={open}
-        onClick={openDropdown}
-        onClear={selected ? () => onSelect(null as any) : undefined}
-      />
+        done={!!selected} locked={disabled} active={open} onClick={openDropdown}
+        onClear={selected ? () => onSelect(null as any) : undefined} />
       {open && createPortal(
-        <div ref={menuRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
           {specialists.length === 0
             ? <p className="px-4 py-3 text-sm text-gray-400">No specialists for this service</p>
@@ -400,7 +363,6 @@ function SpecialistBookingDropdown({ specialists, selected, onSelect, disabled }
   );
 }
 
-// Date dropdown — exact BookingModal calendar
 function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
   selected: string | null; onSelect: (ds: string) => void; workingHours: any; disabled?: boolean;
 }) {
@@ -410,59 +372,38 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
   const calDays = generateCalendar(calDate);
   const monthYearLabel = `${months[calDate.getMonth()]} ${calDate.getFullYear()}`;
   const changeMonth = (dir: number) => setCalDate(p => { const d = new Date(p); d.setMonth(p.getMonth() + dir); return d; });
-
   const displayLabel = selected
     ? new Date(selected + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
     : "Date";
-
   return (
     <>
-      <BookingTrigger
-        ref={btnRef}
-        icon={<CalendarDays size={14} />}
-        label={displayLabel}
-        done={!!selected}
-        locked={disabled}
-        active={open}
-        onClick={openDropdown}
-        onClear={selected ? () => { onSelect(null as any); } : undefined}
-      />
+      <BookingTrigger ref={btnRef} icon={<CalendarDays size={14} />}
+        label={displayLabel} done={!!selected} locked={disabled} active={open} onClick={openDropdown}
+        onClear={selected ? () => { onSelect(null as any); } : undefined} />
       {open && createPortal(
-        <div ref={menuRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
-          {/* Calendar — exact same as BookingModal */}
           <div className="rounded-2xl p-4 bg-teal-50 border-0">
             <div className="flex items-center justify-between mb-3">
-              <button onClick={() => changeMonth(-1)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors font-bold text-lg text-teal-600">←</button>
+              <button onClick={() => changeMonth(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors font-bold text-lg text-teal-600">←</button>
               <span className="font-semibold text-sm text-teal-700">{monthYearLabel}</span>
-              <button onClick={() => changeMonth(1)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors font-bold text-lg text-teal-600">→</button>
+              <button onClick={() => changeMonth(1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors font-bold text-lg text-teal-600">→</button>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center text-xs">
-              {weekdays.map(d => (
-                <div key={d} className="font-semibold py-1 text-xs text-teal-700">{d}</div>
-              ))}
+              {weekdays.map(d => <div key={d} className="font-semibold py-1 text-xs text-teal-700">{d}</div>)}
               {calDays.map((dateObj, idx) => {
-                const isWorking = workingHours?.some(
-                  (e: any) => e.dayOfWeek === (dateObj?.getDay() ?? -1) && e.isOpen
-                ) ?? false;
+                const isWorking = workingHours?.some((e: any) => e.dayOfWeek === (dateObj?.getDay() ?? -1) && e.isOpen) ?? false;
                 const isPast = dateObj ? dateObj < today : false;
                 const isDisabled = !dateObj || isPast || !isWorking;
                 const isSelected = dateObj && selected === dateObj.ds;
                 return (
                   <div key={idx}>
                     {dateObj && (
-                      <button
-                        onClick={() => { if (!isDisabled) { onSelect(dateObj.ds); setOpen(false); } }}
-                        disabled={isDisabled}
-                        className={[
-                          "w-full aspect-square rounded-md text-[13px] transition-colors flex items-center justify-center",
+                      <button onClick={() => { if (!isDisabled) { onSelect(dateObj.ds); setOpen(false); } }} disabled={isDisabled}
+                        className={["w-full aspect-square rounded-md text-[13px] transition-colors flex items-center justify-center",
                           isSelected ? "bg-teal-700 text-white font-bold" :
                           isDisabled ? "text-gray-300 cursor-not-allowed" :
-                          "hover:bg-teal-100 cursor-pointer",
-                        ].join(" ")}>
+                          "hover:bg-teal-100 cursor-pointer"].join(" ")}>
                         {dateObj.getDate()}
                       </button>
                     )}
@@ -471,7 +412,6 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
               })}
             </div>
           </div>
-          {/* Working hours — exact same as BookingModal */}
           {selected && workingHours && (
             <div className="mx-3 mb-3 rounded-xl p-2.5 flex items-center gap-2 text-xs bg-teal-50 border border-teal-200 text-teal-700">
               <Clock className="h-3.5 w-3.5 flex-shrink-0 text-teal-700" />
@@ -481,8 +421,7 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
                   const day = new Date(selected + "T00:00:00").getDay();
                   const s = workingHours.find((wh: any) => wh.dayOfWeek === day);
                   if (!s?.isOpen) return "Closed";
-                  if (s.hasBreak && s.breakStart && s.breakEnd)
-                    return `${s.openTime} - ${s.breakStart}, ${s.breakEnd} - ${s.closeTime}`;
+                  if (s.hasBreak && s.breakStart && s.breakEnd) return `${s.openTime} - ${s.breakStart}, ${s.breakEnd} - ${s.closeTime}`;
                   return `${s.openTime} - ${s.closeTime}`;
                 })()}
               </span>
@@ -495,7 +434,6 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
   );
 }
 
-// Time dropdown — exact BookingModal slots + ScrollPicker custom time
 function TimeBookingDropdown({ selected, onSelect, slots, loading, error, service, specialist, date, disabled }: {
   selected: TimeSlot | null; onSelect: (t: TimeSlot | null) => void;
   slots: TimeSlot[]; loading: boolean; error: string | null;
@@ -506,20 +444,16 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
   const [customMinute, setCustomMinute] = useState("00");
   const [customTimeError, setCustomTimeError] = useState("");
   const [validatingTime, setValidatingTime] = useState(false);
-
   const label = selected ? selected.startTime : "Time";
 
-  // validateCustomTime — exact same as BookingModal
   const validateCustomTime = async () => {
     if (!customHour || !customMinute || !specialist || !service || !date) return;
     setValidatingTime(true);
     setCustomTimeError("");
     try {
       const res = await bookingService.validateCustomTime({
-        specialistId: specialist._id,
-        serviceId: service._id,
-        bookingDate: date,
-        customStartTime: `${customHour}:${customMinute}`,
+        specialistId: specialist._id, serviceId: service._id,
+        bookingDate: date, customStartTime: `${customHour}:${customMinute}`,
       });
       if (res.isValid) {
         onSelect({ startTime: res.startTime as string, endTime: res.endTime as string, isAvailable: true, isCustomTime: true, duration: res.duration as number });
@@ -538,9 +472,7 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
       onSelect(null);
     } else {
       const [h, m] = slot.startTime.split(":");
-      setCustomHour(h);
-      setCustomMinute(m);
-      setCustomTimeError("");
+      setCustomHour(h); setCustomMinute(m); setCustomTimeError("");
       onSelect({ ...slot, isCustomTime: false });
       setOpen(false);
     }
@@ -548,19 +480,11 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
 
   return (
     <>
-      <BookingTrigger
-        ref={btnRef}
-        icon={<Clock size={14} />}
-        label={label}
-        done={!!selected}
-        locked={disabled}
-        active={open}
-        onClick={openDropdown}
-        onClear={selected ? () => onSelect(null) : undefined}
-      />
+      <BookingTrigger ref={btnRef} icon={<Clock size={14} />}
+        label={label} done={!!selected} locked={disabled} active={open} onClick={openDropdown}
+        onClear={selected ? () => onSelect(null) : undefined} />
       {open && createPortal(
-        <div ref={menuRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 300), zIndex: 9999 }}
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 300), zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4">
             {loading ? (
@@ -572,25 +496,22 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
               <div className="text-center py-3 rounded-2xl text-sm bg-amber-50 border border-amber-200 text-amber-700">{error}</div>
             ) : (
               <>
-                {/* Slots — exact same as BookingModal */}
                 <div className="rounded-2xl p-4 bg-gray-50 border border-teal-100">
                   <h4 className="text-sm font-semibold mb-3 text-teal-700">Available Time Slots</h4>
                   <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
                     <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-green-50 border border-green-300" /> Available</span>
                     <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-red-50 border border-red-200" /> Booked</span>
                   </div>
-                  <div className="max-h-56 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded">
+                  <div className="max-h-56 overflow-y-auto pr-1">
                     <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                       {slots.map((slot, idx) => {
                         const isSel = selected?.startTime === slot.startTime && !selected?.isCustomTime;
                         return (
                           <button key={idx} onClick={() => selectSlot(slot)} disabled={!slot.isAvailable}
-                            className={[
-                              "rounded-lg py-2 px-1 text-[13px] font-semibold border-2 transition-all",
+                            className={["rounded-lg py-2 px-1 text-[13px] font-semibold border-2 transition-all",
                               !slot.isAvailable ? "bg-red-50 border-red-200 text-red-400 cursor-not-allowed" :
                               isSel ? "bg-green-700 border-green-800 text-white" :
-                              "bg-green-50 border-green-300 text-green-800 hover:bg-green-100",
-                            ].join(" ")}>
+                              "bg-green-50 border-green-300 text-green-800 hover:bg-green-100"].join(" ")}>
                             {slot.startTime}
                           </button>
                         );
@@ -598,8 +519,6 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
                     </div>
                   </div>
                 </div>
-
-                {/* Custom time picker — exact same as BookingModal, gated on allowSpecificTimes */}
                 {service?.allowSpecificTimes && (
                   <div className="rounded-2xl p-5 mt-3 bg-teal-50 border border-teal-100">
                     <p className="text-center text-sm mb-4 text-teal-600">— or enter a custom time —</p>
@@ -620,9 +539,7 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
                       </div>
                     )}
                     {selected?.isCustomTime && !customTimeError && (
-                      <p className="mt-3 p-3 rounded-lg text-sm bg-green-50 border border-green-300 text-green-800">
-                        ✓ Custom time set: <strong>{selected.startTime}</strong>
-                      </p>
+                      <p className="mt-3 p-3 rounded-lg text-sm bg-green-50 border border-green-300 text-green-800">✓ Custom time set: <strong>{selected.startTime}</strong></p>
                     )}
                     {customTimeError && (
                       <p className="mt-3 p-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-600">⚠️ {customTimeError}</p>
@@ -639,7 +556,473 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
   );
 }
 
-// ── Main Export ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOBILE WIZARD — step-by-step bottom sheet
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type WizardStep = "branch" | "service" | "specialist" | "date" | "time" | "confirm";
+
+interface MobileWizardProps {
+  business: TBusiness;
+  onClose: () => void;
+  onBooked: () => void;
+}
+
+function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps) {
+  const branches = business.branches ?? [];
+  const allServices = business.services ?? [];
+  const allSpecialists = business.specialists ?? [];
+
+  const hasBranchChoice = branches.length > 1;
+
+  const steps: WizardStep[] = hasBranchChoice
+    ? ["branch", "service", "specialist", "date", "time", "confirm"]
+    : ["service", "specialist", "date", "time", "confirm"];
+
+  const [stepIdx, setStepIdx] = useState(0);
+  const currentStep = steps[stepIdx];
+
+  const [bookBranch, setBookBranch] = useState<any>(branches.length === 1 ? branches[0] : null);
+  const [bookService, setBookService] = useState<TService | null>(null);
+  const [bookSpecialist, setBookSpecialist] = useState<TSpecialist | null>(null);
+  const [bookDate, setBookDate] = useState<string | null>(null);
+  const [bookTime, setBookTime] = useState<TimeSlot | null>(null);
+
+  const [calDate, setCalDate] = useState(new Date());
+  const today = new Date(new Date().setHours(0, 0, 0, 0));
+
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
+
+  const [customHour, setCustomHour] = useState("09");
+  const [customMinute, setCustomMinute] = useState("00");
+  const [customTimeError, setCustomTimeError] = useState("");
+  const [validatingTime, setValidatingTime] = useState(false);
+
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const branchServices = allServices.filter((s: any) => s.branch === bookBranch?._id);
+  const filteredSpecialists = allSpecialists.filter(sp => {
+    if (bookBranch && sp.branch !== bookBranch._id) return false;
+    if (!bookService) return true;
+    if (!sp.services?.length) return false;
+    return sp.services.some(svc => (typeof svc === "string" ? svc : svc._id) === bookService._id);
+  });
+
+  useEffect(() => {
+    if (currentStep === "time" && bookSpecialist && bookService && bookDate) {
+      fetchSlots();
+    }
+  }, [currentStep]);
+
+  const fetchSlots = async () => {
+    if (!bookSpecialist || !bookService || !bookDate) return;
+    setLoadingSlots(true);
+    setSlotsError(null);
+    try {
+      const data = await bookingService.getAvailability({
+        specialistId: bookSpecialist._id,
+        serviceId: bookService._id,
+        date: bookDate,
+      });
+      setSlots((data.slots ?? []) as TimeSlot[]);
+      if (!data.slots?.length) setSlotsError("No slots available for this date.");
+    } catch (err) {
+      setSlotsError(getErrorMessage(err, "Failed to load available slots"));
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const goNext = () => { if (stepIdx < steps.length - 1) setStepIdx(s => s + 1); };
+  const goBack = () => { if (stepIdx > 0) setStepIdx(s => s - 1); };
+
+  const validateCustomTime = async () => {
+    if (!bookSpecialist || !bookService || !bookDate) return;
+    setValidatingTime(true);
+    setCustomTimeError("");
+    try {
+      const res = await bookingService.validateCustomTime({
+        specialistId: bookSpecialist._id, serviceId: bookService._id,
+        bookingDate: bookDate, customStartTime: `${customHour}:${customMinute}`,
+      });
+      if (res.isValid) {
+        setBookTime({ startTime: res.startTime as string, endTime: res.endTime as string, isAvailable: true, isCustomTime: true, duration: res.duration as number });
+      }
+    } catch (err) {
+      setCustomTimeError(getErrorMessage(err, "This time is not available"));
+    } finally {
+      setValidatingTime(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!bookService || !bookSpecialist || !bookDate || !bookTime) return;
+    setConfirming(true);
+    try {
+      await bookingService.createBooking({
+        businessId: business.id,
+        branchId: bookBranch?._id,
+        serviceId: bookService._id,
+        specialistId: bookSpecialist._id,
+        bookingDate: bookDate,
+        startTime: bookTime.startTime,
+        customerInfo: { firstName: "Admin", lastName: "Admin", email: "admin@admin.com", phone: "" },
+        notes: "",
+        isGuestBooking: false,
+      });
+      setConfirmed(true);
+      onBooked();
+      setTimeout(() => { onClose(); }, 1800);
+    } catch (err) {
+      console.error("Booking failed:", getErrorMessage(err, "Failed to create booking"));
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const calDays = generateCalendar(calDate);
+  const monthYearLabel = `${months[calDate.getMonth()]} ${calDate.getFullYear()}`;
+
+  // Progress bar
+  const progress = ((stepIdx + 1) / steps.length) * 100;
+
+  const STEP_LABELS: Record<WizardStep, string> = {
+    branch: "Choose Branch",
+    service: "Choose Service",
+    specialist: "Choose Specialist",
+    date: "Pick a Date",
+    time: "Pick a Time",
+    confirm: "Confirm Booking",
+  };
+
+  const STEP_ICONS: Record<WizardStep, React.ReactNode> = {
+    branch: <Building2 size={18} />,
+    service: <Briefcase size={18} />,
+    specialist: <User2 size={18} />,
+    date: <CalendarDays size={18} />,
+    time: <Clock size={18} />,
+    confirm: <Zap size={18} />,
+  };
+
+  return createPortal(
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/50 z-[60]" onClick={onClose} />
+
+      {/* Sheet */}
+      <div className="fixed inset-x-0 bottom-0 z-[70] bg-white rounded-t-3xl shadow-2xl flex flex-col max-h-[92dvh]">
+
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1 mx-5 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden">
+          <div className="h-full bg-teal-600 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }} />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-3 flex-shrink-0">
+          <button onClick={stepIdx > 0 ? goBack : onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex-shrink-0">
+            {stepIdx > 0 ? <ChevronLeft size={18} /> : <X size={18} />}
+          </button>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-teal-700">{STEP_ICONS[currentStep]}</span>
+              <h3 className="font-semibold text-gray-900">{STEP_LABELS[currentStep]}</h3>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">Step {stepIdx + 1} of {steps.length}</p>
+          </div>
+          <button onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors flex-shrink-0">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Summary chips — show what's been selected */}
+        {stepIdx > 0 && (
+          <div className="flex gap-2 px-5 pb-3 overflow-x-auto flex-shrink-0 scrollbar-hide">
+            {bookBranch && hasBranchChoice && (
+              <Chip icon={<Building2 size={11} />} label={bookBranch.address?.street || "Branch"} onClick={() => setStepIdx(steps.indexOf("branch"))} />
+            )}
+            {bookService && (
+              <Chip icon={<Briefcase size={11} />} label={bookService.name} onClick={() => setStepIdx(steps.indexOf("service"))} />
+            )}
+            {bookSpecialist && (
+              <Chip icon={<User2 size={11} />} label={bookSpecialist.name} onClick={() => setStepIdx(steps.indexOf("specialist"))} />
+            )}
+            {bookDate && (
+              <Chip icon={<CalendarDays size={11} />}
+                label={new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                onClick={() => setStepIdx(steps.indexOf("date"))} />
+            )}
+            {bookTime && (
+              <Chip icon={<Clock size={11} />} label={bookTime.startTime} onClick={() => setStepIdx(steps.indexOf("time"))} />
+            )}
+          </div>
+        )}
+
+        {/* Step content — scrollable */}
+        <div className="flex-1 overflow-y-auto px-5 pb-4 min-h-0">
+
+          {/* ── BRANCH ── */}
+          {currentStep === "branch" && (
+            <div className="space-y-3">
+              {branches.map(b => (
+                <button key={b._id} onClick={() => { setBookBranch(b); setBookService(null); setBookSpecialist(null); setBookDate(null); setBookTime(null); goNext(); }}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left ${bookBranch?._id === b._id ? "border-teal-700 bg-teal-50" : "border-gray-100 bg-gray-50 hover:border-gray-200"}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <Building2 size={18} className="text-teal-700" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900 flex items-center gap-2">
+                        {b.address?.street}
+                        {b.isBaseBranch && <span className="text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-bold">Main</span>}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-0.5">{b.address?.city}</div>
+                    </div>
+                  </div>
+                  {bookBranch?._id === b._id && <Check size={18} className="text-teal-700 flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── SERVICE ── */}
+          {currentStep === "service" && (
+            <div className="space-y-3">
+              {branchServices.length === 0 && (
+                <p className="text-center text-gray-400 text-sm py-8">No services available at this branch.</p>
+              )}
+              {(branchServices as TService[]).map(s => (
+                <button key={s._id} onClick={() => { setBookService(s); setBookSpecialist(null); setBookDate(null); setBookTime(null); goNext(); }}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left ${bookService?._id === s._id ? "border-teal-700 bg-teal-50" : "border-gray-100 bg-gray-50 hover:border-gray-200"}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <Briefcase size={18} className="text-teal-700" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">{s.name}</div>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-0.5">
+                        <span className="flex items-center gap-1"><Clock size={12} />{s.duration}min</span>
+                        <span className="flex items-center gap-1"><DollarSign size={12} />{s.price?.amount}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {bookService?._id === s._id && <Check size={18} className="text-teal-700 flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── SPECIALIST ── */}
+          {currentStep === "specialist" && (
+            <div className="space-y-3">
+              {filteredSpecialists.length === 0 && (
+                <p className="text-center text-gray-400 text-sm py-8">No specialists available.</p>
+              )}
+              {filteredSpecialists.map(sp => (
+                <button key={sp._id} onClick={() => { setBookSpecialist(sp); setBookDate(null); setBookTime(null); goNext(); }}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left ${bookSpecialist?._id === sp._id ? "border-teal-700 bg-teal-50" : "border-gray-100 bg-gray-50 hover:border-gray-200"}`}>
+                  <div className="flex items-center gap-3">
+                    <SpecialistIcon url={sp?.photo?.url} name={sp.name} />
+                    <span className="font-semibold text-gray-900">{sp.name}</span>
+                  </div>
+                  {bookSpecialist?._id === sp._id && <Check size={18} className="text-teal-700 flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── DATE ── */}
+          {currentStep === "date" && (
+            <div>
+              <div className="rounded-2xl p-4 bg-teal-50">
+                <div className="flex items-center justify-between mb-4">
+                  <button onClick={() => setCalDate(p => { const d = new Date(p); d.setMonth(p.getMonth() - 1); return d; })}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-sm text-teal-700 font-bold text-lg hover:bg-teal-100 transition-colors">←</button>
+                  <span className="font-semibold text-teal-800">{monthYearLabel}</span>
+                  <button onClick={() => setCalDate(p => { const d = new Date(p); d.setMonth(p.getMonth() + 1); return d; })}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white shadow-sm text-teal-700 font-bold text-lg hover:bg-teal-100 transition-colors">→</button>
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                  {weekdays.map(d => <div key={d} className="text-xs font-bold text-teal-600 py-1">{d}</div>)}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {calDays.map((dateObj, idx) => {
+                    const isWorking = bookBranch?.workingHours?.some((e: any) => e.dayOfWeek === (dateObj?.getDay() ?? -1) && e.isOpen) ?? true;
+                    const isPast = dateObj ? dateObj < today : false;
+                    const isDisabled = !dateObj || isPast || !isWorking;
+                    const isSelected = dateObj && bookDate === dateObj.ds;
+                    return (
+                      <div key={idx} className="aspect-square">
+                        {dateObj && (
+                          <button onClick={() => { if (!isDisabled) { setBookDate(dateObj.ds); setBookTime(null); } }} disabled={isDisabled}
+                            className={["w-full h-full rounded-xl text-sm font-semibold transition-all",
+                              isSelected ? "bg-teal-700 text-white shadow-md" :
+                              isDisabled ? "text-gray-300 cursor-not-allowed" :
+                              "hover:bg-white text-gray-700"].join(" ")}>
+                            {dateObj.getDate()}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {bookDate && (
+                <div className="mt-3 flex items-center gap-2 px-4 py-3 bg-teal-50 rounded-xl border border-teal-200 text-sm text-teal-700">
+                  <Check size={16} className="flex-shrink-0" />
+                  <span>Selected: <strong>{new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</strong></span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── TIME ── */}
+          {currentStep === "time" && (
+            <div>
+              {loadingSlots ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-700" />
+                  <p className="mt-3 text-sm text-gray-500">Loading available times...</p>
+                </div>
+              ) : slotsError && !slots.length ? (
+                <div className="mt-2 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 text-sm text-center">{slotsError}</div>
+              ) : (
+                <>
+                  <div className="rounded-2xl p-4 bg-gray-50 border border-teal-100">
+                    <h4 className="text-sm font-bold text-teal-700 mb-3">Available Slots</h4>
+                    <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-green-50 border border-green-300" /> Available</span>
+                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-red-50 border border-red-200" /> Booked</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {slots.map((slot, idx) => {
+                        const isSel = bookTime?.startTime === slot.startTime && !bookTime?.isCustomTime;
+                        return (
+                          <button key={idx} onClick={() => { if (!slot.isAvailable) return; if (isSel) { setBookTime(null); } else { setBookTime({ ...slot, isCustomTime: false }); } }}
+                            disabled={!slot.isAvailable}
+                            className={["rounded-xl py-3 text-sm font-bold border-2 transition-all active:scale-95",
+                              !slot.isAvailable ? "bg-red-50 border-red-200 text-red-400 cursor-not-allowed" :
+                              isSel ? "bg-teal-700 border-teal-800 text-white shadow-md" :
+                              "bg-white border-green-200 text-green-800 hover:border-green-400 hover:bg-green-50"].join(" ")}>
+                            {slot.startTime}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {bookService?.allowSpecificTimes && (
+                    <div className="mt-4 rounded-2xl p-5 bg-teal-50 border border-teal-100">
+                      <p className="text-center text-sm font-medium text-teal-600 mb-4">— or enter a custom time —</p>
+                      <div className="flex items-center justify-center gap-4 mb-4">
+                        <ScrollPicker length={24} value={customHour} onChange={setCustomHour} />
+                        <span className="text-3xl font-bold text-teal-700/50">:</span>
+                        <ScrollPicker length={60} value={customMinute} onChange={setCustomMinute} />
+                      </div>
+                      <button onClick={validateCustomTime} disabled={validatingTime}
+                        className="w-full py-3 bg-teal-700 text-white rounded-xl font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity">
+                        {validatingTime ? "Validating..." : `Set ${customHour}:${customMinute}`}
+                      </button>
+                      {customTimeError && <p className="mt-2 text-sm text-red-600 text-center">{customTimeError}</p>}
+                      {bookTime?.isCustomTime && !customTimeError && (
+                        <p className="mt-2 text-sm text-green-700 text-center font-medium">✓ Custom time: {bookTime.startTime}</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── CONFIRM ── */}
+          {currentStep === "confirm" && (
+            <div>
+              {confirmed ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-4">
+                  <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center">
+                    <CheckCircle2 size={36} className="text-teal-700" />
+                  </div>
+                  <p className="text-lg font-bold text-gray-900">Booking Confirmed!</p>
+                  <p className="text-sm text-gray-500">Closing...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-500 mb-4">Review your booking details before confirming.</p>
+                  <SummaryRow icon={<Building2 size={16} />} label="Branch" value={bookBranch?.address?.street || "—"} sub={bookBranch?.address?.city} />
+                  <SummaryRow icon={<Briefcase size={16} />} label="Service" value={bookService?.name || "—"} sub={bookService ? `${bookService.duration}min · $${bookService.price?.amount}` : undefined} />
+                  <SummaryRow icon={<User2 size={16} />} label="Specialist" value={bookSpecialist?.name || "—"} />
+                  <SummaryRow icon={<CalendarDays size={16} />} label="Date" value={bookDate ? new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "—"} />
+                  <SummaryRow icon={<Clock size={16} />} label="Time" value={bookTime ? `${bookTime.startTime} – ${bookTime.endTime}` : "—"} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer CTA */}
+        {!confirmed && (
+          <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
+            {currentStep === "confirm" ? (
+              <button onClick={handleConfirm} disabled={confirming}
+                className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-opacity active:scale-[0.98]">
+                {confirming ? <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Zap size={18} />}
+                {confirming ? "Confirming..." : "Confirm Booking"}
+              </button>
+            ) : currentStep === "date" ? (
+              <button onClick={goNext} disabled={!bookDate}
+                className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:opacity-90 transition-opacity active:scale-[0.98]">
+                Continue <ChevronRight size={18} />
+              </button>
+            ) : currentStep === "time" ? (
+              <button onClick={goNext} disabled={!bookTime}
+                className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:opacity-90 transition-opacity active:scale-[0.98]">
+                Review Booking <ChevronRight size={18} />
+              </button>
+            ) : null}
+          </div>
+        )}
+      </div>
+    </>,
+    document.body
+  );
+}
+
+// Small helpers
+function Chip({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-1 px-2.5 py-1 bg-teal-50 border border-teal-200 rounded-full text-xs font-medium text-teal-700 whitespace-nowrap flex-shrink-0 hover:bg-teal-100 transition-colors">
+      {icon}{label}
+    </button>
+  );
+}
+
+function SummaryRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+  return (
+    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl">
+      <div className="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0 text-teal-700">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-xs text-gray-400 font-medium">{label}</p>
+        <p className="text-sm font-semibold text-gray-900 truncate">{value}</p>
+        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN EXPORT — QuickBookingBar (desktop) + MobileBookingWizard toggle
+// ═══════════════════════════════════════════════════════════════════════════════
 
 interface FilterOption2 { label: string; value: string; }
 
@@ -658,16 +1041,14 @@ export interface QuickBookingBarProps {
 export function QuickBookingBar({
   business, branchOptions, serviceOptions, specialistOptions, onFilterChange, onBooked,
 }: QuickBookingBarProps) {
-  // ── Mode ─────────────────────────────────────────────────────────────────
   const [bookingMode, setBookingMode] = useState(false);
+  const [mobileWizardOpen, setMobileWizardOpen] = useState(false);
 
-  // ── Filter state ─────────────────────────────────────────────────────────
   const [filterBranch, setFilterBranch] = useState<string | null>(null);
   const [filterService, setFilterService] = useState<string | null>(null);
   const [filterSpecialist, setFilterSpecialist] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState({ start: "", end: "" });
 
-  // ── Booking state ─────────────────────────────────────────────────────────
   const [bookBranch, setBookBranch] = useState<any>(null);
   const [bookService, setBookService] = useState<TService | null>(null);
   const [bookSpecialist, setBookSpecialist] = useState<TSpecialist | null>(null);
@@ -677,53 +1058,27 @@ export function QuickBookingBar({
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
-
   const [confirming, setConfirming] = useState(false);
   const [lastBooked, setLastBooked] = useState<TBooking | null>(null);
 
-  // Propagate filter changes
   useEffect(() => {
     onFilterChange?.({ branch: filterBranch, service: filterService, specialist: filterSpecialist, timeRange });
   }, [filterBranch, filterService, filterSpecialist, timeRange]);
 
-  // Auto-select single branch
   useEffect(() => {
     if (business.branches?.length === 1) setBookBranch(business.branches[0]);
   }, []);
 
-  // Reset downstream when branch changes
-  useEffect(() => {
-    setBookService(null); setBookSpecialist(null); setBookDate(null); setBookTime(null);
-    setSlots([]); setSlotsError(null);
-  }, [bookBranch?._id]);
+  useEffect(() => { setBookService(null); setBookSpecialist(null); setBookDate(null); setBookTime(null); setSlots([]); setSlotsError(null); }, [bookBranch?._id]);
+  useEffect(() => { setBookSpecialist(null); setBookDate(null); setBookTime(null); setSlots([]); setSlotsError(null); }, [bookService?._id]);
+  useEffect(() => { setBookDate(null); setBookTime(null); setSlots([]); setSlotsError(null); }, [bookSpecialist?._id]);
+  useEffect(() => { setBookTime(null); setSlots([]); setSlotsError(null); }, [bookDate]);
 
-  // Reset specialist when service changes
-  useEffect(() => {
-    setBookSpecialist(null); setBookDate(null); setBookTime(null);
-    setSlots([]); setSlotsError(null);
-  }, [bookService?._id]);
-
-  // Reset date/time when specialist changes
-  useEffect(() => {
-    setBookDate(null); setBookTime(null); setSlots([]); setSlotsError(null);
-  }, [bookSpecialist?._id]);
-
-  // Reset time when date changes
-  useEffect(() => {
-    setBookTime(null); setSlots([]); setSlotsError(null);
-  }, [bookDate]);
-
-  // Fetch slots — exact same as BookingModal
   const fetchSlots = useCallback(async () => {
     if (!bookSpecialist || !bookService || !bookDate) return;
-    setLoadingSlots(true);
-    setSlotsError(null);
+    setLoadingSlots(true); setSlotsError(null);
     try {
-      const data = await bookingService.getAvailability({
-        specialistId: bookSpecialist._id,
-        serviceId: bookService._id,
-        date: bookDate,
-      });
+      const data = await bookingService.getAvailability({ specialistId: bookSpecialist._id, serviceId: bookService._id, date: bookDate });
       setSlots((data.slots ?? []) as TimeSlot[]);
       if (!data.slots?.length) setSlotsError("No time slots available for this date. Please try another date.");
     } catch (err) {
@@ -733,11 +1088,9 @@ export function QuickBookingBar({
     }
   }, [bookSpecialist, bookService, bookDate]);
 
-  useEffect(() => {
-    if (bookDate && bookService && bookSpecialist) fetchSlots();
-  }, [bookDate, bookService?._id, bookSpecialist?._id]);
+  useEffect(() => { if (bookDate && bookService && bookSpecialist) fetchSlots(); }, [bookDate, bookService?._id, bookSpecialist?._id]);
 
-  // Filtered data — exact same logic as BookingModal
+  const branches = business.branches ?? [];
   const branchServices = (business.services ?? []).filter((s: any) => s.branch === bookBranch?._id);
   const filteredSpecialists: TSpecialist[] = (business.specialists ?? []).filter(sp => {
     if (bookBranch && sp.branch !== bookBranch._id) return false;
@@ -746,25 +1099,19 @@ export function QuickBookingBar({
     return sp.services.some(svc => (typeof svc === "string" ? svc : svc._id) === bookService._id);
   });
 
-  // Confirm — exact same as BookingModal createBooking, admin info
   const handleConfirm = async () => {
     if (!bookService || !bookSpecialist || !bookDate || !bookTime) return;
     setConfirming(true);
     try {
       const booking = await bookingService.createBooking({
-        businessId: business.id,
-        branchId: bookBranch?._id,
-        serviceId: bookService._id,
-        specialistId: bookSpecialist._id,
-        bookingDate: bookDate,
-        startTime: bookTime.startTime,
+        businessId: business.id, branchId: bookBranch?._id,
+        serviceId: bookService._id, specialistId: bookSpecialist._id,
+        bookingDate: bookDate, startTime: bookTime.startTime,
         customerInfo: { firstName: "Admin", lastName: "Admin", email: "admin@admin.com", phone: "" },
-        notes: "",
-        isGuestBooking: false,
+        notes: "", isGuestBooking: false,
       });
       setLastBooked(booking);
       onBooked?.();
-      // Reset booking fields
       setBookBranch(business.branches?.length === 1 ? business.branches[0] : null);
       setBookService(null); setBookSpecialist(null); setBookDate(null); setBookTime(null);
       setSlots([]); setSlotsError(null);
@@ -780,12 +1127,10 @@ export function QuickBookingBar({
 
   return (
     <>
-      <div className="w-full flex items-center gap-2 bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-
-        {/* ── Contents swap based on mode ── */}
+      {/* ── Desktop bar (hidden on mobile) ── */}
+      <div className="hidden md:flex w-full items-center gap-2 bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow overflow-hidden">
         <div className="flex justify-between items-center flex-1 min-w-0">
           {!bookingMode ? (
-            /* ── Filter mode ── */
             <>
               <FilterDropdown icon={<Building2 size={14} />} placeholder="All Branches" options={branchOptions} selected={filterBranch} onSelect={setFilterBranch} />
               <div className="w-px h-5 bg-gray-200 flex-shrink-0" />
@@ -798,79 +1143,56 @@ export function QuickBookingBar({
               </div>
             </>
           ) : (
-            /* ── Booking mode ── */
             <>
-              {business.branches && business.branches.length > 1 && (
+              {branches.length > 1 && (
                 <>
-                  <BranchBookingDropdown
-                    branches={business.branches}
-                    selected={bookBranch}
-                    onSelect={b => setBookBranch(b)}
-                  />
+                  <BranchBookingDropdown branches={branches} selected={bookBranch} onSelect={b => setBookBranch(b)} />
                   <div className="w-px h-5 bg-gray-100 flex-shrink-0" />
                 </>
               )}
-              <ServiceBookingDropdown
-                services={branchServices as TService[]}
-                selected={bookService}
-                onSelect={s => setBookService(s || null)}
-                disabled={!bookBranch}
-              />
+              <ServiceBookingDropdown services={branchServices as TService[]} selected={bookService} onSelect={s => setBookService(s || null)} disabled={!bookBranch} />
               <div className="w-px h-5 bg-gray-100 flex-shrink-0" />
-              <SpecialistBookingDropdown
-                specialists={filteredSpecialists}
-                selected={bookSpecialist}
-                onSelect={sp => setBookSpecialist(sp || null)}
-                disabled={!bookService}
-              />
+              <SpecialistBookingDropdown specialists={filteredSpecialists} selected={bookSpecialist} onSelect={sp => setBookSpecialist(sp || null)} disabled={!bookService} />
               <div className="w-px h-5 bg-gray-100 flex-shrink-0" />
-              <DateBookingDropdown
-                selected={bookDate}
-                onSelect={ds => setBookDate(ds || null)}
-                workingHours={bookBranch?.workingHours}
-                disabled={!bookSpecialist}
-              />
+              <DateBookingDropdown selected={bookDate} onSelect={ds => setBookDate(ds || null)} workingHours={bookBranch?.workingHours} disabled={!bookSpecialist} />
               <div className="w-px h-5 bg-gray-100 flex-shrink-0" />
-              <TimeBookingDropdown
-                selected={bookTime}
-                onSelect={t => setBookTime(t)}
-                slots={slots}
-                loading={loadingSlots}
-                error={slotsError}
-                service={bookService}
-                specialist={bookSpecialist}
-                date={bookDate}
-                disabled={!bookDate}
-              />
+              <TimeBookingDropdown selected={bookTime} onSelect={t => setBookTime(t)} slots={slots} loading={loadingSlots} error={slotsError} service={bookService} specialist={bookSpecialist} date={bookDate} disabled={!bookDate} />
             </>
           )}
         </div>
 
-        {/* ── Right buttons ── */}
         <div className="flex items-center flex-shrink-0">
-          {/* Confirm — only in booking mode */}
           {bookingMode && (
-            <button
-              onClick={handleConfirm}
-              disabled={!bookingReady || confirming}
-              className={`flex items-center gap-2 mx-1.5 px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${bookingReady && !confirming ? "bg-teal-700 text-white hover:opacity-90" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
-            >
-              {confirming
-                ? <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-500 animate-spin" />
-                : <Zap size={14} />}
+            <button onClick={handleConfirm} disabled={!bookingReady || confirming}
+              className={`flex items-center gap-2 mx-1.5 px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${bookingReady && !confirming ? "bg-teal-700 text-white hover:opacity-90" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
+              {confirming ? <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-500 animate-spin" /> : <Zap size={14} />}
               Confirm
             </button>
           )}
-
-          {/* Book Now / Cancel toggle */}
-          <button
-            onClick={() => setBookingMode(p => !p)}
-            className={`flex items-center gap-2 mr-0.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${bookingMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-teal-700 text-white hover:opacity-90 shadow-md"}`}
-          >
+          <button onClick={() => setBookingMode(p => !p)}
+            className={`flex items-center gap-2 mr-0.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${bookingMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-teal-700 text-white hover:opacity-90 shadow-md"}`}>
             {bookingMode ? <><X size={14} /> Cancel</> : <><Zap size={14} /> Book Now</>}
           </button>
         </div>
       </div>
+
+      {/* ── Mobile: single "Book Now" button that opens the wizard ── */}
+      <button
+        onClick={() => setMobileWizardOpen(true)}
+        className="md:hidden flex items-center justify-center gap-2 w-full px-5 py-3 bg-teal-700 text-white rounded-2xl text-sm font-bold shadow-md hover:opacity-90 transition-opacity active:scale-[0.98]"
+      >
+        <Zap size={16} />
+        Book Now
+      </button>
+
+      {/* Mobile wizard */}
+      {mobileWizardOpen && (
+        <MobileBookingWizard
+          business={business}
+          onClose={() => setMobileWizardOpen(false)}
+          onBooked={() => { onBooked?.(); setMobileWizardOpen(false); }}
+        />
+      )}
 
       {/* Success toast */}
       {lastBooked && (

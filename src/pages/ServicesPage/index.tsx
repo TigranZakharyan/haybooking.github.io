@@ -29,9 +29,8 @@ export const ServicesPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [creatingService, setCreatingService] = useState<boolean>(false);
   const [editingService, setEditingService] = useState<TService | null>(null);
-  const [serviceImageUploading, setServiceImageUploading] = useState<
-    Record<string, boolean>
-  >({});
+  const [serviceImageUploading, setServiceImageUploading] = useState<Record<string, boolean>>({});
+  const [mobilePanel, setMobilePanel] = useState<"list" | "form">("list");
 
   const [newService, setNewService] = useState<TCreateService>(initialService);
 
@@ -41,25 +40,18 @@ export const ServicesPage = () => {
     servicePrice: "",
   });
 
-  // Validation functions
   const validateServiceName = (value: string): string => {
-    if (!value || !value.trim()) {
-      return "Service name is required";
-    }
+    if (!value || !value.trim()) return "Service name is required";
     return "";
   };
 
   const validateServiceDuration = (value: number): string => {
-    if (!value || value <= 0) {
-      return "Duration must be greater than 0";
-    }
+    if (!value || value <= 0) return "Duration must be greater than 0";
     return "";
   };
 
   const validateServicePrice = (value: number): string => {
-    if (value === null || value === undefined || value < 0) {
-      return "Price must be 0 or greater";
-    }
+    if (value === null || value === undefined || value < 0) return "Price must be 0 or greater";
     return "";
   };
 
@@ -78,7 +70,6 @@ export const ServicesPage = () => {
       setServices(servicesData);
       setBranches(businessData.branches || []);
 
-      // Set default branch
       const baseBranch =
         businessData.branches?.find((b: TBranch) => b.isBaseBranch)?._id ||
         businessData.branches?.[0]?._id ||
@@ -99,11 +90,7 @@ export const ServicesPage = () => {
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      return;
-    }
+    if (!file || !file.type.startsWith("image/")) return;
 
     const formData = new FormData();
     formData.append("image", file);
@@ -111,7 +98,6 @@ export const ServicesPage = () => {
     setServiceImageUploading((prev) => ({ ...prev, [serviceId]: true }));
     try {
       const image = await uploadService.uploadServiceImage(serviceId, formData);
-
       if (image) {
         setServices((prev) =>
           prev.map((s) => (s._id === serviceId ? { ...s, image } : s)),
@@ -129,7 +115,7 @@ export const ServicesPage = () => {
     try {
       await uploadService.deleteServiceImage(serviceId);
       setServices((prev) =>
-        prev.map((s) => (s._id === serviceId ? { ...s, image: {key: '', url: ''} } : s)),
+        prev.map((s) => (s._id === serviceId ? { ...s, image: { key: "", url: "" } } : s)),
       );
     } catch (err: any) {
       console.error("Failed to delete service image:", err);
@@ -138,40 +124,27 @@ export const ServicesPage = () => {
     }
   };
 
+  const resetForm = () => {
+    const baseBranch =
+      branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
+    setNewService({ ...initialService, branch: baseBranch });
+    setValidationErrors({ serviceName: "", serviceDuration: "", servicePrice: "" });
+  };
+
   const handleAddService = async (): Promise<void> => {
     const nameError = validateServiceName(newService.name);
     const durationError = validateServiceDuration(newService.duration);
     const priceError = validateServicePrice(newService.price.amount);
 
-    setValidationErrors({
-      serviceName: nameError,
-      serviceDuration: durationError,
-      servicePrice: priceError,
-    });
-
-    if (nameError || durationError || priceError) {
-      return;
-    }
+    setValidationErrors({ serviceName: nameError, serviceDuration: durationError, servicePrice: priceError });
+    if (nameError || durationError || priceError) return;
 
     setCreatingService(true);
     try {
       const createdService = await serviceService.createService(newService);
-
-      // Add new service to state locally
       setServices((prev) => [...prev, createdService]);
-
-      // Reset form with current base branch
-      const baseBranch =
-        branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
-      setNewService({
-        ...initialService,
-        branch: baseBranch,
-      });
-      setValidationErrors({
-        serviceName: "",
-        serviceDuration: "",
-        servicePrice: "",
-      });
+      resetForm();
+      setMobilePanel("list");
     } catch (error) {
       console.error("Failed to create service:", error);
     } finally {
@@ -191,6 +164,7 @@ export const ServicesPage = () => {
       allowSpecificTimes: service.allowSpecificTimes || false,
       isActive: service.isActive !== undefined ? service.isActive : true,
     });
+    setMobilePanel("form");
 
     setTimeout(() => {
       const editSection = document.getElementById("edit-service");
@@ -207,41 +181,18 @@ export const ServicesPage = () => {
     const durationError = validateServiceDuration(newService.duration);
     const priceError = validateServicePrice(newService.price.amount);
 
-    setValidationErrors({
-      serviceName: nameError,
-      serviceDuration: durationError,
-      servicePrice: priceError,
-    });
-
-    if (nameError || durationError || priceError) {
-      return;
-    }
+    setValidationErrors({ serviceName: nameError, serviceDuration: durationError, servicePrice: priceError });
+    if (nameError || durationError || priceError) return;
 
     setCreatingService(true);
     try {
-      const updatedService = await serviceService.updateService(
-        editingService._id,
-        newService,
-      );
-
-      // Update service in state locally
+      const updatedService = await serviceService.updateService(editingService._id, newService);
       setServices((prev) =>
         prev.map((s) => (s._id === editingService._id ? updatedService : s)),
       );
-
-      // Reset form with current base branch
-      const baseBranch =
-        branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
-      setNewService({
-        ...initialService,
-        branch: baseBranch,
-      });
       setEditingService(null);
-      setValidationErrors({
-        serviceName: "",
-        serviceDuration: "",
-        servicePrice: "",
-      });
+      resetForm();
+      setMobilePanel("list");
     } catch (error) {
       console.error("Failed to update service:", error);
     } finally {
@@ -250,56 +201,31 @@ export const ServicesPage = () => {
   };
 
   const handleCancelEditService = () => {
-    const baseBranch =
-      branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
     setEditingService(null);
-    setNewService({
-      ...initialService,
-      branch: baseBranch,
-    });
-    setValidationErrors({
-      serviceName: "",
-      serviceDuration: "",
-      servicePrice: "",
-    });
+    resetForm();
+    setMobilePanel("list");
   };
 
   const handleDeleteService = async (id: string) => {
     try {
       await serviceService.deleteService(id);
-
-      // Remove service from state locally
       setServices((prev) => prev.filter((s) => s._id !== id));
     } catch (error) {
       console.error("Failed to delete service:", error);
     }
   };
 
-  const handleToggleServiceActive = async (
-    serviceId: string,
-    currentStatus: boolean,
-  ) => {
+  const handleToggleServiceActive = async (serviceId: string, currentStatus: boolean) => {
     const newStatus = !currentStatus;
-
-    // Optimistically update UI
     setServices((prev) =>
-      prev.map((s) =>
-        s._id === serviceId ? { ...s, isActive: newStatus } : s,
-      ),
+      prev.map((s) => (s._id === serviceId ? { ...s, isActive: newStatus } : s)),
     );
-
     try {
-      await serviceService.updateService(serviceId, {
-        isActive: newStatus,
-      });
+      await serviceService.updateService(serviceId, { isActive: newStatus });
     } catch (error) {
       console.error("Failed to toggle service status:", error);
-
-      // Revert on error
       setServices((prev) =>
-        prev.map((s) =>
-          s._id === serviceId ? { ...s, isActive: currentStatus } : s,
-        ),
+        prev.map((s) => (s._id === serviceId ? { ...s, isActive: currentStatus } : s)),
       );
     }
   };
@@ -323,105 +249,63 @@ export const ServicesPage = () => {
     label: `${b.address.country}, ${b.address.city}, ${b.address.street}`,
   }));
 
-  return (
-    <div className="flex h-full gap-5">
-      {/* Existing Services */}
-      {services.length > 0 && (
-        <Card className="flex-1">
-          <SectionTitle
-            title="Your Services"
-            subtitle="Manage your service offerings and pricing"
-          />
-          <div className="grid gap-4">
-            {services.map((service) => (
-              <ServiceCard
-                key={service._id}
-                service={service}
-                isEditing={editingService?._id === service._id}
-                isUploading={serviceImageUploading[service._id] || false}
-                onImageChange={(e) => handleServiceImageChange(service._id, e)}
-                onImageDelete={() => handleDeleteServiceImage(service._id)}
-                onToggleActive={() =>
-                  handleToggleServiceActive(service._id, service.isActive)
-                }
-                onEdit={() => handleEditService(service)}
-                onDelete={() => handleDeleteService(service._id)}
-              />
-            ))}
-          </div>
-        </Card>
-      )}
+  const formPanel = (
+    <Card className="flex-1 overflow-auto">
+      <div id="edit-service">
+        <SectionTitle
+          title={editingService ? "Edit Service" : "Add New Service"}
+          subtitle={editingService ? "Update service details" : "Create a new service offering"}
+        />
+      </div>
 
-      {/* Add/Edit Service Form */}
-      <Card className="flex-1 overflow-auto">
-        <div id="edit-service">
-          <SectionTitle
-            title={editingService ? "Edit Service" : "Add New Service"}
-            subtitle={
-              editingService
-                ? "Update service details"
-                : "Create a new service offering"
-            }
-          />
-        </div>
+      <div className="space-y-4">
+        <Input
+          required
+          label="Service Name"
+          variant="primary"
+          placeholder="e.g., Haircut, Massage, Consultation"
+          value={newService.name}
+          onChange={(e) => {
+            setNewService({ ...newService, name: e.target.value });
+            setValidationErrors((prev) => ({
+              ...prev,
+              serviceName: validateServiceName(e.target.value),
+            }));
+          }}
+          error={validationErrors.serviceName}
+        />
 
-        <div className="space-y-4">
-          {/* Service Name */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            required
-            label="Service Name"
+            value={newService.duration}
+            label="Duration (minutes)"
             variant="primary"
-            placeholder="e.g., Haircut, Massage, Consultation"
-            value={newService.name}
+            required
             onChange={(e) => {
-              setNewService({ ...newService, name: e.target.value });
+              const value = e.target.value;
+              const cleaned = value.replace(/[^\d.]/g, "");
+              const parts = cleaned.split(".");
+              const formatted =
+                parts[0].replace(/^0+(?=\d)/, "") +
+                (parts[1] ? "." + parts[1].slice(0, 2) : "");
+              const duration = formatted ? parseFloat(formatted) : 0;
+              setNewService({ ...newService, duration });
               setValidationErrors((prev) => ({
                 ...prev,
-                serviceName: validateServiceName(e.target.value),
+                serviceDuration: validateServiceDuration(duration),
               }));
             }}
-            error={validationErrors.serviceName}
+            onKeyPress={(e) => {
+              if (!/[\d.]/.test(e.key) && e.key !== "Backspace") e.preventDefault();
+              if (e.key === "." && (e.target as HTMLInputElement).value.includes("."))
+                e.preventDefault();
+            }}
+            error={validationErrors.serviceDuration}
+            placeholder="60"
           />
 
-          {/* Duration and Price */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Input
-                value={newService.duration}
-                label="Duration (minutes)"
-                variant="primary"
-                required
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const cleaned = value.replace(/[^\d.]/g, "");
-                  const parts = cleaned.split(".");
-                  const formatted =
-                    parts[0].replace(/^0+(?=\d)/, "") +
-                    (parts[1] ? "." + parts[1].slice(0, 2) : "");
-                  const duration = formatted ? parseFloat(formatted) : 0;
-                  setNewService({ ...newService, duration });
-                  setValidationErrors((prev) => ({
-                    ...prev,
-                    serviceDuration: validateServiceDuration(duration),
-                  }));
-                }}
-                onKeyPress={(e) => {
-                  if (!/[\d.]/.test(e.key) && e.key !== "Backspace") {
-                    e.preventDefault();
-                  }
-                  if (
-                    e.key === "." &&
-                    (e.target as HTMLInputElement).value.includes(".")
-                  ) {
-                    e.preventDefault();
-                  }
-                }}
-                error={validationErrors.serviceDuration}
-                placeholder="60"
-              />
-            </div>
-
-            <div className="flex gap-6">
+          <div className="flex gap-3">
+            <div className="flex-1">
               <Input
                 variant="primary"
                 label="Price"
@@ -446,189 +330,225 @@ export const ServicesPage = () => {
                   }));
                 }}
                 onKeyPress={(e) => {
-                  if (!/[\d.]/.test(e.key) && e.key !== "Backspace") {
+                  if (!/[\d.]/.test(e.key) && e.key !== "Backspace") e.preventDefault();
+                  if (e.key === "." && (e.target as HTMLInputElement).value.includes("."))
                     e.preventDefault();
-                  }
-                  if (
-                    e.key === "." &&
-                    (e.target as HTMLInputElement).value.includes(".")
-                  ) {
-                    e.preventDefault();
-                  }
                 }}
                 error={validationErrors.servicePrice}
                 placeholder="0.00"
               />
-              <Select
-                label="Currency"
-                variant="primary"
-                options={currencies}
-                value={newService.price.currency}
-                onChange={(e) =>
-                  setNewService({
-                    ...newService,
-                    price: { ...newService.price, currency: e },
-                  })
-                }
-              />
             </div>
-          </div>
-
-          {/* Branch Selection */}
-          {branchOptions.length > 0 && (
-            <div>
-              <Select
-                variant="primary"
-                required
-                options={branchOptions}
-                label="Select Branch"
-                className="w-full"
-                value={newService.branch}
-                onChange={(value) =>
-                  setNewService({ ...newService, branch: value })
-                }
-              />
-            </div>
-          )}
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium mb-2 tracking-wide">
-              Description <span className="text-gray-500">(optional)</span>
-            </label>
-            <textarea
-              placeholder="Describe what this service includes..."
-              value={newService.description}
+            <Select
+              label="Currency"
+              variant="primary"
+              options={currencies}
+              value={newService.price.currency}
               onChange={(e) =>
-                setNewService({ ...newService, description: e.target.value })
+                setNewService({ ...newService, price: { ...newService.price, currency: e } })
               }
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-              rows={3}
             />
           </div>
+        </div>
 
-          {/* Booking Settings */}
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-            <h4 className="font-semibold text-base mb-4 text-gray-900">
-              Booking Settings
-            </h4>
-            <p className="text-gray-700 text-sm mb-4">
-              Configure how customers can book this service
-            </p>
+        {branchOptions.length > 0 && (
+          <Select
+            variant="primary"
+            required
+            options={branchOptions}
+            label="Select Branch"
+            className="w-full"
+            value={newService.branch}
+            onChange={(value) => setNewService({ ...newService, branch: value })}
+          />
+        )}
 
-            <div className="space-y-4">
-              {/* Time Interval */}
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-800">
-                  Time Interval (minutes){" "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="flex justify-center">
-                  <NumberInput
-                    min={5}
-                    max={240}
-                    step={5}
-                    value={newService.timeInterval || 30}
-                    onChange={(value: number) =>
-                      setNewService({ ...newService, timeInterval: value })
-                    }
-                  />
+        <div>
+          <label className="block text-sm font-medium mb-2 tracking-wide">
+            Description <span className="text-gray-500">(optional)</span>
+          </label>
+          <textarea
+            placeholder="Describe what this service includes..."
+            value={newService.description}
+            onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+            rows={3}
+          />
+        </div>
+
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+          <h4 className="font-semibold text-base mb-2 text-gray-900">Booking Settings</h4>
+          <p className="text-gray-700 text-sm mb-4">Configure how customers can book this service</p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-800">
+                Time Interval (minutes) <span className="text-red-500">*</span>
+              </label>
+              <div className="flex justify-center">
+                <NumberInput
+                  min={5}
+                  max={240}
+                  step={5}
+                  value={newService.timeInterval || 30}
+                  onChange={(value: number) =>
+                    setNewService({ ...newService, timeInterval: value })
+                  }
+                />
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                This determines the time slots available for booking. Enter any multiple of 5
+                minutes. For example, if set to 30 minutes, customers can book at 9:00, 9:30,
+                10:00, etc.
+              </p>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg p-3 bg-white">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newService.allowSpecificTimes || false}
+                  onChange={(e) =>
+                    setNewService({ ...newService, allowSpecificTimes: e.target.checked })
+                  }
+                  className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer mt-0.5"
+                />
+                <div>
+                  <span className="block text-sm font-semibold text-gray-900">
+                    Allow Specific Times
+                  </span>
+                  <p className="text-xs text-gray-600 mt-1">
+                    When enabled, customers can only book at exact times you specify. When
+                    disabled, they can book at any available time slot based on your time interval.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-600 mt-2">
-                  This determines the time slots available for booking. Enter
-                  any multiple of 5 minutes. For example, if set to 30 minutes,
-                  customers can book at 9:00, 9:30, 10:00, etc.
-                </p>
-              </div>
+              </label>
+            </div>
 
-              {/* Allow Specific Times */}
-              <div className="border border-gray-200 rounded-lg p-3 bg-white">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newService.allowSpecificTimes || false}
-                    onChange={(e) =>
-                      setNewService({
-                        ...newService,
-                        allowSpecificTimes: e.target.checked,
-                      })
-                    }
-                    className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer mt-0.5"
-                  />
-                  <div>
-                    <span className="block text-sm font-semibold text-gray-900">
-                      Allow Specific Times
-                    </span>
-                    <p className="text-xs text-gray-600 mt-1">
-                      When enabled, customers can only book at exact times you
-                      specify. When disabled, they can book at any available
-                      time slot based on your time interval.
-                    </p>
-                  </div>
-                </label>
-              </div>
-
-              {/* Service Active */}
-              <div className="border border-gray-200 rounded-lg p-3 bg-white">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newService.isActive !== false}
-                    onChange={(e) =>
-                      setNewService({
-                        ...newService,
-                        isActive: e.target.checked,
-                      })
-                    }
-                    className="h-5 w-5 text-green-600 rounded border-gray-300 cursor-pointer mt-0.5"
-                  />
-                  <div>
-                    <span className="block text-sm font-semibold text-gray-900">
-                      Service Active
-                    </span>
-                    <p className="text-xs text-gray-600 mt-1">
-                      When unchecked, this service will be hidden from customers
-                      and cannot be booked.
-                    </p>
-                  </div>
-                </label>
-              </div>
+            <div className="border border-gray-200 rounded-lg p-3 bg-white">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newService.isActive !== false}
+                  onChange={(e) =>
+                    setNewService({ ...newService, isActive: e.target.checked })
+                  }
+                  className="h-5 w-5 text-green-600 rounded border-gray-300 cursor-pointer mt-0.5"
+                />
+                <div>
+                  <span className="block text-sm font-semibold text-gray-900">Service Active</span>
+                  <p className="text-xs text-gray-600 mt-1">
+                    When unchecked, this service will be hidden from customers and cannot be
+                    booked.
+                  </p>
+                </div>
+              </label>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="default"
-              onClick={editingService ? handleUpdateService : handleAddService}
-              disabled={creatingService}
-              className="flex-1 flex items-center justify-center gap-2"
-            >
-              {creatingService ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  <span>{editingService ? "Updating..." : "Adding..."}</span>
-                </>
-              ) : (
-                <>
-                  <span>
-                    {editingService ? "Update Service" : "Add Service"}
-                  </span>
-                </>
-              )}
-            </Button>
-            {editingService && (
-              <Button
-                variant="outline"
-                onClick={handleCancelEditService}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
         </div>
-      </Card>
+
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="default"
+            onClick={editingService ? handleUpdateService : handleAddService}
+            disabled={creatingService}
+            className="flex-1 flex items-center justify-center gap-2"
+          >
+            {creatingService ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span>{editingService ? "Updating..." : "Adding..."}</span>
+              </>
+            ) : (
+              <span>{editingService ? "Update Service" : "Add Service"}</span>
+            )}
+          </Button>
+          {editingService && (
+            <Button variant="outline" onClick={handleCancelEditService} className="flex-1">
+              Cancel
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+
+  return (
+    <div className="h-full flex flex-col gap-4 overflow-hidden">
+      {/* Mobile header */}
+      <div className="flex-shrink-0 flex items-center justify-between lg:hidden">
+        <h1 className="text-xl font-bold text-gray-900">Services</h1>
+        {mobilePanel === "list" ? (
+          <Button
+            variant="default"
+            onClick={() => {
+              setEditingService(null);
+              resetForm();
+              setMobilePanel("form");
+            }}
+            className="text-sm"
+          >
+            + Add
+          </Button>
+        ) : (
+          <button
+            onClick={handleCancelEditService}
+            className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to list
+          </button>
+        )}
+      </div>
+
+      {/* Desktop: side-by-side. Mobile: single panel */}
+      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row lg:gap-5">
+
+        {/* Services list */}
+        {services.length > 0 && (
+          <div
+            className={`
+              lg:flex-1 overflow-y-auto
+              ${mobilePanel === "list" ? "flex flex-col gap-4" : "hidden"}
+              lg:flex lg:flex-col lg:gap-4
+            `}
+          >
+            <Card className="flex-1 max-w-full">
+              <SectionTitle
+                title="Your Services"
+                subtitle="Manage your service offerings and pricing"
+              />
+              <div className="max-w-full grid gap-4">
+                {services.map((service) => (
+                  <ServiceCard
+                    key={service._id}
+                    service={service}
+                    isEditing={editingService?._id === service._id}
+                    isUploading={serviceImageUploading[service._id] || false}
+                    onImageChange={(e) => handleServiceImageChange(service._id, e)}
+                    onImageDelete={() => handleDeleteServiceImage(service._id)}
+                    onToggleActive={() => handleToggleServiceActive(service._id, service.isActive)}
+                    onEdit={() => handleEditService(service)}
+                    onDelete={() => handleDeleteService(service._id)}
+                  />
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Form panel */}
+        <div
+          className={`
+            lg:flex-1 overflow-y-auto flex flex-col
+            ${mobilePanel === "form" || services.length === 0 ? "flex" : "hidden"}
+            lg:flex
+          `}
+        >
+          {formPanel}
+        </div>
+      </div>
     </div>
   );
 };

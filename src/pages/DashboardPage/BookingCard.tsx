@@ -49,27 +49,31 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
 
   return (
     <div className="bg-white border-2 border-primary rounded-lg p-4 hover:shadow-md transition-shadow">
-      {/* Header - Time and Status */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-gray-500" />
-          <span className="font-medium text-gray-900">
+      {/* Header - Time, Status, Price, Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        {/* Left: time + status badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <span className="font-medium text-gray-900 text-sm sm:text-base">
             {booking.startTime} - {booking.endTime}
           </span>
           <span
-            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-normal capitalize ${getStatusColor(
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal capitalize ${getStatusColor(
               booking.status
             )}`}
           >
             {booking.status}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-gray-900">
+
+        {/* Right: price + button */}
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+          <span className="text-base sm:text-lg font-semibold text-gray-900">
             $ {booking.price?.amount || 0}
           </span>
           <Button
             onClick={() => onChangeStatus(booking._id)}
+            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 h-auto"
           >
             Change Status
           </Button>
@@ -78,9 +82,9 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
 
       {/* Customer Info */}
       <div className="mb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <User className="w-4 h-4 text-gray-500" />
-          <span className="font-medium text-gray-900">
+        <div className="flex items-center gap-2 flex-wrap">
+          <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <span className="font-medium text-gray-900 text-sm sm:text-base">
             {booking.customerInfo?.firstName} {booking.customerInfo?.lastName}
           </span>
           {booking.isGuestBooking && (
@@ -90,29 +94,31 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
       </div>
 
       {/* Service and Specialist */}
-      <div className="space-y-1 mb-3">
-        <div className="text-sm text-gray-700">
+      <div className="space-y-1 mb-3 text-sm text-gray-700">
+        <div>
           <span>Services: </span>
           <ul className="font-medium list-disc list-inside">
-            {booking.services?.map((service) => <li key={service._id}>{service.name}</li>)}
+            {booking.services?.map((service) => (
+              <li key={service._id}>{service.name}</li>
+            ))}
           </ul>
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-gray-600">
           With {booking.specialist?.name || "Specialist"}
         </div>
       </div>
 
       {/* Contact Info */}
-      <div className="space-y-1 text-sm text-gray-600">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-x-4 text-sm text-gray-600">
         {booking.customerInfo?.phone && (
-          <div className="flex items-center gap-2">
-            <Phone className="w-3 h-3" />
+          <div className="flex items-center gap-1.5">
+            <Phone className="w-3 h-3 flex-shrink-0" />
             <span>{booking.customerInfo.phone}</span>
           </div>
         )}
         {booking.customerInfo?.email && (
-          <div className="flex items-center gap-2">
-            <Mail className="w-3 h-3" />
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Mail className="w-3 h-3 flex-shrink-0" />
             <span className="truncate">{booking.customerInfo.email}</span>
           </div>
         )}

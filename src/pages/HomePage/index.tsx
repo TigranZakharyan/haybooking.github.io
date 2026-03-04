@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import { Button, Container, Input, Select, BookingModal, Pagination } from "@/components";
 import { businessService, searchService } from '@/services/api';
 import type { TBusiness, TBusinessType, TPagination, TSearchBusinessParams } from '@/types';
-import { ServiceCard } from './ServiceCard'
+import { ServiceCard } from './ServiceCard';
 
 export function HomePage() {
   const [businesses, setBusinesses] = useState<TBusiness[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [types, setTypes] = useState<TBusinessType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState<TPagination>()
+  const [pagination, setPagination] = useState<TPagination>();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<TSearchBusinessParams>({
     q: '',
     city: '',
@@ -31,7 +32,7 @@ export function HomePage() {
       setCities(citiesData);
       setTypes(typesData);
       setBusinesses(businessesData.businesses);
-      setPagination(businessesData.pagination)
+      setPagination(businessesData.pagination);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -43,7 +44,6 @@ export function HomePage() {
     setLoading(true);
     try {
       const result = await searchService.searchBusinesses({ ...filters, page });
-      console.log(result)
       setBusinesses(result.businesses);
       setPagination(result.pagination);
     } catch (error) {
@@ -59,17 +59,14 @@ export function HomePage() {
   };
 
   const handleBookingClick = async (business: TBusiness) => {
-    const fetchBusinessDetails = await businessService.getBusinessByLink(business.bookingLink)
+    const fetchBusinessDetails = await businessService.getBusinessByLink(
+      business.bookingLink
+    );
     setSelectedBusiness(fetchBusinessDetails);
   };
 
-  const handleCloseModal = () => {
-    setSelectedBusiness(null);
-  };
-
-  const handleConfirmed = () => {
-    setSelectedBusiness(null);
-  };
+  const handleCloseModal = () => setSelectedBusiness(null);
+  const handleConfirmed = () => setSelectedBusiness(null);
 
   if (loading && businesses.length === 0) {
     return (
@@ -84,66 +81,124 @@ export function HomePage() {
   return (
     <>
       <Container>
-        <h2 className="uppercase">Find & book services</h2>
+        <h2 className="uppercase text-xl sm:text-2xl md:text-3xl">
+          Find &amp; book services
+        </h2>
 
-        {/* Search filters */}
-        <div className="grid grid-cols-4 gap-6 my-8">
-          <Input
-            variant="primary"
-            placeholder="Search..."
-            value={filters.q}
-            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-          />
-          <Select
-            variant="primary"
-            options={cities.map(city => ({ value: city, label: city }))}
-            placeholder="All Cities"
-            value={filters.city}
-            onChange={(value) => setFilters({ ...filters, city: value as string })}
-          />
-          <Select
-            variant="primary"
-            options={[{ value: 'all', label: 'All Types' }, ...types]}
-            placeholder="All Types"
-            value={filters.type}
-            onChange={(value) => setFilters({ ...filters, type: value as string })}
-          />
+        {/* ── Search filters ── */}
+
+        {/* Mobile toggle */}
+        <div className="mt-4 mb-2 sm:hidden">
           <Button
-            onClick={() => handleSearch(1)}
-            className="bg-primary text-white font-bold hover:bg-primary/95 shadow-xl"
+            onClick={() => setFiltersOpen((prev) => !prev)}
+            className="w-full bg-primary/10 text-primary font-semibold border border-primary/30"
           >
-            {loading ? 'Searching...' : 'Search'}
+            {filtersOpen ? '▲ Hide Filters' : '▼ Show Filters'}
           </Button>
         </div>
 
-        {/* Results */}
-        <div className="flex gap-12 flex-wrap mb-8">
+        {/* Filters panel */}
+        <div
+          className={[
+            'overflow-hidden transition-all duration-300',
+            filtersOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0',
+            'sm:max-h-none sm:opacity-100',
+          ].join(' ')}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-4 sm:my-8">
+            <Input
+              variant="primary"
+              placeholder="Search..."
+              value={filters.q}
+              onChange={(e) =>
+                setFilters({ ...filters, q: e.target.value })
+              }
+            />
+
+            <Select
+              variant="primary"
+              options={cities.map((city) => ({
+                value: city,
+                label: city,
+              }))}
+              placeholder="All Cities"
+              value={filters.city}
+              onChange={(value) =>
+                setFilters({ ...filters, city: value as string })
+              }
+            />
+
+            <Select
+              variant="primary"
+              options={[
+                { value: 'all', label: 'All Types' },
+                ...types,
+              ]}
+              placeholder="All Types"
+              value={filters.type}
+              onChange={(value) =>
+                setFilters({ ...filters, type: value as string })
+              }
+            />
+
+            <Button
+              onClick={() => handleSearch(1)}
+              className="bg-primary text-white font-bold hover:bg-primary/95 shadow-xl w-full"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Results grid ── */}
+        <div
+          className="
+            grid 
+            grid-cols-1 
+            sm:grid-cols-2 
+            lg:grid-cols-3 
+            gap-6 
+            mb-8
+            justify-items-center 
+            sm:justify-items-stretch
+          "
+        >
           {businesses.length === 0 ? (
-            <div className="w-full text-center py-12">
-              <p className="text-xl font-semibold text-gray-700">No businesses found.</p>
-              <p className="text-gray-500 mt-2">Try adjusting your search filters.</p>
+            <div className="col-span-full text-center py-12">
+              <p className="text-xl font-semibold text-gray-700">
+                No businesses found.
+              </p>
+              <p className="text-gray-500 mt-2">
+                Try adjusting your search filters.
+              </p>
             </div>
           ) : (
             businesses.map((business) => (
-              <ServiceCard
-                key={business.id}
-                title={business.businessName}
-                logo={business.logo}
-                specialists={business.specialists?.length || 0}
-                services={business.services?.length || 0}
-                priceFrom={business.services?.[0]?.price?.amount || 0}
-                buttonText="Book Now"
-                onButtonClick={() => handleBookingClick(business)}
-              />
+              <div key={business.id} className="w-full max-w-xs">
+                <ServiceCard
+                  title={business.businessName}
+                  logo={business.logo}
+                  specialists={business.specialists?.length || 0}
+                  services={business.services?.length || 0}
+                  priceFrom={business.services?.[0]?.price?.amount || 0}
+                  buttonText="Book Now"
+                  onButtonClick={() => handleBookingClick(business)}
+                />
+              </div>
             ))
           )}
         </div>
 
-        {/* Pagination */}
-        {pagination && <Pagination pagination={pagination} onPageChange={handlePageChange} />}
+        {/* ── Pagination ── */}
+        {pagination && (
+          <Pagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+          />
+        )}
       </Container>
 
-      {/* Booking Modal */}
+      {/* ── Booking Modal ── */}
       {selectedBusiness && (
         <BookingModal
           business={selectedBusiness}

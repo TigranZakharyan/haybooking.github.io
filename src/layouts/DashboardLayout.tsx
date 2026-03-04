@@ -45,6 +45,9 @@ export function DashboardLayout() {
   if (user.role !== "business") return <Navigate to="/" />;
 
   const baseURL = window.location.protocol + "//" + window.location.hostname;
+  const fullLink = `${baseURL}/business/${user.business?.bookingLink}`;
+  const shortLink =
+    fullLink.length > 32 ? fullLink.slice(0, 24) + "..." : fullLink;
 
   const handleCopyLink = (link: string) => {
     try {
@@ -124,8 +127,8 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="h-screen flex items-start justify-center p-5 bg-[linear-gradient(145deg,#ded4d7c5_0%,#c2cbcdff_100%)]">
-      <div className="w-full flex rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-40px)] relative">
+    <div className="h-screen flex items-start justify-center sm:p-5 bg-[linear-gradient(145deg,#ded4d7c5_0%,#c2cbcdff_100%)]">
+      <div className="h-full w-full flex sm:rounded-2xl overflow-hidden shadow-2xl sm:h-[calc(100vh-40px)] relative">
         {/* Mobile Overlay */}
         {mobileOpen && (
           <div
@@ -174,15 +177,17 @@ export function DashboardLayout() {
                 <Menu className="w-5 h-5" />
               </button>
 
-              <Tooltip text="Copied!" position="bottom" onClick={() =>
-                    handleCopyLink(
-                      `${baseURL}/business/${user.business?.bookingLink}`,
-                    )
-                  }>
-                <span
-                  className="text-primary"
-                >
-                  {baseURL}/business/{user.business?.bookingLink}
+              <Tooltip
+                text="Copied!"
+                position="bottom"
+                onClick={() => handleCopyLink(fullLink)}
+              >
+                <span className="text-primary">
+                  {/* Small screens */}
+                  <span className="sm:hidden">{shortLink}</span>
+
+                  {/* ≥ sm screens */}
+                  <span className="hidden sm:inline">{fullLink}</span>
                 </span>
               </Tooltip>
             </div>
@@ -192,7 +197,7 @@ export function DashboardLayout() {
           </header>
 
           {/* Content — only this scrolls */}
-          <main className="flex-1 overflow-auto p-8">
+          <main className="flex-1 overflow-auto p-2 sm:p-8">
             <Outlet />
           </main>
         </div>

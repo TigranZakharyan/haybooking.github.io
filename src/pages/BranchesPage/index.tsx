@@ -17,6 +17,8 @@ export const BranchesPage = () => {
   const [editingBranch, setEditingBranch] = useState<TBranch | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Track which panel is active on mobile: "list" | "detail"
+  const [mobilePanel, setMobilePanel] = useState<"list" | "detail">("list");
 
   const emptyBranch: TCreateBranch = {
     address: {
@@ -73,6 +75,7 @@ export const BranchesPage = () => {
       setShowForm(false);
       setEditingBranch(null);
       setForm(emptyBranch);
+      setMobilePanel("list");
     } finally {
       setSaving(false);
     }
@@ -81,8 +84,8 @@ export const BranchesPage = () => {
   const handleEdit = (branch: TBranch) => {
     setEditingBranch(branch);
     setShowForm(true);
-
     setForm(branch);
+    setMobilePanel("detail");
 
     setTimeout(() => {
       const formElement = document.getElementById("branch-form");
@@ -100,6 +103,7 @@ export const BranchesPage = () => {
       await fetchBranches();
       if (selectedBranch?._id === branchId) {
         setSelectedBranch(null);
+        setMobilePanel("list");
       }
     } catch (error) {
       console.error("Failed to delete branch:", error);
@@ -110,12 +114,20 @@ export const BranchesPage = () => {
     setShowForm(false);
     setEditingBranch(null);
     setForm(emptyBranch);
+    setMobilePanel("list");
   };
 
   const handleAddNew = () => {
     setShowForm(true);
     setEditingBranch(null);
     setForm(emptyBranch);
+    setMobilePanel("detail");
+  };
+
+  const handleSelectBranch = (branch: TBranch) => {
+    setSelectedBranch(branch);
+    setShowForm(false);
+    setMobilePanel("detail");
   };
 
   if (loading) {
@@ -133,38 +145,75 @@ export const BranchesPage = () => {
   }
 
   return (
-    <div className="h-full flex flex-col gap-5 overflow-hidden">
+    <div className="h-full flex flex-col gap-4 overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between">
+      <div className="flex-shrink-0 gap-2 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Business Branches</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Business Branches</h1>
+          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
             Manage your business locations and working hours
           </p>
         </div>
         <Button
           variant="default"
           onClick={handleAddNew}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-sm sm:text-base"
         >
-          Add Branch
+          <span className="hidden sm:inline">Add Branch</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[minmax(300px,1fr)_2fr] gap-5 overflow-hidden">
-        {/* Left Column - Branch List */}
-        <BranchList
-          branches={branches}
-          selectedBranch={selectedBranch}
-          onSelectBranch={setSelectedBranch}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onAddNew={handleAddNew}
-        />
+      {/* Mobile: back button when showing detail panel */}
+      {mobilePanel === "detail" && (
+        <div className="flex-shrink-0 lg:hidden">
+          <button
+            onClick={() => {
+              setMobilePanel("list");
+              setShowForm(false);
+              setEditingBranch(null);
+            }}
+            className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to list
+          </button>
+        </div>
+      )}
 
-        {/* Right Column - Map or Form */}
-        <div className="h-full overflow-y-auto">
+      {/* Layout */}
+      <div className="flex-1 overflow-hidden lg:grid lg:grid-cols-[minmax(300px,1fr)_2fr] lg:gap-5">
+
+        {/* Left Column — Branch List */}
+        {/* On mobile: visible only when mobilePanel === "list" */}
+        <div
+          className={`
+            h-full overflow-y-auto
+            ${mobilePanel === "list" ? "block" : "hidden"}
+            lg:block
+          `}
+        >
+          <BranchList
+            branches={branches}
+            selectedBranch={selectedBranch}
+            onSelectBranch={handleSelectBranch}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onAddNew={handleAddNew}
+          />
+        </div>
+
+        {/* Right Column — Map or Form */}
+        {/* On mobile: visible only when mobilePanel === "detail" */}
+        <div
+          className={`
+            h-full overflow-y-auto
+            ${mobilePanel === "detail" ? "block" : "hidden"}
+            lg:block
+          `}
+        >
           {showForm ? (
             <BranchForm
               form={form}

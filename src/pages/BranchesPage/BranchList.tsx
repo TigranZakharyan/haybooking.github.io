@@ -37,7 +37,7 @@ export const BranchList = ({
   }
 
   return (
-    <div className="space-y-4 pl-1 pt-1">
+    <div className="space-y-3 sm:space-y-4 pl-1 pt-1">
       {branches.map((branch) => (
         <Card
           key={branch._id}
@@ -47,41 +47,39 @@ export const BranchList = ({
               : "hover:bg-gray-50 border-transparent"
           }`}
         >
-          <div 
-            className="flex items-stretch justify-between" 
+          <div
+            className="flex items-stretch justify-between gap-2"
             onClick={() => onSelectBranch(branch)}
           >
             {/* Left Side: Icon and Address Info */}
-            <div className="flex items-start gap-3 flex-1">
+            <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
               <div className="bg-primary/10 p-2 rounded-lg flex-shrink-0">
                 {branch.isBaseBranch ? (
-                  <Home className="w-5 h-5 text-primary" />
+                  <Home className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 ) : (
-                  <MapPin className="w-5 h-5 text-primary" />
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900 text-base">
-                    {branch.address.street}
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-2 leading-relaxed">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-0.5">
+                  {branch.address.street}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-1.5 leading-relaxed">
                   {branch.address.city}, {branch.address.country}
                   {branch.address.state && `, ${branch.address.state}`}
                   {branch.address.zipCode && ` ${branch.address.zipCode}`}
                 </p>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Phone className="w-4 h-4" />
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
+                  <Phone className="w-3.5 h-3.5 flex-shrink-0" />
                   <span className="truncate">{branch.phones.join(", ")}</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Side: Actions (Top) and Base Tag (Bottom) */}
-            <div className="flex flex-col justify-between items-end min-h-[90px] ml-4">
-              {/* Top: Buttons */}
-              <div className="flex gap-1 items-center">
+            {/* Right Side: Actions */}
+            <div className="flex flex-col justify-between items-end flex-shrink-0">
+              {/* Top: Map + Edit + Delete buttons */}
+              <div className="flex gap-0.5 sm:gap-1 items-center">
                 <YandexMapButton {...branch.address.coordinates} />
                 <GoogleMapButton {...branch.address.coordinates} />
                 <button
@@ -90,10 +88,11 @@ export const BranchList = ({
                     e.stopPropagation();
                     onEdit(branch);
                   }}
-                  className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                  className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                   aria-label="Edit branch"
                 >
-                  <Edit size={18} />
+                  <Edit size={16} className="sm:hidden" />
+                  <Edit size={18} className="hidden sm:block" />
                 </button>
                 <button
                   type="button"
@@ -101,15 +100,18 @@ export const BranchList = ({
                     e.stopPropagation();
                     onDelete(branch._id);
                   }}
-                  className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                  className="p-1.5 sm:p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                   aria-label="Delete branch"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={16} className="sm:hidden" />
+                  <Trash2 size={18} className="hidden sm:block" />
                 </button>
               </div>
 
               {/* Bottom: Badge */}
-              {branch.isBaseBranch && <Badge variant="info">BASE</Badge>}
+              {branch.isBaseBranch && (
+                <Badge variant="info" className="text-xs">BASE</Badge>
+              )}
             </div>
           </div>
         </Card>
