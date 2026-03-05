@@ -6,7 +6,7 @@ import { GoogleMapButton } from "@/components/GoogleMapButton";
 import { YandexMapButton } from "@/components/YandexMapButton";
 import { bookingService } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
-import { formatPhone, isValidPhone, isValidEmail } from "@/services/validation";
+import { isValidPhone, isValidEmail } from "@/services/validation";
 import type {
   TBusiness,
   TCustomerInfo,
@@ -15,6 +15,7 @@ import type {
   TBooking,
 } from "@/types";
 import { months, weekdays } from "@/constants";
+import { formatPhone } from "@/services/format";
 
 interface Props {
   business: TBusiness;

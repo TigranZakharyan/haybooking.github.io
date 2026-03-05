@@ -7,6 +7,7 @@ import {
 import { Button, Input } from "@/components";
 import { SectionTitle, Select, Card } from "@/components";
 import { SpecialistCard } from "./SpecialistCard";
+import { UploadImage } from "@/components";
 import type {
   TBranch,
   TCreateSpecialist,
@@ -28,8 +29,12 @@ export const SpecialistsPage = () => {
   const [creatingSpecialist, setCreatingSpecialist] = useState<boolean>(false);
   const [editingSpecialist, setEditingSpecialist] = useState<TSpecialist | null>(null);
   const [specialistImageUploading, setSpecialistImageUploading] = useState<Record<string, boolean>>({});
-  // Mobile: "list" shows specialists, "form" shows add/edit form
   const [mobilePanel, setMobilePanel] = useState<"list" | "form">("list");
+
+  // New specialist form image state
+  const [newSpecialistImageFile, setNewSpecialistImageFile] = useState<File | null>(null);
+  const [newSpecialistImagePreview, setNewSpecialistImagePreview] = useState<string>("");
+  const [newSpecialistImageUploading, setNewSpecialistImageUploading] = useState<boolean>(false);
 
   const [newSpecialist, setNewSpecialist] = useState<TCreateSpecialist>({
     name: "",
@@ -129,11 +134,25 @@ export const SpecialistsPage = () => {
     }
   };
 
+  const handleNewSpecialistImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setNewSpecialistImageFile(file);
+    setNewSpecialistImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleNewSpecialistImageDelete = () => {
+    setNewSpecialistImageFile(null);
+    setNewSpecialistImagePreview("");
+  };
+
   const resetForm = () => {
     const baseBranch =
       branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
     setNewSpecialist({ name: "", branch: baseBranch, services: [], isActive: true });
     setValidationErrors({ specialistName: "", specialistBranch: "", specialistServices: "" });
+    setNewSpecialistImageFile(null);
+    setNewSpecialistImagePreview("");
   };
 
   const handleAddSpecialist = async (): Promise<void> => {
@@ -146,7 +165,26 @@ export const SpecialistsPage = () => {
 
     setCreatingSpecialist(true);
     try {
+      // 1st call: create the specialist
       const createdSpecialist = await specialistService.createSpecialist(newSpecialist);
+
+      // 2nd call: upload photo if one was selected
+      if (newSpecialistImageFile) {
+        setNewSpecialistImageUploading(true);
+        try {
+          const formData = new FormData();
+          formData.append("photo", newSpecialistImageFile);
+          const photo = await uploadService.uploadSpecialistPhoto(createdSpecialist._id, formData);
+          if (photo) {
+            createdSpecialist.photo = photo;
+          }
+        } catch (err) {
+          console.error("Failed to upload specialist photo:", err);
+        } finally {
+          setNewSpecialistImageUploading(false);
+        }
+      }
+
       setSpecialists((prev) => [...prev, createdSpecialist]);
       resetForm();
       setMobilePanel("list");
@@ -165,6 +203,8 @@ export const SpecialistsPage = () => {
       services: specialist.services.map((e) => e._id),
       isActive: specialist.isActive !== undefined ? specialist.isActive : true,
     });
+    setNewSpecialistImageFile(null);
+    setNewSpecialistImagePreview("");
     setMobilePanel("form");
 
     setTimeout(() => {
@@ -272,13 +312,28 @@ export const SpecialistsPage = () => {
 
   const formPanel = (
     <Card className="flex flex-1 flex-col">
-      <div id="edit-specialist">
+      <div id="edit-specialist" className="flex justify-between">
         <SectionTitle
           title={editingSpecialist ? "Edit Team Member" : "Add New Team Member"}
           subtitle={
             editingSpecialist ? "Update team member details" : "Create a new team member"
           }
         />
+        {!editingSpecialist && (
+          <label
+            htmlFor="new-specialist-image"
+            className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition flex-shrink-0"
+          >
+            <UploadImage
+              id="new-specialist"
+              imageUrl={newSpecialistImagePreview}
+              altText="New specialist"
+              isUploading={newSpecialistImageUploading}
+              onChange={handleNewSpecialistImageChange}
+              onDelete={handleNewSpecialistImageDelete}
+            />
+          </label>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col justify-between">

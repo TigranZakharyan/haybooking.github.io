@@ -95,6 +95,7 @@ export function Select({
           rounded-xl shadow-lg
           overflow-hidden
           z-50
+          max-h-60 overflow-y-auto
         "
         >
           {options.map((option) => {

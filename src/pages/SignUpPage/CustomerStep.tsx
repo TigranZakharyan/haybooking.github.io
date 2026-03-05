@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Lock, Mail, User, CheckCircle } from "lucide-react";
 import { Input, Button } from "@/components";
 import { authService } from "@/services/api";
-import { formatPhone, isValidEmail } from "@/services/validation";
+import { isValidEmail } from "@/services/validation";
 import { useNavigate } from "react-router-dom";
 import type { TRegisterCustomerCredentials } from "@/types";
+import { formatPhone } from "@/services/format";
 
 type CustomerStepProps = {
   phone: string;
@@ -32,7 +33,7 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
     if (!firstName.trim()) newErrors.firstName = "First name is required";
     if (!lastName.trim()) newErrors.lastName = "Last name is required";
     if (email.trim() && !isValidEmail(email)) newErrors.email = "Email is invalid";
-    if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    if (password.length < 8) newErrors.password = "Password must be at least 8 characters";
     if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
 
     // Set errors to show them under inputs

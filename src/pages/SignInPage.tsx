@@ -134,8 +134,8 @@ export function SignInPage() {
         </div>
       </div>
 
-      <div className="w-full h-full hidden md:block relative">
-        <div className="fixed w-1/2 h-full top-0 bg-[url(/booking.jpg)] bg-no-repeat bg-cover bg-center"></div>
+      <div className="w-full h-full md:block hidden">
+        <div className="fixed w-1/2 h-full top-0 bg-[url(/booking.png)] bg-cover bg-[position:10%_center]"></div>
       </div>
     </div>
   );

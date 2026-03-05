@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { businessService, serviceService, uploadService } from "@/services/api";
 import { Button, Input } from "@/components";
 import { NumberInput, SectionTitle, Select, Card } from "@/components";
 import { ServiceCard } from "./ServiceCard";
+import { UploadImage } from "@/components";
 import type { TBranch, TCreateService, TService } from "@/types";
 import { currencies } from "@/constants/currencies";
+import { formatPrice } from "@/services/format";
 
 interface ValidationErrors {
   serviceName: string;
@@ -31,6 +33,11 @@ export const ServicesPage = () => {
   const [editingService, setEditingService] = useState<TService | null>(null);
   const [serviceImageUploading, setServiceImageUploading] = useState<Record<string, boolean>>({});
   const [mobilePanel, setMobilePanel] = useState<"list" | "form">("list");
+
+  // New service form image state
+  const [newServiceImageFile, setNewServiceImageFile] = useState<File | null>(null);
+  const [newServiceImagePreview, setNewServiceImagePreview] = useState<string>("");
+  const [newServiceImageUploading, setNewServiceImageUploading] = useState<boolean>(false);
 
   const [newService, setNewService] = useState<TCreateService>(initialService);
 
@@ -124,11 +131,26 @@ export const ServicesPage = () => {
     }
   };
 
+  // Handle image selection in the "new service" form (preview only, no upload yet)
+  const handleNewServiceImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setNewServiceImageFile(file);
+    setNewServiceImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleNewServiceImageDelete = () => {
+    setNewServiceImageFile(null);
+    setNewServiceImagePreview("");
+  };
+
   const resetForm = () => {
     const baseBranch =
       branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
     setNewService({ ...initialService, branch: baseBranch });
     setValidationErrors({ serviceName: "", serviceDuration: "", servicePrice: "" });
+    setNewServiceImageFile(null);
+    setNewServiceImagePreview("");
   };
 
   const handleAddService = async (): Promise<void> => {
@@ -141,7 +163,26 @@ export const ServicesPage = () => {
 
     setCreatingService(true);
     try {
+      // 1st call: create the service
       const createdService = await serviceService.createService(newService);
+
+      // 2nd call: upload image if one was selected
+      if (newServiceImageFile) {
+        setNewServiceImageUploading(true);
+        try {
+          const formData = new FormData();
+          formData.append("image", newServiceImageFile);
+          const image = await uploadService.uploadServiceImage(createdService._id, formData);
+          if (image) {
+            createdService.image = image;
+          }
+        } catch (err) {
+          console.error("Failed to upload service image:", err);
+        } finally {
+          setNewServiceImageUploading(false);
+        }
+      }
+
       setServices((prev) => [...prev, createdService]);
       resetForm();
       setMobilePanel("list");
@@ -164,6 +205,9 @@ export const ServicesPage = () => {
       allowSpecificTimes: service.allowSpecificTimes || false,
       isActive: service.isActive !== undefined ? service.isActive : true,
     });
+    // Clear new-service image state when switching to edit mode
+    setNewServiceImageFile(null);
+    setNewServiceImagePreview("");
     setMobilePanel("form");
 
     setTimeout(() => {
@@ -251,14 +295,30 @@ export const ServicesPage = () => {
 
   const formPanel = (
     <Card className="flex-1 overflow-auto">
-      <div id="edit-service">
+      <div id="edit-service" className="flex justify-between">
         <SectionTitle
           title={editingService ? "Edit Service" : "Add New Service"}
           subtitle={editingService ? "Update service details" : "Create a new service offering"}
         />
+        {!editingService && (
+          <label
+            htmlFor="new-service-image"
+            className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition flex-shrink-0"
+          >
+            <UploadImage
+              id="new-service"
+              imageUrl={newServiceImagePreview}
+              altText="New service"
+              isUploading={newServiceImageUploading}
+              onChange={handleNewServiceImageChange}
+              onDelete={handleNewServiceImageDelete}
+            />
+          </label>
+        )}
       </div>
 
       <div className="space-y-4">
+
         <Input
           required
           label="Service Name"
@@ -275,7 +335,7 @@ export const ServicesPage = () => {
           error={validationErrors.serviceName}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
           <Input
             value={newService.duration}
             label="Duration (minutes)"
@@ -304,7 +364,7 @@ export const ServicesPage = () => {
             placeholder="60"
           />
 
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="flex-1">
               <Input
                 variant="primary"
@@ -313,16 +373,10 @@ export const ServicesPage = () => {
                 required
                 value={newService.price.amount || "0"}
                 onChange={(e) => {
-                  const value = e.target.value;
-                  const cleaned = value.replace(/[^\d.]/g, "");
-                  const parts = cleaned.split(".");
-                  const formatted =
-                    parts[0].replace(/^0+(?=\d)/, "") +
-                    (parts[1] ? "." + parts[1].slice(0, 2) : "");
-                  const amount = formatted ? parseFloat(formatted) : 0;
+                  const amount = formatPrice(e.target.value);
                   setNewService({
                     ...newService,
-                    price: { ...newService.price, amount: Number(value) },
+                    price: { ...newService.price, amount },
                   });
                   setValidationErrors((prev) => ({
                     ...prev,
@@ -456,7 +510,13 @@ export const ServicesPage = () => {
             {creatingService ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                <span>{editingService ? "Updating..." : "Adding..."}</span>
+                <span>
+                  {editingService
+                    ? "Updating..."
+                    : newServiceImageFile
+                    ? "Adding & uploading image..."
+                    : "Adding..."}
+                </span>
               </>
             ) : (
               <span>{editingService ? "Update Service" : "Add Service"}</span>
@@ -487,7 +547,7 @@ export const ServicesPage = () => {
             }}
             className="text-sm"
           >
-            + Add
+            Add
           </Button>
         ) : (
           <button

@@ -53,16 +53,18 @@ export function SignUpPage() {
                     type="button"
                     onClick={() => setAccountType("customer")}
                     className={`rounded-xl border p-5 text-left transition-all
-                      ${accountType === "customer"
-                        ? "border-liberty bg-liberty/5 shadow-[0_0_0_2px_rgba(99,102,241,0.15)]"
-                        : "border-gray-200 hover:border-liberty/40"
+                      ${
+                        accountType === "customer"
+                          ? "border-liberty bg-liberty/5 shadow-[0_0_0_2px_rgba(99,102,241,0.15)]"
+                          : "border-gray-200 hover:border-liberty/40"
                       }`}
                   >
                     <User
-                      className={`mb-3 h-6 w-6 ${accountType === "customer"
-                        ? "text-liberty"
-                        : "text-gray-400"
-                        }`}
+                      className={`mb-3 h-6 w-6 ${
+                        accountType === "customer"
+                          ? "text-liberty"
+                          : "text-gray-400"
+                      }`}
                     />
                     <p className="font-semibold text-gray-900">Customer</p>
                     <p className="text-sm text-gray-500">
@@ -74,16 +76,18 @@ export function SignUpPage() {
                     type="button"
                     onClick={() => setAccountType("business")}
                     className={`rounded-xl border p-5 text-left transition-all
-                      ${accountType === "business"
-                        ? "border-liberty bg-liberty/5 shadow-[0_0_0_2px_rgba(99,102,241,0.15)]"
-                        : "border-gray-200 hover:border-liberty/40"
+                      ${
+                        accountType === "business"
+                          ? "border-liberty bg-liberty/5 shadow-[0_0_0_2px_rgba(99,102,241,0.15)]"
+                          : "border-gray-200 hover:border-liberty/40"
                       }`}
                   >
                     <Briefcase
-                      className={`mb-3 h-6 w-6 ${accountType === "business"
-                        ? "text-liberty"
-                        : "text-gray-400"
-                        }`}
+                      className={`mb-3 h-6 w-6 ${
+                        accountType === "business"
+                          ? "text-liberty"
+                          : "text-gray-400"
+                      }`}
                     />
                     <p className="font-semibold text-gray-900">Business</p>
                     <p className="text-sm text-gray-500">
@@ -99,14 +103,16 @@ export function SignUpPage() {
                 required
                 hint="Enter your phone number with country code"
                 onChange={handlePhoneChange}
-                error={showPhoneError && !phone ? "Phone number is invalid" : ""}
+                error={
+                  showPhoneError && !phone ? "Phone number is invalid" : ""
+                }
               />
 
               {/* Info */}
               <div className="rounded-xl border border-liberty/30 bg-liberty/5 px-4 py-3">
                 <p className="text-sm text-liberty">
-                  We&apos;ll send you a verification code via SMS to confirm your
-                  phone number.
+                  We&apos;ll send you a verification code via SMS to confirm
+                  your phone number.
                 </p>
               </div>
 
@@ -154,9 +160,8 @@ export function SignUpPage() {
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
       <div className="w-full h-full md:block hidden">
-        <div className="fixed w-1/2 h-full z-1 top-0 bg-[url(/booking.jpg)] bg-no-repeat bg-cover bg-center"></div>
+        <div className="fixed w-1/2 h-full top-0 bg-[url(/booking.png)] bg-cover bg-[position:10%_center]"></div>
       </div>
     </div>
   );
