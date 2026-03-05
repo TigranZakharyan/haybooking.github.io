@@ -4,7 +4,6 @@ import {
     User,
     Mail,
     Briefcase,
-    Phone,
     CheckCircle,
     Trash2,
 } from "lucide-react";
@@ -12,7 +11,7 @@ import { Button, Input, Select } from "@/components";
 import { PhoneInput } from "@/components/PhoneInput";
 import { nanoid } from "nanoid";
 import { cities, countries } from "@/constants";
-import { formatPhone, isValidPhone, isValidEmail, isValidPasswordLength, isValidPasswordMatch } from "@/services/validation";
+import { isValidPhone, isValidEmail, isValidPasswordLength, isValidPasswordMatch } from "@/services/validation";
 import { authService, searchService } from "@/services/api";
 import type { TBranch, TBusinessType } from "@/types";
 import { useNavigate } from "react-router-dom";

@@ -113,31 +113,61 @@ const ScrollPicker = ({ length, value, onChange }: { length: number; value: stri
   );
 };
 
-// ── Portal dropdown (desktop, unchanged) ─────────────────────────────────────
 function usePortalDropdown() {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const updatePosition = useCallback(() => {
+    if (!btnRef.current) return;
+
+    const rect = btnRef.current.getBoundingClientRect();
+
+    setPos({
+      top: rect.bottom + 8,
+      left: rect.left + rect.width / 2, // center
+      width: Math.max(rect.width, 220),
+    });
+  }, []);
+
   const openDropdown = () => {
-    if (btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 220) });
-    }
+    updatePosition();
     setOpen(true);
   };
 
+  // close when clicking outside
   useEffect(() => {
-    const h = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       if (
-        btnRef.current && !btnRef.current.contains(e.target as Node) &&
-        menuRef.current && !menuRef.current.contains(e.target as Node)
-      ) setOpen(false);
+        btnRef.current &&
+        !btnRef.current.contains(e.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
     };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // reposition on scroll / resize
+  useEffect(() => {
+    if (!open) return;
+
+    const handleUpdate = () => updatePosition();
+
+    window.addEventListener("scroll", handleUpdate, true);
+    window.addEventListener("resize", handleUpdate);
+
+    return () => {
+      window.removeEventListener("scroll", handleUpdate, true);
+      window.removeEventListener("resize", handleUpdate);
+    };
+  }, [open, updatePosition]);
 
   return { open, setOpen, pos, btnRef, menuRef, openDropdown };
 }
