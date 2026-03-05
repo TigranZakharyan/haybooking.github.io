@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MapPin, Phone, Clock, DollarSign, X } from "lucide-react";
+import { MapPin, Phone, Clock, DollarSign, X, Check } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
 import { MapWithCoords } from "@/components/MapWithCoords";
 import { GoogleMapButton } from "@/components/GoogleMapButton";
@@ -85,14 +85,14 @@ function canGoToStep(
   num: number,
   {
     selectedBranch,
-    selectedService,
+    selectedServices,
     selectedSpecialist,
     selectedDate,
     selectedTime,
     sentCode,
   }: {
     selectedBranch: unknown;
-    selectedService: unknown;
+    selectedServices: TService[];
     selectedSpecialist: unknown;
     selectedDate: string | null;
     selectedTime: TimeSlot | null;
@@ -103,7 +103,7 @@ function canGoToStep(
   if (mode === "edit" && num === 5) return false;
   if (num <= 1) return true;
   if (num === 2) return !!selectedBranch;
-  if (num === 3) return !!(selectedService && selectedSpecialist);
+  if (num === 3) return !!(selectedServices.length > 0 && selectedSpecialist);
   if (num === 4) return !!(selectedDate && selectedTime);
   if (num === 5) return !!sentCode;
   return false;
@@ -244,11 +244,12 @@ export const BookingModal = ({
     if (!isEditMode || !editBooking) return null;
     const bookingDateObj = new Date(editBooking.bookingDate);
     const dateString = `${bookingDateObj.getFullYear()}-${String(bookingDateObj.getMonth() + 1).padStart(2, "0")}-${String(bookingDateObj.getDate()).padStart(2, "0")}`;
+    const services = Array.isArray(editBooking.services)
+      ? editBooking.services
+      : [editBooking.services];
     return {
       branch: editBooking.branch,
-      service: Array.isArray(editBooking.services)
-        ? editBooking.services[0]
-        : editBooking.services,
+      services,
       specialist: editBooking.specialist,
       date: dateString,
       time: {
@@ -280,8 +281,9 @@ export const BookingModal = ({
   const [selectedBranch, setSelectedBranch] = useState<any>(
     initialData?.branch || preSelectedBranch || null,
   );
-  const [selectedService, setSelectedService] = useState<TService | null>(
-    initialData?.service || null,
+  // ── Multi-select: array of services ──────────────────────────────────────
+  const [selectedServices, setSelectedServices] = useState<TService[]>(
+    initialData?.services || [],
   );
   const [selectedSpecialist, setSelectedSpecialist] = useState<TSpecialist | null>(
     initialData?.specialist || null,
@@ -369,8 +371,8 @@ export const BookingModal = ({
   }, [step]);
 
   useEffect(() => {
-    if (selectedDate && selectedService && selectedSpecialist) fetchSlots();
-  }, [selectedDate, selectedService, selectedSpecialist]);
+    if (selectedDate && selectedServices.length > 0 && selectedSpecialist) fetchSlots();
+  }, [selectedDate, selectedServices, selectedSpecialist]);
 
   useEffect(() => {
     if (
@@ -387,7 +389,7 @@ export const BookingModal = ({
   useEffect(() => {
     if (!isEditMode) {
       setSelectedSpecialist(null);
-      setSelectedService(null);
+      setSelectedServices([]);
       setSelectedDate(null);
       setSelectedTime(null);
       setAvailableSlots([]);
@@ -397,13 +399,15 @@ export const BookingModal = ({
   // ── Data fetching ───────────────────────────────────────────────────────────
 
   const fetchSlots = async () => {
-    if (!selectedSpecialist || !selectedService || !selectedDate) return;
+    if (!selectedSpecialist || selectedServices.length === 0 || !selectedDate) return;
     setLoadingSlots(true);
     setSlotsError(null);
     try {
       const data = await bookingService.getAvailability({
         specialistId: selectedSpecialist._id,
-        serviceId: selectedService._id,
+        // Pass all selected service IDs (use serviceIds if your API supports multiple)
+        serviceIds: selectedServices.map((s) => s._id).join(","),
+        serviceId: selectedServices[0]._id, // fallback for APIs that only accept one
         date: selectedDate,
       });
       setAvailableSlots((data.slots ?? []) as TimeSlot[]);
@@ -416,37 +420,67 @@ export const BookingModal = ({
     }
   };
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────────
 
+  // Total duration & price across all selected services
+  const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration, 0);
+  const totalPrice = selectedServices.reduce((acc, s) => acc + s.price.amount, 0);
+  const priceCurrency = selectedServices[0]?.price.currency ?? "";
+
+  // ── Specialist filtering ──────────────────────────────────────────────────
+  // Show specialists who can perform ALL selected services
   const filteredSpecialists: TSpecialist[] = (business.specialists ?? []).filter(
     (specialist) => {
       if (selectedBranch && specialist.branch !== selectedBranch._id) return false;
-      if (!selectedService) return true;
+      if (selectedServices.length === 0) return true;
       if (!specialist.services?.length) return false;
-      return specialist.services.some((svc) => {
-        const id = typeof svc === "string" ? svc : svc._id;
-        return id === selectedService._id;
-      });
+      // Specialist must cover every selected service
+      return selectedServices.every((selectedSvc) =>
+        specialist.services.some((svc) => {
+          const id = typeof svc === "string" ? svc : svc._id;
+          return id === selectedSvc._id;
+        }),
+      );
     },
   );
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
   const selectBranch = (branch: any) => {
     setSelectedBranch(branch);
     if (!isEditMode) {
       setSelectedSpecialist(null);
-      setSelectedService(null);
+      setSelectedServices([]);
     }
     setStep(2);
   };
 
-  const selectService = (service: TService) => {
-    setSelectedService(service);
-    if (!isEditMode) setSelectedSpecialist(null);
+  // Toggle a service in/out of the selection
+  const toggleService = (service: TService) => {
+    setSelectedServices((prev) => {
+      const isAlreadySelected = prev.some((s) => s._id === service._id);
+      const next = isAlreadySelected
+        ? prev.filter((s) => s._id !== service._id)
+        : [...prev, service];
+
+      // Only clear specialist if they can no longer serve the new set of services
+      if (!isEditMode && selectedSpecialist) {
+        const stillValid = next.every((svc) =>
+          selectedSpecialist.services?.some((sp) => {
+            const id = typeof sp === "string" ? sp : sp._id;
+            return id === svc._id;
+          }),
+        );
+        if (!stillValid) setSelectedSpecialist(null);
+      }
+
+      return next;
+    });
   };
 
   const selectSpecialist = (specialist: TSpecialist) => {
     setSelectedSpecialist(specialist);
-    setStep(3);
+    // Do NOT auto-advance — user may still want to toggle more services
   };
 
   const selectDate = (dateString: string) => {
@@ -532,11 +566,12 @@ export const BookingModal = ({
   };
 
   const confirmBooking = async () => {
-    if (!selectedService || !selectedSpecialist || !selectedDate || !selectedTime) return;
+    if (!selectedServices.length || !selectedSpecialist || !selectedDate || !selectedTime) return;
     const booking = await bookingService.createBooking({
       businessId: business.id,
       branchId: selectedBranch?._id,
-      serviceId: selectedService._id,
+      serviceIds: selectedServices.map((s) => s._id),
+      serviceId: selectedServices[0]._id, // keep for backward compat
       specialistId: selectedSpecialist._id,
       bookingDate: selectedDate,
       startTime: selectedTime.startTime,
@@ -553,10 +588,11 @@ export const BookingModal = ({
   };
 
   const updateBooking = async () => {
-    if (!selectedService || !selectedSpecialist || !selectedDate || !selectedTime || !editBooking) return;
+    if (!selectedServices.length || !selectedSpecialist || !selectedDate || !selectedTime || !editBooking) return;
     const updatedBooking = await bookingService.updateBooking(editBooking._id, {
       branchId: selectedBranch?._id,
-      serviceId: selectedService._id,
+      serviceIds: selectedServices.map((s) => s._id),
+      serviceId: selectedServices[0]._id,
       specialistId: selectedSpecialist._id,
       bookingDate: selectedDate,
       startTime: selectedTime.startTime,
@@ -572,14 +608,14 @@ export const BookingModal = ({
   };
 
   const validateCustomTime = async () => {
-    if (!customHour || !customMinute || !selectedSpecialist || !selectedService || !selectedDate) return;
+    if (!customHour || !customMinute || !selectedSpecialist || !selectedServices.length || !selectedDate) return;
     const timeStr = `${customHour}:${customMinute}`;
     setValidatingTime(true);
     setCustomTimeError("");
     try {
       const res = await bookingService.validateCustomTime({
         specialistId: selectedSpecialist._id,
-        serviceId: selectedService._id,
+        serviceId: selectedServices[0]._id,
         bookingDate: selectedDate,
         customStartTime: timeStr,
       });
@@ -603,7 +639,7 @@ export const BookingModal = ({
   const stepGate = (num: number) =>
     canGoToStep(
       num,
-      { selectedBranch, selectedService, selectedSpecialist, selectedDate, selectedTime, sentCode },
+      { selectedBranch, selectedServices, selectedSpecialist, selectedDate, selectedTime, sentCode },
       mode,
     );
 
@@ -623,6 +659,9 @@ export const BookingModal = ({
   );
   const displaySteps = isEditMode ? STEPS.filter((s) => s.num !== 5) : STEPS;
 
+  // Whether at least one selected service allows specific (custom) times
+  const anyServiceAllowsCustomTime = selectedServices.some((s) => s.allowSpecificTimes);
+
   // ── Branch map point ────────────────────────────────────────────────────────
   const branchHasCoords =
     selectedBranch?.address.coordinates?.latitude && selectedBranch?.address.coordinates?.longitude;
@@ -636,7 +675,7 @@ export const BookingModal = ({
         isBase: selectedBranch.isBaseBranch,
       }
     : null;
-      console.log(selectedBranch)
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -675,7 +714,7 @@ export const BookingModal = ({
               </div>
             </div>
 
-            {/* Right: mini map + map buttons (only when branch with coords is selected) */}
+            {/* Right: mini map + map buttons */}
             {branchMapPoint && (
               <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
                 <div className="w-36 h-24 sm:w-48 sm:h-28 hidden sm:block rounded-xl overflow-hidden shadow-lg border-2 border-white/20">
@@ -820,83 +859,129 @@ export const BookingModal = ({
           {/* ── Step 2: Service & Specialist ───────────────────────────── */}
           {step === 2 && (
             <div>
-              <h3 className="text-base sm:text-lg font-semibold mb-4 text-primary">
-                Select Service
-              </h3>
+              {/* ── Services: multi-select ── */}
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base sm:text-lg font-semibold text-primary">
+                  Select Services
+                </h3>
+                {selectedServices.length > 0 && (
+                  <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-semibold">
+                    {selectedServices.length} selected
+                  </span>
+                )}
+              </div>
 
               {!branchServices.length ? (
                 <p className="text-center py-8 text-gray-500">
                   No services available at this branch.
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                  {branchServices.map((service: any) => {
-                    const selected = selectedService?._id === service._id;
-                    return (
-                      <div
-                        key={service._id}
-                        onClick={() => selectService(service)}
-                        className={[
-                          "rounded-xl p-4 cursor-pointer transition-all text-white border-2",
-                          selected
-                            ? "bg-[#3D2B2B] border-white"
-                            : "bg-[#4A3535] border-transparent hover:border-primary/50",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Icon url={service?.image?.url} name={service.name} />
-                            <h4 className="font-semibold text-base text-white">{service.name}</h4>
-                          </div>
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    {branchServices.map((service: any) => {
+                      const isSelected = selectedServices.some((s) => s._id === service._id);
+                      return (
+                        <div
+                          key={service._id}
+                          onClick={() => toggleService(service)}
+                          className={[
+                            "rounded-xl p-4 cursor-pointer transition-all text-white border-2 relative",
+                            isSelected
+                              ? "bg-[#3D2B2B] border-white"
+                              : "bg-[#4A3535] border-transparent hover:border-primary/50",
+                          ].join(" ")}
+                        >
+                          {/* Checkbox-style indicator */}
                           <div
                             className={[
-                              "w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5",
-                              selected
+                              "absolute top-3 right-3 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                              isSelected
                                 ? "border-white bg-white"
                                 : "border-white/50 bg-transparent",
                             ].join(" ")}
                           >
-                            {selected && <div className="w-[7px] h-[7px] rounded-full bg-[#4A3535]" />}
+                            {isSelected && <Check className="w-3 h-3 text-[#3D2B2B]" strokeWidth={3} />}
+                          </div>
+
+                          <div className="flex items-center gap-2 mb-2 pr-6">
+                            <Icon url={service?.image?.url} name={service.name} />
+                            <h4 className="font-semibold text-base text-white">{service.name}</h4>
+                          </div>
+                          {service.description && (
+                            <p className="text-xs mb-3 text-white/65">{service.description}</p>
+                          )}
+                          <div className="flex justify-between items-center text-xs text-white/75">
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5" /> {service.duration} min
+                            </span>
+                            <span className="flex items-center font-bold text-base text-white">
+                              <DollarSign className="h-3.5 w-3.5" />
+                              {service.price.amount}
+                            </span>
                           </div>
                         </div>
-                        {service.description && (
-                          <p className="text-xs mb-3 text-white/65">{service.description}</p>
-                        )}
-                        <div className="flex justify-between items-center text-xs text-white/75">
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5" /> {service.duration} min
+                      );
+                    })}
+                  </div>
+
+                  {/* Selected services summary bar */}
+                  {selectedServices.length > 0 && (
+                    <div className="rounded-xl p-3.5 mb-5 bg-primary/5 border border-primary/20">
+                      <p className="text-xs font-semibold text-[#3D2B2B] mb-2">Selected:</p>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {selectedServices.map((s) => (
+                          <span
+                            key={s._id}
+                            className="inline-flex items-center gap-1.5 text-xs bg-[#3D2B2B] text-white rounded-full px-2.5 py-1"
+                          >
+                            {s.name}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleService(s); }}
+                              className="hover:opacity-70 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
                           </span>
-                          <span className="flex items-center font-bold text-base text-white">
-                            <DollarSign className="h-3.5 w-3.5" />
-                            {service.price.amount}
-                          </span>
-                        </div>
+                        ))}
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex items-center justify-between text-xs text-secondary border-t border-primary/10 pt-2 mt-1">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          Total: <strong className="ml-1 text-[#3D2B2B]">{totalDuration} min</strong>
+                        </span>
+                        <span className="flex items-center gap-0.5 font-bold text-sm text-[#3D2B2B]">
+                          <DollarSign className="h-3.5 w-3.5" />
+                          {totalPrice} {priceCurrency}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
-              {selectedService && (
+              {/* ── Specialists: shown once at least one service is selected ── */}
+              {selectedServices.length > 0 && (
                 <>
                   <h3 className="text-base sm:text-lg font-semibold mb-3 text-primary">
                     Select Specialist
                   </h3>
-                  <div className="space-y-2 mb-6">
-                    {filteredSpecialists.length === 0 ? (
-                      <p className="text-center py-6 text-gray-500 text-sm">
-                        No specialists available for this service at this branch
-                      </p>
-                    ) : (
-                      filteredSpecialists.map((specialist) => {
-                        const selected = selectedSpecialist?._id === specialist._id;
+                  {filteredSpecialists.length === 0 ? (
+                    <div className="text-center py-6 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm mb-5">
+                      No specialists available for all selected services at this branch.
+                      <br />
+                      <span className="text-xs mt-1 block text-amber-600">Try selecting fewer services.</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mb-6">
+                      {filteredSpecialists.map((specialist) => {
+                        const isSelected = selectedSpecialist?._id === specialist._id;
                         return (
                           <div
                             key={specialist._id}
                             onClick={() => selectSpecialist(specialist)}
                             className={[
                               "rounded-xl p-3.5 px-4 border-2 cursor-pointer transition-all flex items-center gap-3",
-                              selected
+                              isSelected
                                 ? "border-primary bg-primary/5"
                                 : "border-[#e5dada] bg-white hover:border-primary hover:bg-primary/5",
                             ].join(" ")}
@@ -904,22 +989,28 @@ export const BookingModal = ({
                             <Icon url={specialist?.photo?.url} name={specialist.name} />
                             <div className="flex-1">
                               <p className="font-semibold text-sm text-[#3D2B2B]">{specialist.name}</p>
+                              {/* Show which of the selected services this specialist covers */}
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {selectedServices.length > 1
+                                  ? `Can perform all ${selectedServices.length} selected services`
+                                  : specialist.specialties?.join(", ")}
+                              </p>
                             </div>
                             <div
                               className={[
                                 "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                                selected
+                                isSelected
                                   ? "border-primary bg-primary"
                                   : "border-gray-300 bg-white",
                               ].join(" ")}
                             >
-                              {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+                              {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                             </div>
                           </div>
                         );
-                      })
-                    )}
-                  </div>
+                      })}
+                    </div>
+                  )}
                 </>
               )}
 
@@ -933,8 +1024,8 @@ export const BookingModal = ({
                   </button>
                 )}
                 <button
-                  onClick={() => selectedService && selectedSpecialist && setStep(3)}
-                  disabled={!(selectedService && selectedSpecialist)}
+                  onClick={() => selectedServices.length > 0 && selectedSpecialist && setStep(3)}
+                  disabled={!(selectedServices.length > 0 && selectedSpecialist)}
                   className="flex-1 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                 >
                   Next: Date &amp; Time
@@ -1059,8 +1150,8 @@ export const BookingModal = ({
                         </div>
                       </div>
 
-                      {/* Custom time picker */}
-                      {selectedService?.allowSpecificTimes && (
+                      {/* Custom time picker — shown if any selected service allows it */}
+                      {anyServiceAllowsCustomTime && (
                         <div className="rounded-xl p-5 mb-4 bg-primary/5 border border-[#e5dada]">
                           <p className="text-center text-sm mb-4 text-secondary">
                             — or enter a custom time —
