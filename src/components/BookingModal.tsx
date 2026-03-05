@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MapPin, Phone, Clock, DollarSign, X } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
+import { MapWithCoords } from "@/components/MapWithCoords";
+import { GoogleMapButton } from "@/components/GoogleMapButton";
+import { YandexMapButton } from "@/components/YandexMapButton";
 import { bookingService } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { formatPhone, isValidPhone, isValidEmail } from "@/services/validation";
@@ -96,7 +99,6 @@ function canGoToStep(
   },
   mode: "create" | "edit" = "create",
 ): boolean {
-  // In edit mode, skip phone verification
   if (mode === "edit" && num === 5) return false;
   if (num <= 1) return true;
   if (num === 2) return !!selectedBranch;
@@ -125,6 +127,8 @@ export function Icon({ url, name }: { url: string; name: string }) {
   );
 }
 
+// ── Scroll Picker ─────────────────────────────────────────────────────────────
+
 interface ScrollPickerProps {
   length: number;
   value: string;
@@ -133,9 +137,8 @@ interface ScrollPickerProps {
 
 const ScrollPicker = ({ length, value, onChange }: ScrollPickerProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const itemHeight = 40; // Fixed height for reliable calculations
+  const itemHeight = 40;
 
-  // Centralize the scroll-to-value logic
   const scrollToValue = useCallback(
     (val: string, behavior: ScrollBehavior = "smooth") => {
       if (scrollRef.current) {
@@ -149,7 +152,6 @@ const ScrollPicker = ({ length, value, onChange }: ScrollPickerProps) => {
     [],
   );
 
-  // Sync scroll position when the 'value' prop changes externally (e.g., arrow buttons)
   useEffect(() => {
     scrollToValue(value);
   }, [value, scrollToValue]);
@@ -159,7 +161,6 @@ const ScrollPicker = ({ length, value, onChange }: ScrollPickerProps) => {
     const scrollTop = scrollRef.current.scrollTop;
     const index = Math.round(scrollTop / itemHeight);
     const newValue = index.toString().padStart(2, "0");
-
     if (newValue !== value && index >= 0 && index < length) {
       onChange(newValue);
     }
@@ -173,31 +174,17 @@ const ScrollPicker = ({ length, value, onChange }: ScrollPickerProps) => {
 
   return (
     <div className="flex flex-col items-center select-none">
-      {/* Up Button */}
       <button
         onClick={() => step(-1)}
         className="z-20 p-2 text-primary hover:scale-110 active:scale-95 transition-transform"
       >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={3}
-            d="M5 15l7-7 7 7"
-          />
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
         </svg>
       </button>
 
-      {/* Picker Container */}
       <div className="relative h-[120px] w-16 overflow-hidden">
-        {/* Selection Overlay (The Glass Box) */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-10 border-y border-primary/20 bg-primary/5 pointer-events-none" />
-
         <div
           ref={scrollRef}
           onScroll={handleScroll}
@@ -205,12 +192,10 @@ const ScrollPicker = ({ length, value, onChange }: ScrollPickerProps) => {
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
-            scrollPaddingBlock: "40px", // Keeps the active item centered
+            scrollPaddingBlock: "40px",
           }}
         >
-          {/* Top Padding to allow first item to center */}
           <div style={{ height: "40px" }} />
-
           {Array.from({ length }, (_, i) => {
             const padded = i.toString().padStart(2, "0");
             const isActive = value === padded;
@@ -219,36 +204,22 @@ const ScrollPicker = ({ length, value, onChange }: ScrollPickerProps) => {
                 key={i}
                 onClick={() => onChange(padded)}
                 className={`h-10 flex items-center justify-center text-xl font-medium transition-all duration-200 snap-center cursor-pointer
-                  ${isActive ? "text-primary scale-125 font-bold" : "text-gray-400 scale-100"}
-                `}
+                  ${isActive ? "text-primary scale-125 font-bold" : "text-gray-400 scale-100"}`}
               >
                 {padded}
               </div>
             );
           })}
-
-          {/* Bottom Padding to allow last item to center */}
           <div style={{ height: "40px" }} />
         </div>
       </div>
 
-      {/* Down Button */}
       <button
         onClick={() => step(1)}
         className="z-20 p-2 text-primary hover:scale-110 active:scale-95 transition-transform"
       >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={3}
-            d="M19 9l-7 7-7-7"
-          />
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
     </div>
@@ -268,13 +239,10 @@ export const BookingModal = ({
   const { user } = useAuth();
   const isEditMode = mode === "edit" && !!editBooking;
 
-  // Initialize state from editBooking if in edit mode
   const initializeFromBooking = () => {
     if (!isEditMode || !editBooking) return null;
-
     const bookingDateObj = new Date(editBooking.bookingDate);
     const dateString = `${bookingDateObj.getFullYear()}-${String(bookingDateObj.getMonth() + 1).padStart(2, "0")}-${String(bookingDateObj.getDate()).padStart(2, "0")}`;
-
     return {
       branch: editBooking.branch,
       service: Array.isArray(editBooking.services)
@@ -301,7 +269,6 @@ export const BookingModal = ({
 
   const initialData = initializeFromBooking();
 
-  // Determine initial step - skip to step 2 if branch is pre-selected
   const getInitialStep = () => {
     if (preSelectedBranch) return 2;
     return 1;
@@ -309,16 +276,15 @@ export const BookingModal = ({
 
   const [step, setStep] = useState(getInitialStep());
 
-  // Branch selection - initialize with preSelectedBranch if provided
   const [selectedBranch, setSelectedBranch] = useState<any>(
     initialData?.branch || preSelectedBranch || null,
   );
-
   const [selectedService, setSelectedService] = useState<TService | null>(
     initialData?.service || null,
   );
-  const [selectedSpecialist, setSelectedSpecialist] =
-    useState<TSpecialist | null>(initialData?.specialist || null);
+  const [selectedSpecialist, setSelectedSpecialist] = useState<TSpecialist | null>(
+    initialData?.specialist || null,
+  );
   const [selectedDate, setSelectedDate] = useState<string | null>(
     initialData?.date || null,
   );
@@ -374,7 +340,6 @@ export const BookingModal = ({
       minuteRef.current.scrollTop = parseInt(customMinute) * 32;
   }, [customMinute]);
 
-  // Set initial scroll position in edit mode
   useEffect(() => {
     if (isEditMode && initialData?.time?.startTime) {
       const [h, m] = initialData.time.startTime.split(":");
@@ -391,7 +356,6 @@ export const BookingModal = ({
     }
   }, [isEditMode]);
 
-  // Also set scroll position when step changes to 3 (Date & Time step)
   useEffect(() => {
     if (step === 3 && customHour && customMinute) {
       setTimeout(() => {
@@ -407,7 +371,6 @@ export const BookingModal = ({
     if (selectedDate && selectedService && selectedSpecialist) fetchSlots();
   }, [selectedDate, selectedService, selectedSpecialist]);
 
-  // Auto-select branch if only one exists (only in create mode)
   useEffect(() => {
     if (
       !isEditMode &&
@@ -420,7 +383,6 @@ export const BookingModal = ({
     }
   }, [business.branches, isEditMode, preSelectedBranch]);
 
-  // Reset specialist when branch changes (only in create mode)
   useEffect(() => {
     if (!isEditMode) {
       setSelectedSpecialist(null);
@@ -445,9 +407,7 @@ export const BookingModal = ({
       });
       setAvailableSlots((data.slots ?? []) as TimeSlot[]);
       if (!data.slots?.length)
-        setSlotsError(
-          "No time slots available for this date. Please try another date.",
-        );
+        setSlotsError("No time slots available for this date. Please try another date.");
     } catch (err) {
       setSlotsError(getErrorMessage(err, "Failed to load available slots"));
     } finally {
@@ -457,25 +417,17 @@ export const BookingModal = ({
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  // Filter specialists by branch AND service
-  const filteredSpecialists: TSpecialist[] = (
-    business.specialists ?? []
-  ).filter((specialist) => {
-    // First check if specialist belongs to selected branch
-    if (selectedBranch && specialist.branch !== selectedBranch._id) {
-      return false;
-    }
-
-    // Then check if they offer the selected service
-    if (!selectedService) return true;
-
-    if (!specialist.services?.length) return false;
-
-    return specialist.services.some((svc) => {
-      const id = typeof svc === "string" ? svc : svc._id;
-      return id === selectedService._id;
-    });
-  });
+  const filteredSpecialists: TSpecialist[] = (business.specialists ?? []).filter(
+    (specialist) => {
+      if (selectedBranch && specialist.branch !== selectedBranch._id) return false;
+      if (!selectedService) return true;
+      if (!specialist.services?.length) return false;
+      return specialist.services.some((svc) => {
+        const id = typeof svc === "string" ? svc : svc._id;
+        return id === selectedService._id;
+      });
+    },
+  );
 
   const selectBranch = (branch: any) => {
     setSelectedBranch(branch);
@@ -488,9 +440,7 @@ export const BookingModal = ({
 
   const selectService = (service: TService) => {
     setSelectedService(service);
-    if (!isEditMode) {
-      setSelectedSpecialist(null);
-    }
+    if (!isEditMode) setSelectedSpecialist(null);
   };
 
   const selectSpecialist = (specialist: TSpecialist) => {
@@ -510,10 +460,7 @@ export const BookingModal = ({
 
   const selectSlot = (slot: TimeSlot) => {
     if (!slot.isAvailable) return;
-    if (
-      selectedTime?.startTime === slot.startTime &&
-      !selectedTime?.isCustomTime
-    ) {
+    if (selectedTime?.startTime === slot.startTime && !selectedTime?.isCustomTime) {
       setSelectedTime(null);
     } else {
       setSelectedTime({ ...slot, isCustomTime: false });
@@ -584,15 +531,7 @@ export const BookingModal = ({
   };
 
   const confirmBooking = async () => {
-    if (
-      !selectedService ||
-      !selectedSpecialist ||
-      !selectedDate ||
-      !selectedTime
-    )
-      return;
-    const firstName = customerInfo.firstName;
-    const lastName = customerInfo.lastName;
+    if (!selectedService || !selectedSpecialist || !selectedDate || !selectedTime) return;
     const booking = await bookingService.createBooking({
       businessId: business.id,
       branchId: selectedBranch?._id,
@@ -601,8 +540,8 @@ export const BookingModal = ({
       bookingDate: selectedDate,
       startTime: selectedTime.startTime,
       customerInfo: {
-        firstName,
-        lastName,
+        firstName: customerInfo.firstName,
+        lastName: customerInfo.lastName,
         email: customerInfo.email,
         phone: customerInfo.phone,
       },
@@ -613,18 +552,7 @@ export const BookingModal = ({
   };
 
   const updateBooking = async () => {
-    if (
-      !selectedService ||
-      !selectedSpecialist ||
-      !selectedDate ||
-      !selectedTime ||
-      !editBooking
-    )
-      return;
-    const firstName = customerInfo.firstName;
-    const lastName = customerInfo.lastName;
-
-    // Call your API to update the booking
+    if (!selectedService || !selectedSpecialist || !selectedDate || !selectedTime || !editBooking) return;
     const updatedBooking = await bookingService.updateBooking(editBooking._id, {
       branchId: selectedBranch?._id,
       serviceId: selectedService._id,
@@ -632,26 +560,18 @@ export const BookingModal = ({
       bookingDate: selectedDate,
       startTime: selectedTime.startTime,
       customerInfo: {
-        firstName,
-        lastName,
+        firstName: customerInfo.firstName,
+        lastName: customerInfo.lastName,
         email: customerInfo.email,
         phone: customerInfo.phone,
       },
       notes: customerInfo.notes,
     });
-
     onConfirmed?.(updatedBooking);
   };
 
   const validateCustomTime = async () => {
-    if (
-      !customHour ||
-      !customMinute ||
-      !selectedSpecialist ||
-      !selectedService ||
-      !selectedDate
-    )
-      return;
+    if (!customHour || !customMinute || !selectedSpecialist || !selectedService || !selectedDate) return;
     const timeStr = `${customHour}:${customMinute}`;
     setValidatingTime(true);
     setCustomTimeError("");
@@ -682,14 +602,7 @@ export const BookingModal = ({
   const stepGate = (num: number) =>
     canGoToStep(
       num,
-      {
-        selectedBranch,
-        selectedService,
-        selectedSpecialist,
-        selectedDate,
-        selectedTime,
-        sentCode,
-      },
+      { selectedBranch, selectedService, selectedSpecialist, selectedDate, selectedTime, sentCode },
       mode,
     );
 
@@ -703,27 +616,38 @@ export const BookingModal = ({
 
   const calendarDays = generateCalendar(calendarDate);
   const today = new Date(new Date().setHours(0, 0, 0, 0));
-
-  // Get current working hours from selected branch
   const currentBranchWorkingHours = selectedBranch?.workingHours;
-
-  // Filter services by branch
   const branchServices = (business.services ?? []).filter(
     (service: any) => service.branch === selectedBranch?._id,
   );
-
-  // Filter steps for edit mode (skip phone verification)
   const displaySteps = isEditMode ? STEPS.filter((s) => s.num !== 5) : STEPS;
 
+  // ── Branch map point ────────────────────────────────────────────────────────
+  const branchHasCoords =
+    selectedBranch?.address.coordinates?.latitude && selectedBranch?.address.coordinates?.longitude;
+
+  const branchMapPoint = branchHasCoords
+    ? {
+        id: selectedBranch._id,
+        lat: selectedBranch.address.coordinates.latitude,
+        lng: selectedBranch.address.coordinates.longitude,
+        label: selectedBranch.address?.street,
+        isBase: selectedBranch.isBaseBranch,
+      }
+    : null;
+      console.log(selectedBranch)
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm font-sans">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="sticky top-0 z-10 rounded-t-2xl bg-primary">
-          <div className="flex items-start justify-between p-5 sm:p-6">
-            <div className="flex-1 min-w-0 pr-4">
+          <div className="flex items-start justify-between p-5 sm:p-6 gap-3">
+
+            {/* Left: title + address info */}
+            <div className="flex-1 min-w-0">
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 tracking-wide uppercase">
                 {isEditMode
                   ? `EDIT BOOKING - ${business.businessName}`
@@ -749,6 +673,30 @@ export const BookingModal = ({
                 ))}
               </div>
             </div>
+
+            {/* Right: mini map + map buttons (only when branch with coords is selected) */}
+            {branchMapPoint && (
+              <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
+                <div className="w-36 h-24 sm:w-48 sm:h-28 hidden sm:block rounded-xl overflow-hidden shadow-lg border-2 border-white/20">
+                  <MapWithCoords
+                    points={[branchMapPoint]}
+                    selectedPoint={branchMapPoint}
+                  />
+                </div>
+                <div className="flex gap-1.5">
+                  <GoogleMapButton
+                    latitude={branchMapPoint.lat}
+                    longitude={branchMapPoint.lng}
+                  />
+                  <YandexMapButton
+                    latitude={branchMapPoint.lat}
+                    longitude={branchMapPoint.lng}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Close button */}
             <button
               onClick={onClose}
               className="flex-shrink-0 p-1 rounded-full hover:opacity-70 transition-opacity text-white/80"
@@ -776,12 +724,8 @@ export const BookingModal = ({
                         : "bg-white/12 text-white/75 cursor-not-allowed",
                   ].join(" ")}
                 >
-                  <span className="hidden sm:inline">
-                    {num}. {label}
-                  </span>
-                  <span className="sm:hidden">
-                    {num}. {short}
-                  </span>
+                  <span className="hidden sm:inline">{num}. {label}</span>
+                  <span className="sm:hidden">{num}. {short}</span>
                 </button>
               );
             })}
@@ -790,7 +734,8 @@ export const BookingModal = ({
 
         {/* ── Body ───────────────────────────────────────────────────────── */}
         <div className="p-5 sm:p-6">
-          {/* ── Step 1: Branch Selection (hidden in edit mode) ───────────── */}
+
+          {/* ── Step 1: Branch Selection ─────────────────────────────────── */}
           {step === 1 && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-primary">
@@ -827,8 +772,7 @@ export const BookingModal = ({
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-semibold text-sm text-[#3D2B2B]">
                                 {branch.address?.street}{" "}
-                                {branch.address?.state &&
-                                  `, ${branch.address.state}`}
+                                {branch.address?.state && `, ${branch.address.state}`}
                               </p>
                               {branch.isBaseBranch && (
                                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
@@ -836,9 +780,7 @@ export const BookingModal = ({
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-gray-600 mb-2">
-                              {branch.address?.city}
-                            </p>
+                            <p className="text-xs text-gray-600 mb-2">{branch.address?.city}</p>
                             {branch.phones && branch.phones.length > 0 && (
                               <div className="flex items-center gap-1.5 text-xs text-primary">
                                 <Phone className="h-3 w-3" />
@@ -846,7 +788,6 @@ export const BookingModal = ({
                               </div>
                             )}
                           </div>
-                          {/* Custom radio */}
                           <div
                             className={[
                               "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5",
@@ -855,9 +796,7 @@ export const BookingModal = ({
                                 : "border-gray-300 bg-white",
                             ].join(" ")}
                           >
-                            {isSelected && (
-                              <div className="w-2 h-2 rounded-full bg-white" />
-                            )}
+                            {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                           </div>
                         </div>
                       </div>
@@ -905,15 +844,9 @@ export const BookingModal = ({
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <Icon
-                              url={service?.image?.url}
-                              name={service.name}
-                            />
-                            <h4 className="font-semibold text-base text-white">
-                              {service.name}
-                            </h4>
+                            <Icon url={service?.image?.url} name={service.name} />
+                            <h4 className="font-semibold text-base text-white">{service.name}</h4>
                           </div>
-                          {/* Custom radio */}
                           <div
                             className={[
                               "w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5",
@@ -922,20 +855,15 @@ export const BookingModal = ({
                                 : "border-white/50 bg-transparent",
                             ].join(" ")}
                           >
-                            {selected && (
-                              <div className="w-[7px] h-[7px] rounded-full bg-[#4A3535]" />
-                            )}
+                            {selected && <div className="w-[7px] h-[7px] rounded-full bg-[#4A3535]" />}
                           </div>
                         </div>
                         {service.description && (
-                          <p className="text-xs mb-3 text-white/65">
-                            {service.description}
-                          </p>
+                          <p className="text-xs mb-3 text-white/65">{service.description}</p>
                         )}
                         <div className="flex justify-between items-center text-xs text-white/75">
                           <span className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5" /> {service.duration}{" "}
-                            min
+                            <Clock className="h-3.5 w-3.5" /> {service.duration} min
                           </span>
                           <span className="flex items-center font-bold text-base text-white">
                             <DollarSign className="h-3.5 w-3.5" />
@@ -960,8 +888,7 @@ export const BookingModal = ({
                       </p>
                     ) : (
                       filteredSpecialists.map((specialist) => {
-                        const selected =
-                          selectedSpecialist?._id === specialist._id;
+                        const selected = selectedSpecialist?._id === specialist._id;
                         return (
                           <div
                             key={specialist._id}
@@ -973,16 +900,10 @@ export const BookingModal = ({
                                 : "border-[#e5dada] bg-white hover:border-primary hover:bg-primary/5",
                             ].join(" ")}
                           >
-                            <Icon
-                              url={specialist?.photo?.url}
-                              name={specialist.name}
-                            />
+                            <Icon url={specialist?.photo?.url} name={specialist.name} />
                             <div className="flex-1">
-                              <p className="font-semibold text-sm text-[#3D2B2B]">
-                                {specialist.name}
-                              </p>
+                              <p className="font-semibold text-sm text-[#3D2B2B]">{specialist.name}</p>
                             </div>
-                            {/* Custom radio */}
                             <div
                               className={[
                                 "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
@@ -991,9 +912,7 @@ export const BookingModal = ({
                                   : "border-gray-300 bg-white",
                               ].join(" ")}
                             >
-                              {selected && (
-                                <div className="w-2 h-2 rounded-full bg-white" />
-                              )}
+                              {selected && <div className="w-2 h-2 rounded-full bg-white" />}
                             </div>
                           </div>
                         );
@@ -1013,9 +932,7 @@ export const BookingModal = ({
                   </button>
                 )}
                 <button
-                  onClick={() =>
-                    selectedService && selectedSpecialist && setStep(3)
-                  }
+                  onClick={() => selectedService && selectedSpecialist && setStep(3)}
                   disabled={!(selectedService && selectedSpecialist)}
                   className="flex-1 bg-[#3D2B2B] text-white rounded-xl py-3 px-6 text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                 >
@@ -1041,9 +958,7 @@ export const BookingModal = ({
                   >
                     ←
                   </button>
-                  <span className="font-semibold text-sm text-[#3D2B2B]">
-                    {monthYearLabel}
-                  </span>
+                  <span className="font-semibold text-sm text-[#3D2B2B]">{monthYearLabel}</span>
                   <button
                     onClick={() => changeMonth(1)}
                     className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white transition-colors font-bold text-lg text-secondary"
@@ -1053,30 +968,21 @@ export const BookingModal = ({
                 </div>
                 <div className="grid grid-cols-7 gap-1 text-center text-xs">
                   {weekdays.map((d) => (
-                    <div
-                      key={d}
-                      className="font-semibold py-1 text-xs text-primary"
-                    >
-                      {d}
-                    </div>
+                    <div key={d} className="font-semibold py-1 text-xs text-primary">{d}</div>
                   ))}
                   {calendarDays.map((dateObj, idx) => {
                     const isWorking =
                       currentBranchWorkingHours?.some(
-                        (e) =>
-                          e.dayOfWeek === (dateObj?.getDay() ?? -1) && e.isOpen,
+                        (e) => e.dayOfWeek === (dateObj?.getDay() ?? -1) && e.isOpen,
                       ) ?? false;
                     const isPast = dateObj ? dateObj < today : false;
                     const isDisabled = !dateObj || isPast || !isWorking;
-                    const isSelected =
-                      dateObj && selectedDate === dateObj.dateString;
+                    const isSelected = dateObj && selectedDate === dateObj.dateString;
                     return (
                       <div key={idx}>
                         {dateObj && (
                           <button
-                            onClick={() =>
-                              !isDisabled && selectDate(dateObj.dateString)
-                            }
+                            onClick={() => !isDisabled && selectDate(dateObj.dateString)}
                             disabled={isDisabled}
                             className={[
                               "w-full aspect-square rounded-md text-[13px] transition-colors flex items-center justify-center",
@@ -1101,9 +1007,7 @@ export const BookingModal = ({
                   {loadingSlots ? (
                     <div className="text-center py-6">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-                      <p className="mt-2 text-sm text-gray-500">
-                        Loading available times...
-                      </p>
+                      <p className="mt-2 text-sm text-gray-500">Loading available times...</p>
                     </div>
                   ) : slotsError && !availableSlots.length ? (
                     <div className="text-center py-4 rounded-xl border text-sm bg-amber-50 border-amber-200 text-amber-700">
@@ -1167,9 +1071,7 @@ export const BookingModal = ({
                               value={customHour}
                               onChange={setCustomHour}
                             />
-                            <span className="text-3xl font-bold text-primary/50">
-                              :
-                            </span>
+                            <span className="text-3xl font-bold text-primary/50">:</span>
                             <ScrollPicker
                               key={`minute-${isEditMode ? editBooking?._id : "new"}`}
                               length={60}
@@ -1191,16 +1093,13 @@ export const BookingModal = ({
                                 disabled={validatingTime}
                                 className="bg-[#3D2B2B] text-white rounded-xl py-3 px-8 text-sm font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
                               >
-                                {validatingTime
-                                  ? "Validating..."
-                                  : "Set This Time"}
+                                {validatingTime ? "Validating..." : "Set This Time"}
                               </button>
                             </div>
                           )}
                           {selectedTime?.isCustomTime && !customTimeError && (
                             <p className="mt-3 p-3 rounded-lg text-sm bg-green-50 border border-green-300 text-green-800">
-                              ✓ Custom time set:{" "}
-                              <strong>{selectedTime.startTime}</strong>
+                              ✓ Custom time set: <strong>{selectedTime.startTime}</strong>
                             </p>
                           )}
                           {customTimeError && (
@@ -1223,11 +1122,7 @@ export const BookingModal = ({
                                 (wh) => wh.dayOfWeek === day,
                               );
                               if (!schedule?.isOpen) return "Closed";
-                              if (
-                                schedule.hasBreak &&
-                                schedule.breakStart &&
-                                schedule.breakEnd
-                              ) {
+                              if (schedule.hasBreak && schedule.breakStart && schedule.breakEnd) {
                                 return `${schedule.openTime} - ${schedule.breakStart}, ${schedule.breakEnd} - ${schedule.closeTime}`;
                               }
                               return `${schedule.openTime} - ${schedule.closeTime}`;
@@ -1267,24 +1162,9 @@ export const BookingModal = ({
               <div className="space-y-3 mb-5">
                 {(
                   [
-                    {
-                      key: "firstName",
-                      label: "First Name",
-                      type: "text",
-                      placeholder: "John",
-                    },
-                    {
-                      key: "lastName",
-                      label: "Last Name",
-                      type: "text",
-                      placeholder: "Smith",
-                    },
-                    {
-                      key: "email",
-                      label: "Email Address",
-                      type: "email",
-                      placeholder: "john@example.com",
-                    },
+                    { key: "firstName", label: "First Name", type: "text", placeholder: "John" },
+                    { key: "lastName", label: "Last Name", type: "text", placeholder: "Smith" },
+                    { key: "email", label: "Email Address", type: "email", placeholder: "john@example.com" },
                   ] as const
                 ).map(({ key, label, type, placeholder }) => (
                   <div key={key}>
@@ -1294,9 +1174,7 @@ export const BookingModal = ({
                     <input
                       type={type}
                       value={customerInfo[key]}
-                      onChange={(e) =>
-                        handleCustomerFieldChange(key, e.target.value)
-                      }
+                      onChange={(e) => handleCustomerFieldChange(key, e.target.value)}
                       placeholder={placeholder}
                       className={[
                         "w-full border-2 rounded-lg py-2.5 px-3.5 text-sm outline-none transition-colors bg-white",
@@ -1306,14 +1184,11 @@ export const BookingModal = ({
                       ].join(" ")}
                     />
                     {infoErrors[key] && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {infoErrors[key]}
-                      </p>
+                      <p className="text-red-500 text-xs mt-1">{infoErrors[key]}</p>
                     )}
                   </div>
                 ))}
-                
-                {/* Phone Input with PhoneInput component */}
+
                 <div>
                   <PhoneInput
                     label="Phone Number"
@@ -1331,10 +1206,7 @@ export const BookingModal = ({
                   <textarea
                     value={customerInfo.notes}
                     onChange={(e) =>
-                      setCustomerInfo((prev) => ({
-                        ...prev,
-                        notes: e.target.value,
-                      }))
+                      setCustomerInfo((prev) => ({ ...prev, notes: e.target.value }))
                     }
                     rows={3}
                     placeholder="Any special requests..."
@@ -1344,12 +1216,9 @@ export const BookingModal = ({
 
                 {!isEditMode && !sentCode && (
                   <div className="rounded-xl p-3.5 text-sm bg-primary/5 border border-primary/30 text-[#3D2B2B]">
-                    <p className="font-semibold mb-1">
-                      📱 Phone Verification Required
-                    </p>
+                    <p className="font-semibold mb-1">📱 Phone Verification Required</p>
                     <p className="text-secondary">
-                      We'll send a <strong>4-digit code</strong> to your phone
-                      to confirm your booking.
+                      We'll send a <strong>4-digit code</strong> to your phone to confirm your booking.
                     </p>
                   </div>
                 )}
@@ -1390,7 +1259,7 @@ export const BookingModal = ({
             </div>
           )}
 
-          {/* ── Step 5: Phone Verification (hidden in edit mode) ─────────── */}
+          {/* ── Step 5: Phone Verification ──────────────────────────────── */}
           {step === 5 && !isEditMode && (
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-4 text-primary">
@@ -1399,13 +1268,10 @@ export const BookingModal = ({
               <div className="space-y-4 mb-5">
                 <div className="p-4 rounded-xl text-sm bg-primary/5 border border-primary/30 text-[#3D2B2B]">
                   <p className="font-semibold mb-1">📱 Code sent to:</p>
-                  <p className="font-mono text-base font-bold">
-                    {customerInfo.phone}
-                  </p>
+                  <p className="font-mono text-base font-bold">{customerInfo.phone}</p>
                   {sentCode && (
                     <p className="mt-2 text-xs p-2 rounded bg-red-50 text-red-600">
-                      ⚠️ DEMO — Code: <strong>{sentCode}</strong> (remove in
-                      production)
+                      ⚠️ DEMO — Code: <strong>{sentCode}</strong> (remove in production)
                     </p>
                   )}
                 </div>
@@ -1418,18 +1284,14 @@ export const BookingModal = ({
                     maxLength={4}
                     value={verificationCode}
                     onChange={(e) => {
-                      setVerificationCode(
-                        e.target.value.replace(/[^0-9]/g, "").slice(0, 4),
-                      );
+                      setVerificationCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 4));
                       setVerifyError("");
                     }}
                     placeholder="- - - -"
                     autoFocus
                     className={[
                       "w-full border-2 rounded-lg py-2.5 px-3.5 text-xl text-center tracking-widest font-mono outline-none transition-colors bg-white",
-                      verifyError
-                        ? "border-red-400"
-                        : "border-[#e5dada] focus:border-primary",
+                      verifyError ? "border-red-400" : "border-[#e5dada] focus:border-primary",
                     ].join(" ")}
                   />
                   {verifyError && (
@@ -1467,6 +1329,7 @@ export const BookingModal = ({
               </div>
             </div>
           )}
+
         </div>
       </div>
     </div>
