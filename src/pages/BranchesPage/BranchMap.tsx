@@ -7,6 +7,7 @@ interface BranchMapProps {
 }
 
 export const BranchMap = ({ branches, selectedBranch }: BranchMapProps) => {
+  console.log(branches, selectedBranch)
   return (
     <Card className="h-full">
       <div className="h-full space-y-4 flex flex-col">
@@ -22,14 +23,8 @@ export const BranchMap = ({ branches, selectedBranch }: BranchMapProps) => {
                 label: e.address.street,
                 isBase: e.isBaseBranch,
               }))}
-            selectedPoint={
-              selectedBranch && selectedBranch.address.coordinates.latitude
-                ? {
-                    lat: selectedBranch.address.coordinates.latitude,
-                    lng: selectedBranch.address.coordinates.longitude,
-                    id: selectedBranch._id,
-                  }
-                : undefined
+            selectedPointId={
+              selectedBranch ? selectedBranch._id : undefined
             }
           />
         </div>

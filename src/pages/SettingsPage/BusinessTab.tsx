@@ -15,8 +15,6 @@ export function BusinessTab() {
 
   const [types, setTypes] = useState<TBusinessType[]>([]);
 
-  // Initialize with the full business object so required fields exist
-  // (e.g. _id, bookingLink, address) and satisfy the Business type.
   const [formData, setFormData] = useState<TBusiness>(() => business);
 
   const [previewLogo, setPreviewLogo] = useState<{ url: string } | undefined>(
@@ -30,35 +28,28 @@ export function BusinessTab() {
     (field: string) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
-
       setFormData((prev) => ({ ...prev, [field]: value }));
-
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     };
 
-  // Handle phone number change from PhoneInput
   const handlePhoneChange = (value: string | null) => {
     setFormData((prev) => ({ ...prev, phone: value || "" }));
-
     if (errors.phone) {
       setErrors((prev) => ({ ...prev, phone: undefined }));
     }
   };
 
-  // 🔥 INSTANT LOGO UPLOAD
   const handleLogoChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setLogoLoading(true);
-
     try {
       const payload = new FormData();
       payload.append("logo", file);
       const newLogo = await uploadService.uploadBusinessLogo(payload);
-      setPreviewLogo(newLogo); // instant preview
+      setPreviewLogo(newLogo);
     } finally {
       setLogoLoading(false);
     }
@@ -75,35 +66,22 @@ export function BusinessTab() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.businessName.trim()) {
-      newErrors.businessName = "Business name is required";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    }
-
-    if (!formData.businessType.trim()) {
-      newErrors.businessType = "Business type is required";
-    }
-
+    if (!formData.businessName.trim()) newErrors.businessName = "Business name is required";
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    if (!formData.businessType.trim()) newErrors.businessType = "Business type is required";
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     const isValid = validate();
     if (!isValid) return;
-
     const payload: TUpdateBusiness = {
       businessName: formData.businessName,
       phone: formData.phone,
       businessType: formData.businessType,
       description: formData.description || "",
     };
-
     await businessService.updateMyBusiness(payload);
   };
 
@@ -112,56 +90,48 @@ export function BusinessTab() {
       const types = await searchService.getBusinessTypes();
       setTypes(types);
     };
-
     fetchTypes();
   }, []);
 
   return (
     <div className="flex flex-col gap-5">
       <Card>
-        <SectionTitle
-          title="Basic Information"
-          subtitle="Update your business details and contact information"
-        />
+        {/* Header row: title + logo upload */}
+        <div className="flex justify-between">
+          <SectionTitle
+            title="Basic Information"
+            subtitle="Update your business details and contact information"
+          />
 
-        <div className="flex flex-col gap-6">
-          {/* Logo */}
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium">Business Logo</p>
-              <p className="text-xs text-gray-500">
-                Shown on your booking page
-              </p>
-            </div>
+          <label className="relative cursor-pointer flex-shrink-0">
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleLogoChange}
+            />
 
-            <label className="relative cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleLogoChange}
+            {previewLogo?.url ? (
+              <img
+                src={previewLogo.url}
+                alt="logo"
+                className="w-12 h-12 rounded-full object-cover border"
               />
+            ) : (
+              <div className="w-12 h-12 rounded-full border border-dashed border-gray-300 bg-white flex items-center justify-center text-gray-400 hover:border-primary hover:bg-primary/5 transition">
+                <Plus className="w-4 h-4" />
+              </div>
+            )}
 
-              {previewLogo?.url ? (
-                <img
-                  src={previewLogo.url}
-                  alt="logo"
-                  className="w-20 h-20 rounded-full object-cover border"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full border-2 border-dashed flex items-center justify-center text-gray-400 hover:bg-gray-50 transition">
-                  <Plus className="w-5 h-5" />
-                </div>
-              )}
+            {logoLoading && (
+              <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-full">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+              </div>
+            )}
+          </label>
+        </div>
 
-              {logoLoading && (
-                <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-full text-xs">
-                  Uploading...
-                </div>
-              )}
-            </label>
-          </div>
-
+        <div className="flex flex-col gap-4">
           {/* Name + Phone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -191,10 +161,7 @@ export function BusinessTab() {
             options={types}
             value={formData.businessType as unknown as string}
             onChange={(value) =>
-              setFormData((prev) => ({
-                ...prev,
-                businessType: value
-              }))
+              setFormData((prev) => ({ ...prev, businessType: value }))
             }
             error={errors.businessType}
           />

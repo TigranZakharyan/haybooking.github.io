@@ -287,7 +287,6 @@ export function BusinessPage() {
                 <div className="h-[500px] rounded-lg overflow-hidden border border-gray-100">
                   <MapWithCoords
                     points={mapPoints}
-                    selectedPoint={undefined}
                   />
                 </div>
               </div>

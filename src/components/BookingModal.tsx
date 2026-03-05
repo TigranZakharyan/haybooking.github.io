@@ -681,7 +681,7 @@ export const BookingModal = ({
                 <div className="w-36 h-24 sm:w-48 sm:h-28 hidden sm:block rounded-xl overflow-hidden shadow-lg border-2 border-white/20">
                   <MapWithCoords
                     points={[branchMapPoint]}
-                    selectedPoint={branchMapPoint}
+                    selectedPointId={branchMapPoint.id}
                   />
                 </div>
                 <div className="flex gap-1.5">
