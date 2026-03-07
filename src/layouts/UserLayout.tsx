@@ -4,11 +4,17 @@ import { CircleDollarSign, UserCircle2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function UserLayout() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const textColor = location.pathname === '/signin' || location.pathname === "/signup" ? "text-white" : 'text-primary'
-  const bgColor = location.pathname === '/signin' || location.pathname === "/signup" ? "bg-white" : 'bg-primary'
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const textColor =
+    location.pathname === "/signin" || location.pathname === "/signup"
+      ? "text-white"
+      : "text-primary";
+  const bgColor =
+    location.pathname === "/signin" || location.pathname === "/signup"
+      ? "bg-white"
+      : "bg-primary";
   return (
     <div className="min-h-full h-auto grid grid-rows-[auto_1fr_auto] bg-gray-50">
       {/* Header */}
@@ -16,48 +22,99 @@ export function UserLayout() {
         <Container className="flex justify-between items-center">
           {/* Logo Section */}
           <Link to="/" className="flex items-center justify-center gap-3">
-            <img src="/logo.png" className="w-10 h-10 md:w-12 md:h-12" alt="Logo" />
+            <img
+              src="/logo.png"
+              className="w-10 h-10 md:w-12 md:h-12"
+              alt="Logo"
+            />
             <h1 className="text-xl font-bold text-business">Haybooking</h1>
           </Link>
 
           {/* Navigation Links */}
           <nav className={`flex gap-4 md:gap-8 ${textColor}`}>
-            <Link to="/pricing" className="relative group flex items-center gap-2">
+            <Link
+              to="/pricing"
+              className="relative group flex items-center gap-2"
+            >
               <CircleDollarSign className="w-6 h-6 md:hidden" />
-              <span className="hidden md:block text-lg font-medium">Pricing</span>
-              <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
+              <span className="hidden md:block text-lg font-medium">
+                Pricing
+              </span>
+              <span
+                className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}
+              ></span>
             </Link>
 
             {user ? (
-              user.role === 'business' ? (
-                <Link to="/dashboard" className="relative group flex items-center gap-2">
-                  <UserCircle2 className="w-6 h-6 md:hidden" />
-                  <span className="hidden md:block text-lg font-medium">Dashboard</span>
-                  <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
-                </Link>
+              user.role === "business" ? (
+                <>
+                  <Link
+                    to="/my-bookings"
+                    className="relative group flex items-center gap-2"
+                  >
+                    <UserCircle2 className="w-6 h-6 md:hidden" />
+                    <span className="hidden md:block text-lg font-medium">
+                      My Bookings
+                    </span>
+                    <span
+                      className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}
+                    ></span>
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    className="relative group flex items-center gap-2"
+                  >
+                    <UserCircle2 className="w-6 h-6 md:hidden" />
+                    <span className="hidden md:block text-lg font-medium">
+                      Dashboard
+                    </span>
+                    <span
+                      className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}
+                    ></span>
+                  </Link>
+                </>
               ) : (
-                <Link to="/my-bookings" className="relative group flex items-center gap-2">
+                <Link
+                  to="/my-bookings"
+                  className="relative group flex items-center gap-2"
+                >
                   <UserCircle2 className="w-6 h-6 md:hidden" />
-                  <span className="hidden md:block text-lg font-medium">My Bookings</span>
-                  <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
+                  <span className="hidden md:block text-lg font-medium">
+                    My Bookings
+                  </span>
+                  <span
+                    className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}
+                  ></span>
                 </Link>
               )
             ) : (
-              <Link to="/signin" className="relative group flex items-center gap-2">
+              <Link
+                to="/signin"
+                className="relative group flex items-center gap-2"
+              >
                 <UserCircle2 className="w-6 h-6 md:hidden" />
-                <span className="hidden md:block text-lg font-medium">Sign In/Up</span>
-                <span className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}></span>
+                <span className="hidden md:block text-lg font-medium">
+                  Sign In/Up
+                </span>
+                <span
+                  className={`absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`}
+                ></span>
               </Link>
             )}
-            {
-              user && (
-                <ProfileAvatar 
-                  initials={user?.firstName[0].toUpperCase() + user?.lastName[0].toUpperCase()}
-                  onLogoutClick={logout}
-                  onSettingsClick={user.role === "business" ? () => navigate("/dashboard/settings") : () => navigate("/settings")}
-                />
-              )
-            }
+            {user && (
+              <ProfileAvatar
+                initials={
+                  user?.firstName[0].toUpperCase() +
+                  user?.lastName[0].toUpperCase()
+                }
+                onLogoutClick={logout}
+                onSettingsClick={
+                  user.role === "business"
+                    ? () => navigate("/dashboard/settings")
+                    : () => navigate("/settings")
+                }
+              />
+            )}
           </nav>
         </Container>
       </header>

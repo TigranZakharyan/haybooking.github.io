@@ -113,6 +113,9 @@ const ScrollPicker = ({ length, value, onChange }: { length: number; value: stri
   );
 };
 
+// ── usePortalDropdown ─────────────────────────────────────────────────────────
+// pos.left stores the CENTER X of the trigger button.
+// All dropdowns use transform: translateX(-50%) so they open centered.
 function usePortalDropdown() {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -122,7 +125,11 @@ function usePortalDropdown() {
   const updatePosition = useCallback(() => {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    setPos({ top: rect.bottom + 8, left: rect.left + rect.width / 2, width: Math.max(rect.width, 220) });
+    setPos({
+      top: rect.bottom + 8,
+      left: rect.left + rect.width / 2, // center X of trigger
+      width: Math.max(rect.width, 220),
+    });
   }, []);
 
   const openDropdown = () => { updatePosition(); setOpen(true); };
@@ -163,8 +170,9 @@ const BookingTrigger = React.forwardRef<HTMLButtonElement, {
         active ? "text-gray-900 cursor-pointer" : "text-gray-500 cursor-pointer hover:text-gray-700"].join(" ")}>
       <span className={done ? "text-teal-700" : "text-gray-400"}>{icon}</span>
       <div className="flex flex-col items-start min-w-0">
-        <span className={`leading-tight truncate max-w-[140px] ${done ? "text-gray-900 font-semibold text-xs" : "text-sm"}`}>{label}</span>
-        {sublabel && <span className="text-[10px] text-gray-400 leading-tight truncate max-w-[140px]">{sublabel}</span>}
+        {/* FIX: increased max-w from 140px to 180px for better readability */}
+        <span className={`leading-tight truncate max-w-[180px] ${done ? "text-gray-900 font-semibold text-xs" : "text-sm"}`}>{label}</span>
+        {sublabel && <span className="text-[10px] text-gray-400 leading-tight truncate max-w-[180px]">{sublabel}</span>}
       </div>
       {done && onClear ? (
         <span role="button" onClick={e => { e.stopPropagation(); onClear(); }}
@@ -193,6 +201,7 @@ function FilterDropdown({ icon, placeholder, options, selected, onSelect, disabl
         <ChevronDown size={12} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && createPortal(
+        // FilterDropdown already used translateX(-50%) — keeping as-is
         <div ref={menuRef}
           style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", zIndex: 9999 }}
           className="min-w-[180px] bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
@@ -216,7 +225,23 @@ function TimeRangeFilter({ timeRange, onChange }: {
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   const [ls, setLs] = useState(timeRange.start);
   const [le, setLe] = useState(timeRange.end);
-  const label = timeRange.start && timeRange.end ? `${timeRange.start}–${timeRange.end}` : timeRange.start ? `From ${timeRange.start}` : "Any Time";
+
+  // FIX: friendlier label formatting
+  const formatTime = (t: string) => {
+    if (!t) return "";
+    const [h, m] = t.split(":");
+    const hour = parseInt(h);
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const display = hour % 12 === 0 ? 12 : hour % 12;
+    return `${display}:${m} ${suffix}`;
+  };
+
+  const label = timeRange.start && timeRange.end
+    ? `${formatTime(timeRange.start)} – ${formatTime(timeRange.end)}`
+    : timeRange.start
+    ? `From ${formatTime(timeRange.start)}`
+    : "Any Time";
+
   return (
     <>
       <button ref={btnRef} onClick={openDropdown}
@@ -226,8 +251,9 @@ function TimeRangeFilter({ timeRange, onChange }: {
         <ChevronDown size={12} className={`text-white/70 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && createPortal(
+        // TimeRangeFilter intentionally right-anchored — keeping as-is
         <div ref={menuRef}
-          style={{ position: "fixed", top: pos.top, right: window.innerWidth - pos.left - pos.width, zIndex: 9999 }}
+          style={{ position: "fixed", top: pos.top, right: window.innerWidth - pos.left - pos.width / 2, zIndex: 9999 }}
           className="w-64 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4 space-y-3">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Time Range</p>
@@ -259,15 +285,25 @@ function BranchBookingDropdown({ branches, selected, onSelect, disabled }: {
   branches: any[]; selected: any; onSelect: (b: any) => void; disabled?: boolean;
 }) {
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
+
+  // FIX: friendlier label — show city as sublabel
+  const label = selected
+    ? selected.address?.street || "Branch"
+    : "Branch";
+  const sublabel = selected
+    ? selected.address?.city
+    : undefined;
+
   return (
     <>
       <BookingTrigger ref={btnRef} icon={<Building2 size={14} />}
-        label={selected ? selected.address?.street || "Branch" : "Branch"}
-        sublabel={selected ? selected.address?.city : undefined}
+        label={label}
+        sublabel={sublabel}
         done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => onSelect(null) : undefined} />
       {open && createPortal(
-        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
+        // FIX: added transform: translateX(-50%) to center under trigger
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: pos.width, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
           {branches.map(b => (
             <button key={b._id} onClick={() => { onSelect(b); setOpen(false); }}
@@ -298,14 +334,18 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
 }) {
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
 
+  // FIX: more readable label and sublabel with proper spacing
   const label = selected.length === 0
     ? "Service"
     : selected.length === 1
       ? selected[0].name
-      : `${selected.length} services`;
+      : `${selected.length} Services`;
+
+  const totalDuration = selected.reduce((a, s) => a + s.duration, 0);
+  const totalPrice = selected.reduce((a, s) => a + (s.price?.amount ?? 0), 0);
 
   const sublabel = selected.length > 0
-    ? `${selected.reduce((a, s) => a + s.duration, 0)}min · $${selected.reduce((a, s) => a + s.price?.amount, 0)}`
+    ? `${totalDuration} min · $${totalPrice}`
     : undefined;
 
   return (
@@ -315,8 +355,9 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
         done={selected.length > 0} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected.length > 0 ? () => selected.forEach(s => onToggle(s)) : undefined} />
       {open && createPortal(
+        // FIX: added transform: translateX(-50%) to center under trigger
         <div ref={menuRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 240), zIndex: 9999 }}
+          style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: Math.max(pos.width, 240), zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           {/* Header */}
           <div className="px-4 pt-3 pb-2 border-b border-gray-100">
@@ -334,7 +375,7 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
           </div>
 
           {/* Service list */}
-          <div className="py-1.5 max-h-72 overflow-y-auto">
+          <div className="py-1.5 overflow-y-auto">
             {services.length === 0
               ? <p className="px-4 py-3 text-sm text-gray-400">No services at this branch</p>
               : services.map(s => {
@@ -349,8 +390,9 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className={`font-semibold truncate ${isSelected ? "text-teal-800" : "text-gray-700"}`}>{s.name}</div>
+                      {/* FIX: friendlier duration/price display */}
                       <div className="flex items-center gap-2 text-xs mt-0.5 text-gray-400">
-                        <span className="flex items-center gap-0.5"><Clock size={10} />{s.duration}min</span>
+                        <span className="flex items-center gap-0.5"><Clock size={10} />{s.duration} min</span>
                         <span className="flex items-center gap-0.5"><DollarSign size={10} />{s.price?.amount}</span>
                       </div>
                     </div>
@@ -365,11 +407,12 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
             <div className="px-4 py-3 border-t border-gray-100 bg-teal-50 flex items-center justify-between">
               <div className="flex items-center gap-1 text-xs text-teal-700">
                 <Clock size={11} />
-                <span className="font-semibold">{selected.reduce((a, s) => a + s.duration, 0)} min total</span>
+                {/* FIX: space between number and unit */}
+                <span className="font-semibold">{totalDuration} min total</span>
               </div>
               <div className="flex items-center gap-0.5 text-xs font-bold text-teal-700">
                 <DollarSign size={11} />
-                {selected.reduce((a, s) => a + s.price?.amount, 0)}
+                {totalPrice}
               </div>
             </div>
           )}
@@ -391,7 +434,8 @@ function SpecialistBookingDropdown({ specialists, selected, onSelect, disabled }
         done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => onSelect(null as any) : undefined} />
       {open && createPortal(
-        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: pos.width, zIndex: 9999 }}
+        // FIX: added transform: translateX(-50%) to center under trigger
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: pos.width, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
           {specialists.length === 0
             ? <p className="px-4 py-3 text-sm text-gray-400">No specialists for selected services</p>
@@ -419,16 +463,20 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
   const calDays = generateCalendar(calDate);
   const monthYearLabel = `${months[calDate.getMonth()]} ${calDate.getFullYear()}`;
   const changeMonth = (dir: number) => setCalDate(p => { const d = new Date(p); d.setMonth(p.getMonth() + dir); return d; });
+
+  // FIX: include weekday name for better readability e.g. "Mon, Mar 10"
   const displayLabel = selected
-    ? new Date(selected + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    ? new Date(selected + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
     : "Date";
+
   return (
     <>
       <BookingTrigger ref={btnRef} icon={<CalendarDays size={14} />}
         label={displayLabel} done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => { onSelect(null as any); } : undefined} />
       {open && createPortal(
-        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
+        // FIX: added transform: translateX(-50%) to center under trigger
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           <div className="rounded-2xl p-4 bg-teal-50 border-0">
             <div className="flex items-center justify-between mb-3">
@@ -468,8 +516,8 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
                   const day = new Date(selected + "T00:00:00").getDay();
                   const s = workingHours.find((wh: any) => wh.dayOfWeek === day);
                   if (!s?.isOpen) return "Closed";
-                  if (s.hasBreak && s.breakStart && s.breakEnd) return `${s.openTime} - ${s.breakStart}, ${s.breakEnd} - ${s.closeTime}`;
-                  return `${s.openTime} - ${s.closeTime}`;
+                  if (s.hasBreak && s.breakStart && s.breakEnd) return `${s.openTime} – ${s.breakStart}, ${s.breakEnd} – ${s.closeTime}`;
+                  return `${s.openTime} – ${s.closeTime}`;
                 })()}
               </span>
             </div>
@@ -491,7 +539,14 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
   const [customMinute, setCustomMinute] = useState("00");
   const [customTimeError, setCustomTimeError] = useState("");
   const [validatingTime, setValidatingTime] = useState(false);
-  const label = selected ? selected.startTime : "Time";
+
+  // FIX: show start–end range when selected, e.g. "10:00 – 10:45"
+  const label = selected
+    ? selected.endTime
+      ? `${selected.startTime} – ${selected.endTime}`
+      : selected.startTime
+    : "Time";
+
   const anyAllowsCustomTime = services.some(s => s.allowSpecificTimes);
 
   const validateCustomTime = async () => {
@@ -534,7 +589,8 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
         label={label} done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => onSelect(null) : undefined} />
       {open && createPortal(
-        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 300), zIndex: 9999 }}
+        // FIX: added transform: translateX(-50%) to center under trigger
+        <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: Math.max(pos.width, 300), zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4">
             {loading ? (
@@ -633,7 +689,6 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
   const currentStep = steps[stepIdx];
 
   const [bookBranch, setBookBranch] = useState<any>(branches.length === 1 ? branches[0] : null);
-  // ── Multi-select services ──
   const [bookServices, setBookServices] = useState<TService[]>([]);
   const [bookSpecialist, setBookSpecialist] = useState<TSpecialist | null>(null);
   const [bookDate, setBookDate] = useState<string | null>(null);
@@ -656,7 +711,6 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
 
   const branchServices = allServices.filter((s: any) => s.branch === bookBranch?._id);
 
-  // Specialists who can perform ALL selected services
   const filteredSpecialists = allSpecialists.filter(sp => {
     if (bookBranch && sp.branch !== bookBranch._id) return false;
     if (bookServices.length === 0) return true;
@@ -666,12 +720,10 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
     );
   });
 
-  // Toggle a service; if removing makes current specialist invalid, clear them
   const toggleService = (service: TService) => {
     setBookServices(prev => {
       const isSelected = prev.some(s => s._id === service._id);
       const next = isSelected ? prev.filter(s => s._id !== service._id) : [...prev, service];
-      // Clear specialist if they can't serve the new set
       if (bookSpecialist) {
         const stillValid = next.every(svc =>
           bookSpecialist.services?.some(sp => (typeof sp === "string" ? sp : sp._id) === svc._id)
@@ -765,7 +817,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
   const progress = ((stepIdx + 1) / steps.length) * 100;
   const anyAllowsCustomTime = bookServices.some(s => s.allowSpecificTimes);
   const totalDuration = bookServices.reduce((a, s) => a + s.duration, 0);
-  const totalPrice = bookServices.reduce((a, s) => a + s.price?.amount, 0);
+  const totalPrice = bookServices.reduce((a, s) => a + (s.price?.amount ?? 0), 0);
 
   const STEP_LABELS: Record<WizardStep, string> = {
     branch: "Choose Branch", service: "Choose Services",
@@ -832,12 +884,16 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
               <Chip icon={<User2 size={11} />} label={bookSpecialist.name} onClick={() => setStepIdx(steps.indexOf("specialist"))} />
             )}
             {bookDate && (
+              // FIX: include weekday in chip label
               <Chip icon={<CalendarDays size={11} />}
-                label={new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                label={new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                 onClick={() => setStepIdx(steps.indexOf("date"))} />
             )}
             {bookTime && (
-              <Chip icon={<Clock size={11} />} label={bookTime.startTime} onClick={() => setStepIdx(steps.indexOf("time"))} />
+              // FIX: show time range in chip
+              <Chip icon={<Clock size={11} />}
+                label={bookTime.endTime ? `${bookTime.startTime} – ${bookTime.endTime}` : bookTime.startTime}
+                onClick={() => setStepIdx(steps.indexOf("time"))} />
             )}
           </div>
         )}
@@ -868,7 +924,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
             </div>
           )}
 
-          {/* ── SERVICE — multi-select, no auto-advance ── */}
+          {/* ── SERVICE — multi-select ── */}
           {currentStep === "service" && (
             <div className="space-y-3">
               {branchServices.length === 0 && (
@@ -880,7 +936,6 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                   <button key={s._id}
                     onClick={() => toggleService(s)}
                     className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${isSelected ? "border-teal-700 bg-teal-50" : "border-gray-100 bg-gray-50 hover:border-gray-200"}`}>
-                    {/* Checkbox */}
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? "bg-teal-700 border-teal-700" : "border-gray-300 bg-white"}`}>
                       {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
                     </div>
@@ -889,8 +944,9 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className={`font-semibold ${isSelected ? "text-teal-800" : "text-gray-900"}`}>{s.name}</div>
+                      {/* FIX: space between number and unit */}
                       <div className="flex items-center gap-3 text-sm text-gray-500 mt-0.5">
-                        <span className="flex items-center gap-1"><Clock size={12} />{s.duration}min</span>
+                        <span className="flex items-center gap-1"><Clock size={12} />{s.duration} min</span>
                         <span className="flex items-center gap-1"><DollarSign size={12} />{s.price?.amount}</span>
                       </div>
                     </div>
@@ -899,11 +955,13 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                 );
               })}
 
-              {/* Summary bar when services are selected */}
               {bookServices.length > 0 && (
                 <div className="sticky bottom-0 mt-2 p-4 bg-teal-50 border border-teal-200 rounded-2xl">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-bold text-teal-700 uppercase tracking-wide">{bookServices.length} service{bookServices.length > 1 ? "s" : ""} selected</p>
+                    {/* FIX: friendlier summary label */}
+                    <p className="text-xs font-bold text-teal-700 uppercase tracking-wide">
+                      {bookServices.length} service{bookServices.length > 1 ? "s" : ""} selected
+                    </p>
                     <div className="flex items-center gap-3 text-xs font-semibold text-teal-700">
                       <span className="flex items-center gap-1"><Clock size={11} />{totalDuration} min</span>
                       <span className="flex items-center gap-1"><DollarSign size={11} />{totalPrice}</span>
@@ -992,6 +1050,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                 </div>
               </div>
               {bookDate && (
+                // FIX: full readable date e.g. "Monday, March 10, 2025"
                 <div className="mt-3 flex items-center gap-2 px-4 py-3 bg-teal-50 rounded-xl border border-teal-200 text-sm text-teal-700">
                   <Check size={16} className="flex-shrink-0" />
                   <span>Selected: <strong>{new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</strong></span>
@@ -1074,7 +1133,6 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                 <div className="space-y-3">
                   <p className="text-sm text-gray-500 mb-4">Review your booking details before confirming.</p>
                   <SummaryRow icon={<Building2 size={16} />} label="Branch" value={bookBranch?.address?.street || "—"} sub={bookBranch?.address?.city} />
-                  {/* Services summary */}
                   <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl">
                     <div className="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0 text-teal-700">
                       <Briefcase size={16} />
@@ -1084,12 +1142,17 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                       {bookServices.map(s => (
                         <p key={s._id} className="text-sm font-semibold text-gray-900">{s.name}</p>
                       ))}
+                      {/* FIX: space between number and unit */}
                       <p className="text-xs text-gray-400 mt-1">{totalDuration} min total · ${totalPrice}</p>
                     </div>
                   </div>
                   <SummaryRow icon={<User2 size={16} />} label="Specialist" value={bookSpecialist?.name || "—"} />
-                  <SummaryRow icon={<CalendarDays size={16} />} label="Date" value={bookDate ? new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "—"} />
-                  <SummaryRow icon={<Clock size={16} />} label="Time" value={bookTime ? `${bookTime.startTime} – ${bookTime.endTime}` : "—"} />
+                  {/* FIX: full readable date */}
+                  <SummaryRow icon={<CalendarDays size={16} />} label="Date"
+                    value={bookDate ? new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "—"} />
+                  {/* FIX: show start – end time */}
+                  <SummaryRow icon={<Clock size={16} />} label="Time"
+                    value={bookTime ? `${bookTime.startTime} – ${bookTime.endTime}` : "—"} />
                 </div>
               )}
             </div>
@@ -1182,7 +1245,6 @@ export function QuickBookingBar({
   const [timeRange, setTimeRange] = useState({ start: "", end: "" });
 
   const [bookBranch, setBookBranch] = useState<any>(null);
-  // ── Multi-select services for desktop bar ──
   const [bookServices, setBookServices] = useState<TService[]>([]);
   const [bookSpecialist, setBookSpecialist] = useState<TSpecialist | null>(null);
   const [bookDate, setBookDate] = useState<string | null>(null);
@@ -1202,12 +1264,10 @@ export function QuickBookingBar({
     if (business.branches?.length === 1) setBookBranch(business.branches[0]);
   }, []);
 
-  // Cascade resets
   useEffect(() => { setBookServices([]); setBookSpecialist(null); setBookDate(null); setBookTime(null); setSlots([]); setSlotsError(null); }, [bookBranch?._id]);
   useEffect(() => { setBookDate(null); setBookTime(null); setSlots([]); setSlotsError(null); }, [bookSpecialist?._id]);
   useEffect(() => { setBookTime(null); setSlots([]); setSlotsError(null); }, [bookDate]);
 
-  // Toggle service for desktop; reset specialist if they can't cover new set
   const toggleBookService = (service: TService) => {
     setBookServices(prev => {
       const isSelected = prev.some(s => s._id === service._id);
@@ -1250,7 +1310,6 @@ export function QuickBookingBar({
   const branches = business.branches ?? [];
   const branchServices = (business.services ?? []).filter((s: any) => s.branch === bookBranch?._id);
 
-  // Specialists who can perform ALL selected services
   const filteredSpecialists: TSpecialist[] = (business.specialists ?? []).filter(sp => {
     if (bookBranch && sp.branch !== bookBranch._id) return false;
     if (bookServices.length === 0) return true;

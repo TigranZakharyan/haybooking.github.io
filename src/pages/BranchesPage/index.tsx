@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { branchesService, businessService } from "@/services/api";
-import { Button, Card } from "@/components";
+import { Button, Card, SectionTitle } from "@/components";
 import type { TBranch, TCreateBranch } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { BranchList } from "./BranchList";
@@ -149,10 +149,10 @@ export const BranchesPage = () => {
       {/* Header */}
       <div className="flex-shrink-0 gap-2 flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Business Branches</h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
-            Manage your business locations and working hours
-          </p>
+          <SectionTitle 
+            title="Business Branches"
+            subtitle="Manage your business locations and working hours"
+          />
         </div>
         <Button
           variant="default"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SwitchTabs } from "@/components";
+import { SectionTitle, SwitchTabs } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { ProfileTab } from "./ProfileTab";
 import { SecurityTab } from "./SecurityTab";
@@ -22,12 +22,10 @@ export function SettingsPage() {
 
           {/* Left: title + subtitle + avatar (below lg) + tabs */}
           <div className="flex flex-col">
-            <h1 className="text-2xl sm:text-3xl font-bold text-text-body mb-1.5 tracking-tight">
-              Account Information
-            </h1>
-            <p className="text-sm text-text-body/60 mb-4">
-              View and manage your account details.
-            </p>
+            <SectionTitle 
+              title="Account Information"
+              subtitle="View and manage your account details."
+            />
 
             {/* Avatar — sits between subtitle and tabs on mobile/md */}
             <div className="lg:hidden mb-4">

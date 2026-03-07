@@ -1,11 +1,13 @@
 import { Calendar } from "@/pages/DashboardPage/Calendar";
 import { QuickBookingBar } from "@/pages/DashboardPage/QuickBookingBar";
+import { Pagination } from "@/components/Pagination"; // adjust path as needed
 import { useState, useEffect } from "react";
 import { businessService, bookingService } from "../../services/api";
 import { BookingCard } from "./BookingCard";
 import { ChangeStatusModal } from "./ChangeStatusModal";
 import { CalendarDays, SlidersHorizontal, X } from "lucide-react";
-import type { TBooking, TBookingStatus, TBusiness } from "@/types";
+import type { TBooking, TBookingStatus, TBusiness, TPagination } from "@/types";
+import { SectionTitle } from "@/components";
 
 interface FilterValues {
   branch: string;
@@ -19,6 +21,7 @@ export function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [business, setBusiness] = useState<TBusiness | null>(null);
   const [bookings, setBookings] = useState<TBooking[]>([]);
+  const [pagination, setPagination] = useState<TPagination>({ page: 1, limit: 20, total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterValues>({
     branch: "all", service: "all", specialist: "all",
@@ -35,21 +38,30 @@ export function DashboardPage() {
     try {
       const businessData = await businessService.getMyBusiness();
       setBusiness(businessData);
-      await fetchBookings();
+      await fetchBookings(1);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (page = 1) => {
     try {
-      const bookingsData = await bookingService.getBusinessBookings({});
+      console.log(page)
+      const bookingsData = await bookingService.getBusinessBookings({ page });
       setBookings(bookingsData.bookings || []);
+      if (bookingsData.pagination) {
+        setPagination(bookingsData.pagination);
+      }
     } catch (error) {
       console.error("Failed to load bookings:", error);
     }
   };
 
+  const handlePageChange = (page: number) => {
+    fetchBookings(page);
+  };
+
+  // ... rest of handlers unchanged
   const handleChangeStatus = (bookingId: string) => {
     const booking = bookings.find((b) => b._id === bookingId);
     if (booking) { setSelectedBooking(booking); setIsModalOpen(true); }
@@ -58,7 +70,7 @@ export function DashboardPage() {
   const handleUpdateStatus = async (bookingId: string, newStatus: TBookingStatus) => {
     try {
       await bookingService.updateBookingStatus(bookingId, newStatus);
-      await fetchBookings();
+      await fetchBookings(pagination.page);
     } catch (error) {
       console.error("Failed to update booking status:", error);
       throw error;
@@ -142,18 +154,18 @@ export function DashboardPage() {
     <div className="h-full overflow-hidden">
 
       {/* ══════════════════════════════════════
-          DESKTOP (lg+) — completely unchanged
+          DESKTOP (lg+)
       ══════════════════════════════════════ */}
       <div className="hidden lg:grid h-full grid-cols-[1fr_minmax(300px,350px)] gap-2">
         <div className="h-full flex flex-col gap-2 min-h-0">
           <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm min-h-0">
-            <div className="relative flex items-center gap-4 px-6 py-4 border-b border-gray-100">
-              <div className="flex-shrink-0">
-                <h2 className="text-2xl font-light text-gray-700">Bookings</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {filteredBookings.length} booking{filteredBookings.length !== 1 ? "s" : ""}
-                  {selectedDate && <span className="ml-2 text-teal-600">on {selectedDate.toLocaleDateString()}</span>}
-                </p>
+            <div className="relative flex gap-4 px-6 py-4 border-b border-gray-100">
+              <div className="flex-shrink-0 items-center">
+                <SectionTitle
+                  title="Bookings"
+                  subtitle={`${filteredBookings.length} booking${filteredBookings.length !== 1 ? "s" : ""}`}
+                  className="!mb-0"
+                />
               </div>
               {bookingBarProps && (
                 <div className="flex-1 flex justify-center">
@@ -165,6 +177,7 @@ export function DashboardPage() {
             </div>
             <div className="flex-1 overflow-auto min-h-0 p-6">
               <BookingsList bookings={filteredBookings} selectedDate={selectedDate} onChangeStatus={handleChangeStatus} />
+              <Pagination pagination={pagination} onPageChange={handlePageChange} />
             </div>
           </div>
         </div>
@@ -173,7 +186,7 @@ export function DashboardPage() {
           <Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} getBookingCount={getBookingCountForDate} showGoToToday showShowAll />
           <div className="mt-6 pt-6 border-t space-y-3">
             <h3 className="font-medium text-text-body mb-3">Statistics</h3>
-            <div className="flex justify-between text-sm"><span>Total Bookings</span><span className="font-semibold">{bookings.length}</span></div>
+            <div className="flex justify-between text-sm"><span>Total Bookings</span><span className="font-semibold">{pagination.total}</span></div>
             <div className="flex justify-between text-sm"><span>Today</span><span className="font-semibold">{getBookingsForDate(new Date()).length}</span></div>
             <div className="flex justify-between text-sm"><span>Filtered</span><span className="font-semibold">{filteredBookings.length}</span></div>
             <div className="flex justify-between text-sm"><span>Pending</span><span className="font-semibold text-yellow-600">{bookings.filter((b) => b.status === "pending").length}</span></div>
@@ -219,14 +232,13 @@ export function DashboardPage() {
               </button>
             </div>
           </div>
-
-          {/* Book Now button (mobile wizard trigger, rendered by QuickBookingBar) */}
           {bookingBarProps && <QuickBookingBar {...bookingBarProps} />}
         </div>
 
         {/* Bookings list */}
         <div className="flex-1 overflow-y-auto p-3">
           <BookingsList bookings={filteredBookings} selectedDate={selectedDate} onChangeStatus={handleChangeStatus} />
+          <Pagination pagination={pagination} onPageChange={handlePageChange} />
         </div>
       </div>
 
@@ -235,25 +247,25 @@ export function DashboardPage() {
         <MobileSheet title="Calendar" onClose={() => setMobileCalendarOpen(false)}>
           <div className="flex flex-col items-center">
             <Calendar
-            selectedDate={selectedDate}
-            onDateSelect={(date) => { setSelectedDate(date); setMobileCalendarOpen(false); }}
-            getBookingCount={getBookingCountForDate}
-            showGoToToday
-            showShowAll
-          />
-          <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 gap-3">
-            {[
-              { label: "Total Bookings", value: bookings.length, color: "text-gray-900" },
-              { label: "Today", value: getBookingsForDate(new Date()).length, color: "text-teal-700" },
-              { label: "Filtered", value: filteredBookings.length, color: "text-gray-900" },
-              { label: "Pending", value: bookings.filter(b => b.status === "pending").length, color: "text-yellow-600" },
-            ].map(item => (
-              <div key={item.label} className="bg-gray-50 rounded-2xl px-4 py-3">
-                <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{item.label}</p>
-              </div>
-            ))}
-          </div>
+              selectedDate={selectedDate}
+              onDateSelect={(date) => { setSelectedDate(date); setMobileCalendarOpen(false); }}
+              getBookingCount={getBookingCountForDate}
+              showGoToToday
+              showShowAll
+            />
+            <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 gap-3">
+              {[
+                { label: "Total Bookings", value: pagination.total, color: "text-gray-900" },
+                { label: "Today", value: getBookingsForDate(new Date()).length, color: "text-teal-700" },
+                { label: "Filtered", value: filteredBookings.length, color: "text-gray-900" },
+                { label: "Pending", value: bookings.filter(b => b.status === "pending").length, color: "text-yellow-600" },
+              ].map(item => (
+                <div key={item.label} className="bg-gray-50 rounded-2xl px-4 py-3">
+                  <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{item.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </MobileSheet>
       )}

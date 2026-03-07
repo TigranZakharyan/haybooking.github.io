@@ -109,6 +109,10 @@ export const ServicesPage = () => {
         setServices((prev) =>
           prev.map((s) => (s._id === serviceId ? { ...s, image } : s)),
         );
+        // If editing this service, update editingService so the preview reflects the new image
+        if (editingService?._id === serviceId) {
+          setEditingService((prev) => prev ? { ...prev, image } : prev);
+        }
       }
     } catch (err: any) {
       console.error("Failed to upload service image:", err);
@@ -124,6 +128,10 @@ export const ServicesPage = () => {
       setServices((prev) =>
         prev.map((s) => (s._id === serviceId ? { ...s, image: { key: "", url: "" } } : s)),
       );
+      // If editing this service, clear the image in editingService too
+      if (editingService?._id === serviceId) {
+        setEditingService((prev) => prev ? { ...prev, image: { key: "", url: "" } } : prev);
+      }
     } catch (err: any) {
       console.error("Failed to delete service image:", err);
     } finally {
@@ -300,21 +308,32 @@ export const ServicesPage = () => {
           title={editingService ? "Edit Service" : "Add New Service"}
           subtitle={editingService ? "Update service details" : "Create a new service offering"}
         />
-        {!editingService && (
-          <label
-            htmlFor="new-service-image"
-            className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition flex-shrink-0"
-          >
-            <UploadImage
-              id="new-service"
-              imageUrl={newServiceImagePreview}
-              altText="New service"
-              isUploading={newServiceImageUploading}
-              onChange={handleNewServiceImageChange}
-              onDelete={handleNewServiceImageDelete}
-            />
-          </label>
-        )}
+        {/* Image upload — shown in both create and edit mode */}
+        <label
+          htmlFor={editingService ? `service-image-${editingService._id}` : "new-service-image"}
+          className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition flex-shrink-0"
+        >
+          <UploadImage
+            id={editingService ? `service-image-${editingService._id}` : "new-service"}
+            imageUrl={editingService ? (editingService.image?.url || "") : newServiceImagePreview}
+            altText={editingService ? editingService.name : "New service"}
+            isUploading={
+              editingService
+                ? (serviceImageUploading[editingService._id] || false)
+                : newServiceImageUploading
+            }
+            onChange={
+              editingService
+                ? (e) => handleServiceImageChange(editingService._id, e)
+                : handleNewServiceImageChange
+            }
+            onDelete={
+              editingService
+                ? () => handleDeleteServiceImage(editingService._id)
+                : handleNewServiceImageDelete
+            }
+          />
+        </label>
       </div>
 
       <div className="space-y-4">

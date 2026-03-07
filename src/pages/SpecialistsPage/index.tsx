@@ -112,6 +112,10 @@ export const SpecialistsPage = () => {
         setSpecialists((prev) =>
           prev.map((s) => (s._id === specialistId ? { ...s, photo } : s)),
         );
+        // If editing this specialist, update editingSpecialist so the preview reflects the new photo
+        if (editingSpecialist?._id === specialistId) {
+          setEditingSpecialist((prev) => prev ? { ...prev, photo } : prev);
+        }
       }
     } catch (err: any) {
       console.error("Failed to upload specialist image:", err);
@@ -127,6 +131,10 @@ export const SpecialistsPage = () => {
       setSpecialists((prev) =>
         prev.map((s) => (s._id === specialistId ? { ...s, photo: { url: "", key: "" } } : s)),
       );
+      // If editing this specialist, clear the photo in editingSpecialist too
+      if (editingSpecialist?._id === specialistId) {
+        setEditingSpecialist((prev) => prev ? { ...prev, photo: { url: "", key: "" } } : prev);
+      }
     } catch (err: any) {
       console.error("Failed to delete specialist image:", err);
     } finally {
@@ -319,21 +327,32 @@ export const SpecialistsPage = () => {
             editingSpecialist ? "Update team member details" : "Create a new team member"
           }
         />
-        {!editingSpecialist && (
-          <label
-            htmlFor="new-specialist-image"
-            className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition flex-shrink-0"
-          >
-            <UploadImage
-              id="new-specialist"
-              imageUrl={newSpecialistImagePreview}
-              altText="New specialist"
-              isUploading={newSpecialistImageUploading}
-              onChange={handleNewSpecialistImageChange}
-              onDelete={handleNewSpecialistImageDelete}
-            />
-          </label>
-        )}
+        {/* Image upload — shown in both create and edit mode */}
+        <label
+          htmlFor={editingSpecialist ? `specialist-image-${editingSpecialist._id}` : "new-specialist-image"}
+          className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition flex-shrink-0"
+        >
+          <UploadImage
+            id={editingSpecialist ? `specialist-image-${editingSpecialist._id}` : "new-specialist"}
+            imageUrl={editingSpecialist ? (editingSpecialist.photo?.url || "") : newSpecialistImagePreview}
+            altText={editingSpecialist ? editingSpecialist.name : "New specialist"}
+            isUploading={
+              editingSpecialist
+                ? (specialistImageUploading[editingSpecialist._id] || false)
+                : newSpecialistImageUploading
+            }
+            onChange={
+              editingSpecialist
+                ? (e) => handleSpecialistImageChange(editingSpecialist._id, e)
+                : handleNewSpecialistImageChange
+            }
+            onDelete={
+              editingSpecialist
+                ? () => handleDeleteSpecialistImage(editingSpecialist._id)
+                : handleNewSpecialistImageDelete
+            }
+          />
+        </label>
       </div>
 
       <div className="flex-1 flex flex-col justify-between">

@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
+import { useState, useEffect } from "react";
+import {
+  TrendingUp,
   TrendingDown,
-  DollarSign, 
+  DollarSign,
   Calendar,
   Award,
   Download,
   Activity,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -24,11 +24,10 @@ import {
   Area,
   AreaChart,
   RadialBarChart,
-  RadialBar
-} from 'recharts';
-import { businessService, bookingService } from '@/services/api';
-import { Select } from '@/components';
-
+  RadialBar,
+} from "recharts";
+import { businessService, bookingService } from "@/services/api";
+import { Button, SectionTitle, Select } from "@/components";
 
 interface Price {
   amount: number;
@@ -47,7 +46,7 @@ interface Booking {
   _id?: string;
   bookingDate: string;
   createdAt: string;
-  status: 'completed' | 'confirmed' | 'pending' | 'cancelled';
+  status: "completed" | "confirmed" | "pending" | "cancelled";
   price?: Price;
   service?: Service;
   specialist?: Specialist;
@@ -97,7 +96,7 @@ export const AnalyticsPage = () => {
   const [business, setBusiness] = useState<Business | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [timeRange, setTimeRange] = useState<string>('30');
+  const [timeRange, setTimeRange] = useState<string>("30");
 
   useEffect(() => {
     fetchData();
@@ -107,12 +106,12 @@ export const AnalyticsPage = () => {
     try {
       const [businessData, bookingsData] = await Promise.all([
         businessService.getMyBusiness(),
-        bookingService.getBusinessBookings({})
+        bookingService.getBusinessBookings({}),
       ]);
       setBusiness(businessData);
       setBookings(bookingsData.bookings || []);
     } catch (error) {
-      console.error('Analytics error:', error);
+      console.error("Analytics error:", error);
     } finally {
       setLoading(false);
     }
@@ -123,21 +122,30 @@ export const AnalyticsPage = () => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     return bookings.filter(
-      (booking) => new Date(booking.bookingDate).getTime() >= cutoffDate.getTime()
+      (booking) =>
+        new Date(booking.bookingDate).getTime() >= cutoffDate.getTime(),
     );
   };
 
   const filteredBookings = getFilteredBookings();
 
   const totalRevenue = filteredBookings
-    .filter((b) => ['confirmed', 'completed'].includes(b.status))
+    .filter((b) => ["confirmed", "completed"].includes(b.status))
     .reduce((sum, b) => sum + (b.price?.amount || 0), 0);
 
   const totalBookings = filteredBookings.length;
-  const completedBookings = filteredBookings.filter((b) => b.status === 'completed').length;
-  const confirmedBookings = filteredBookings.filter((b) => b.status === 'confirmed').length;
-  const pendingBookings = filteredBookings.filter((b) => b.status === 'pending').length;
-  const cancelledBookings = filteredBookings.filter((b) => b.status === 'cancelled').length;
+  const completedBookings = filteredBookings.filter(
+    (b) => b.status === "completed",
+  ).length;
+  const confirmedBookings = filteredBookings.filter(
+    (b) => b.status === "confirmed",
+  ).length;
+  const pendingBookings = filteredBookings.filter(
+    (b) => b.status === "pending",
+  ).length;
+  const cancelledBookings = filteredBookings.filter(
+    (b) => b.status === "cancelled",
+  ).length;
 
   const getPreviousPeriodBookings = (): number => {
     const days = parseInt(timeRange);
@@ -159,10 +167,15 @@ export const AnalyticsPage = () => {
   const previousBookings = getPreviousPeriodBookings();
   const bookingGrowth: number =
     previousBookings > 0
-      ? parseFloat((((totalBookings - previousBookings) / previousBookings) * 100).toFixed(1))
+      ? parseFloat(
+          (
+            ((totalBookings - previousBookings) / previousBookings) *
+            100
+          ).toFixed(1),
+        )
       : totalBookings > 0
-      ? 100
-      : 0;
+        ? 100
+        : 0;
 
   const getDailyData = (): DailyDataEntry[] => {
     const days = parseInt(timeRange);
@@ -171,7 +184,10 @@ export const AnalyticsPage = () => {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const dateStr = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
       dailyMap.set(dateStr, {
         date: dateStr,
         bookings: 0,
@@ -184,9 +200,9 @@ export const AnalyticsPage = () => {
     }
 
     filteredBookings.forEach((booking) => {
-      const dateStr = new Date(booking.createdAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
+      const dateStr = new Date(booking.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
       });
       const data = dailyMap.get(dateStr);
       if (data) {
@@ -195,7 +211,7 @@ export const AnalyticsPage = () => {
         if (status in data) {
           (data[status as keyof DailyDataEntry] as number)++;
         }
-        if (['confirmed', 'completed'].includes(status)) {
+        if (["confirmed", "completed"].includes(status)) {
           data.revenue += booking.price?.amount || 0;
         }
       }
@@ -207,10 +223,10 @@ export const AnalyticsPage = () => {
   const getServiceData = (): ServiceDataEntry[] => {
     const serviceMap = new Map<string, ServiceDataEntry>();
     filteredBookings.forEach((booking) => {
-      const name = booking.service?.name || 'Unknown';
+      const name = booking.service?.name || "Unknown";
       const existing = serviceMap.get(name) || { name, count: 0, revenue: 0 };
       existing.count++;
-      if (['confirmed', 'completed'].includes(booking.status)) {
+      if (["confirmed", "completed"].includes(booking.status)) {
         existing.revenue += booking.price?.amount || 0;
       }
       serviceMap.set(name, existing);
@@ -223,10 +239,14 @@ export const AnalyticsPage = () => {
   const getSpecialistData = (): SpecialistDataEntry[] => {
     const specialistMap = new Map<string, SpecialistDataEntry>();
     filteredBookings.forEach((booking) => {
-      const name = booking.specialist?.name || 'Unknown';
-      const existing = specialistMap.get(name) || { name, count: 0, revenue: 0 };
+      const name = booking.specialist?.name || "Unknown";
+      const existing = specialistMap.get(name) || {
+        name,
+        count: 0,
+        revenue: 0,
+      };
       existing.count++;
-      if (['confirmed', 'completed'].includes(booking.status)) {
+      if (["confirmed", "completed"].includes(booking.status)) {
         existing.revenue += booking.price?.amount || 0;
       }
       specialistMap.set(name, existing);
@@ -241,24 +261,26 @@ export const AnalyticsPage = () => {
   const specialistData = getSpecialistData();
 
   const completionRate: number =
-    totalBookings > 0 ? parseInt((completedBookings / totalBookings * 100).toFixed(0)) : 0;
+    totalBookings > 0
+      ? parseInt(((completedBookings / totalBookings) * 100).toFixed(0))
+      : 0;
 
   const radialData: RadialDataEntry[] = [
-    { name: 'Completion', value: completionRate, fill: '#5D6B8D' },
+    { name: "Completion", value: completionRate, fill: "#5D6B8D" },
   ];
 
   const statusPieData: StatusPieEntry[] = [
-    { name: 'Completed', value: completedBookings, color: '#5D6B8D' },
-    { name: 'Confirmed', value: confirmedBookings, color: '#b39595' },
-    { name: 'Pending', value: pendingBookings, color: '#c4a882' },
-    { name: 'Cancelled', value: cancelledBookings, color: '#c97a7a' },
+    { name: "Completed", value: completedBookings, color: "#5D6B8D" },
+    { name: "Confirmed", value: confirmedBookings, color: "#b39595" },
+    { name: "Pending", value: pendingBookings, color: "#c4a882" },
+    { name: "Cancelled", value: cancelledBookings, color: "#c97a7a" },
   ].filter((item) => item.value > 0);
 
   const timeRangeOptions = [
-    { value: '7', label: 'Last 7 days' },
-    { value: '30', label: 'Last 30 days' },
-    { value: '90', label: 'Last 90 days' },
-    { value: '365', label: 'Last year' },
+    { value: "7", label: "Last 7 days" },
+    { value: "30", label: "Last 30 days" },
+    { value: "90", label: "Last 90 days" },
+    { value: "365", label: "Last year" },
   ];
 
   if (loading) {
@@ -271,49 +293,45 @@ export const AnalyticsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-body">
-            Analytics Dashboard
-          </h1>
-          {business?.businessName && (
-            <p className="text-text-body/70 text-sm mt-0.5">
-              {business.businessName}
-            </p>
-          )}
-        </div>
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <SectionTitle
+          title="Analytics Dashboard"
+          subtitle={business ? business.businessName : ""}
+        />
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-start gap-3 w-full sm:w-auto">
           <Select
             value={timeRange}
             onChange={(value) => setTimeRange(value)}
             options={timeRangeOptions}
             className="w-full sm:w-48 border-liberty/20 focus:border-liberty"
           />
-
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium flex-shrink-0 transition-opacity hover:opacity-85 bg-liberty text-white">
+          <Button variant="liberty" size="large" className="gap-2">
             <Download className="h-4 w-4" />
             <span>Export</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
         {/* Total Bookings */}
         <KpiCard
           label="Total Bookings"
           value={totalBookings}
           sub={
             <div className="flex items-center mt-1 gap-1">
-              {bookingGrowth >= 0
-                ? <TrendingUp className="h-3 w-3 text-liberty" />
-                : <TrendingDown className="h-3 w-3" style={{ color: '#c97a7a' }} />
-              }
+              {bookingGrowth >= 0 ? (
+                <TrendingUp className="h-3 w-3 text-liberty" />
+              ) : (
+                <TrendingDown
+                  className="h-3 w-3"
+                  style={{ color: "#c97a7a" }}
+                />
+              )}
               <span
                 className={`text-xs font-medium ${
-                  bookingGrowth >= 0 ? 'text-liberty' : 'text-[#c97a7a]'
+                  bookingGrowth >= 0 ? "text-liberty" : "text-[#c97a7a]"
                 }`}
               >
                 {Math.abs(bookingGrowth)}% vs prev
@@ -323,7 +341,13 @@ export const AnalyticsPage = () => {
           icon={<Calendar className="h-4 w-4 text-secondary" />}
           chart={
             <LineChart data={dailyData.slice(-7)}>
-              <Line type="monotone" dataKey="bookings" stroke="#b39595" strokeWidth={2} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="bookings"
+                stroke="#b39595"
+                strokeWidth={2}
+                dot={false}
+              />
             </LineChart>
           }
         />
@@ -334,7 +358,10 @@ export const AnalyticsPage = () => {
           value={completedBookings}
           sub={
             <p className="text-text-body text-xs mt-1">
-              {totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(0) : 0}% rate
+              {totalBookings > 0
+                ? ((completedBookings / totalBookings) * 100).toFixed(0)
+                : 0}
+              % rate
             </p>
           }
           icon={<Award className="h-4 w-4 text-secondary" />}
@@ -346,7 +373,13 @@ export const AnalyticsPage = () => {
                   <stop offset="95%" stopColor="#b39595" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Area type="monotone" dataKey="completed" stroke="#b39595" fill="url(#cg1)" strokeWidth={2} />
+              <Area
+                type="monotone"
+                dataKey="completed"
+                stroke="#b39595"
+                fill="url(#cg1)"
+                strokeWidth={2}
+              />
             </AreaChart>
           }
         />
@@ -357,7 +390,8 @@ export const AnalyticsPage = () => {
           value={`$${totalRevenue.toFixed(0)}`}
           sub={
             <p className="text-text-body text-xs mt-1">
-              ${(totalRevenue / Math.max(totalBookings, 1)).toFixed(0)} avg / booking
+              ${(totalRevenue / Math.max(totalBookings, 1)).toFixed(0)} avg /
+              booking
             </p>
           }
           icon={<DollarSign className="h-4 w-4 text-secondary" />}
@@ -369,7 +403,13 @@ export const AnalyticsPage = () => {
                   <stop offset="95%" stopColor="#5D6B8D" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Area type="monotone" dataKey="revenue" stroke="#5D6B8D" fill="url(#cg2)" strokeWidth={2} />
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="#5D6B8D"
+                fill="url(#cg2)"
+                strokeWidth={2}
+              />
             </AreaChart>
           }
         />
@@ -380,13 +420,22 @@ export const AnalyticsPage = () => {
           value={cancelledBookings}
           sub={
             <p className="text-text-body text-xs mt-1">
-              {totalBookings > 0 ? ((cancelledBookings / totalBookings) * 100).toFixed(0) : 0}% rate
+              {totalBookings > 0
+                ? ((cancelledBookings / totalBookings) * 100).toFixed(0)
+                : 0}
+              % rate
             </p>
           }
           icon={<Activity className="h-4 w-4 text-secondary" />}
           chart={
             <LineChart data={dailyData.slice(-7)}>
-              <Line type="monotone" dataKey="cancelled" stroke="#c97a7a" strokeWidth={2} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="cancelled"
+                stroke="#c97a7a"
+                strokeWidth={2}
+                dot={false}
+              />
             </LineChart>
           }
         />
@@ -394,7 +443,6 @@ export const AnalyticsPage = () => {
 
       {/* ── Middle Row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
         {/* General Stats */}
         <div className="lg:col-span-2 rounded-2xl p-6 bg-white border border-[#ede8e4]">
           <div className="flex items-center justify-between mb-5">
@@ -410,23 +458,38 @@ export const AnalyticsPage = () => {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={dailyData}>
                 <defs>
-                  <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient
+                    id="colorBookings"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
                     <stop offset="5%" stopColor="#b39595" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#b39595" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ede8e4" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6a6a6a' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#6a6a6a' }} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#fff',
-                    border: '1px solid #ede8e4',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    color: '#6a6a6a',
-                    boxShadow: '0 4px 16px rgba(179,149,149,0.12)'
-                  }} 
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "#6a6a6a" }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#6a6a6a" }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #ede8e4",
+                    borderRadius: "10px",
+                    fontSize: "12px",
+                    color: "#6a6a6a",
+                    boxShadow: "0 4px 16px rgba(179,149,149,0.12)",
+                  }}
                 />
                 <Area
                   type="monotone"
@@ -467,24 +530,30 @@ export const AnalyticsPage = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#fff',
-                    border: '1px solid #ede8e4',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    color: '#6a6a6a',
-                    boxShadow: '0 4px 16px rgba(179,149,149,0.12)'
-                  }} 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #ede8e4",
+                    borderRadius: "10px",
+                    fontSize: "12px",
+                    color: "#6a6a6a",
+                    boxShadow: "0 4px 16px rgba(179,149,149,0.12)",
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-2.5">
             {statusPieData.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm">
+              <div
+                key={idx}
+                className="flex items-center justify-between text-sm"
+              >
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <div
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
                   <span className="text-text-body">{item.name}</span>
                 </div>
                 <span className="font-semibold text-liberty-dark">
@@ -498,11 +567,12 @@ export const AnalyticsPage = () => {
 
       {/* ── Bottom Row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {/* Services */}
         <div className="rounded-2xl p-6 bg-white border border-[#ede8e4]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-liberty-dark">Services</h3>
+            <h3 className="text-base font-semibold text-liberty-dark">
+              Services
+            </h3>
             <span className="text-liberty text-xs font-medium cursor-pointer hover:text-liberty-dark transition-colors">
               View All
             </span>
@@ -510,10 +580,14 @@ export const AnalyticsPage = () => {
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={serviceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ede8e4" vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#ede8e4"
+                  vertical={false}
+                />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 10, fill: '#6a6a6a' }}
+                  tick={{ fontSize: 10, fill: "#6a6a6a" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
@@ -522,15 +596,15 @@ export const AnalyticsPage = () => {
                   height={40}
                 />
                 <YAxis hide />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#fff',
-                    border: '1px solid #ede8e4',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    color: '#6a6a6a',
-                    boxShadow: '0 4px 16px rgba(179,149,149,0.12)'
-                  }} 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #ede8e4",
+                    borderRadius: "10px",
+                    fontSize: "12px",
+                    color: "#6a6a6a",
+                    boxShadow: "0 4px 16px rgba(179,149,149,0.12)",
+                  }}
                 />
                 <Bar dataKey="count" fill="#b39595" radius={[8, 8, 0, 0]} />
               </BarChart>
@@ -541,7 +615,9 @@ export const AnalyticsPage = () => {
         {/* Daily Pattern */}
         <div className="rounded-2xl p-6 bg-white border border-[#ede8e4]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-liberty-dark">Daily Pattern</h3>
+            <h3 className="text-base font-semibold text-liberty-dark">
+              Daily Pattern
+            </h3>
             <span className="text-liberty text-xs font-medium cursor-pointer hover:text-liberty-dark transition-colors">
               Details
             </span>
@@ -549,28 +625,37 @@ export const AnalyticsPage = () => {
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyData.slice(-10)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ede8e4" vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#ede8e4"
+                  vertical={false}
+                />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 10, fill: '#6a6a6a' }}
+                  tick={{ fontSize: 10, fill: "#6a6a6a" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis hide />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#fff',
-                    border: '1px solid #ede8e4',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    color: '#6a6a6a',
-                    boxShadow: '0 4px 16px rgba(179,149,149,0.12)'
-                  }} 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #ede8e4",
+                    borderRadius: "10px",
+                    fontSize: "12px",
+                    color: "#6a6a6a",
+                    boxShadow: "0 4px 16px rgba(179,149,149,0.12)",
+                  }}
                 />
                 <Bar dataKey="confirmed" stackId="a" fill="#b39595" />
                 <Bar dataKey="pending" stackId="a" fill="#c4a882" />
-                <Bar dataKey="completed" stackId="a" fill="#5D6B8D" radius={[8, 8, 0, 0]} />
+                <Bar
+                  dataKey="completed"
+                  stackId="a"
+                  fill="#5D6B8D"
+                  radius={[8, 8, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -596,7 +681,7 @@ export const AnalyticsPage = () => {
                   endAngle={-270}
                 >
                   <RadialBar
-                    background={{ fill: '#ede8e4' }}
+                    background={{ fill: "#ede8e4" }}
                     dataKey="value"
                     cornerRadius={10}
                     fill="#5D6B8D"
@@ -616,12 +701,11 @@ export const AnalyticsPage = () => {
           <div className="space-y-3">
             {specialistData.slice(0, 4).map((specialist, idx) => {
               const maxCount = Math.max(...specialistData.map((s) => s.count));
-              const pct = maxCount > 0 ? (specialist.count / maxCount) * 100 : 0;
+              const pct =
+                maxCount > 0 ? (specialist.count / maxCount) * 100 : 0;
               return (
                 <div key={idx} className="flex items-center gap-2">
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-primary/20 text-secondary"
-                  >
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-primary/20 text-secondary">
                     {idx + 1}
                   </div>
                   <span className="text-sm flex-1 min-w-0 truncate text-text-body">
@@ -659,16 +743,12 @@ interface KpiCardProps {
 const KpiCard = ({ label, value, sub, icon, chart }: KpiCardProps) => (
   <div className="rounded-2xl p-4 bg-white border border-[#ede8e4]">
     <div className="flex items-center justify-between mb-3">
-      <span className="text-sm font-medium text-text-body">
-        {label}
-      </span>
+      <span className="text-sm font-medium text-text-body">{label}</span>
       {icon}
     </div>
     <div className="flex items-end justify-between">
       <div>
-        <p className="text-3xl font-bold text-liberty-dark">
-          {value}
-        </p>
+        <p className="text-3xl font-bold text-liberty-dark">{value}</p>
         {sub}
       </div>
       <div className="h-12 w-20 flex-shrink-0">
@@ -688,9 +768,9 @@ interface ChipProps {
 const Chip = ({ children, active }: ChipProps) => (
   <button
     className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
-      active 
-        ? 'bg-primary/20 text-secondary' 
-        : 'text-text-body hover:bg-primary/10'
+      active
+        ? "bg-primary/20 text-secondary"
+        : "text-text-body hover:bg-primary/10"
     }`}
   >
     {children}
