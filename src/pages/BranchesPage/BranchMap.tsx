@@ -1,5 +1,9 @@
-import { Badge, Card, MapWithCoords } from "@/components";
+import { lazy } from "react";
+import { Badge, Card } from "@/components";
 import type { TBranch } from "@/types";
+
+// lazy load heavy libs
+const MapWithCoords = lazy(() => import("@/components/MapWithCoords"))
 
 interface BranchMapProps {
   branches: TBranch[];

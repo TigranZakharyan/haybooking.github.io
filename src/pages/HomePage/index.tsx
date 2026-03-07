@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Button, Container, Input, Select, BookingModal, Pagination } from "@/components";
+import { useState, useEffect, lazy } from 'react';
+import { Button, Container, Input, Select, Pagination } from "@/components";
 import { businessService, searchService } from '@/services/api';
 import type { TBusiness, TBusinessType, TPagination, TSearchBusinessParams } from '@/types';
 import { ServiceCard } from './ServiceCard';
+
+const BookingModal = lazy(() => import("@/components/BookingModal"))
 
 export function HomePage() {
   const [businesses, setBusinesses] = useState<TBusiness[]>([]);

@@ -1431,3 +1431,5 @@ export function QuickBookingBar({
     </>
   );
 }
+
+export default QuickBookingBar

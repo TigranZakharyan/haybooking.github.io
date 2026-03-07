@@ -1,22 +1,21 @@
-import { useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   MapPin,
   Phone,
   Clock,
   Star,
-  Calendar,
-  DollarSign,
   Users,
   Building2,
 } from "lucide-react";
+import { weekdays } from "@/constants";
 import { businessService } from "@/services/api";
-import { MapWithCoords } from "@/components/MapWithCoords";
-import { BookingModal } from "@/components/BookingModal";
 import type { TBusiness, TMapPoint, TBooking } from "@/types";
 import { Container } from "@/components";
 
-const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const BookingModal = lazy(() => import("@/components/BookingModal"))
+const MapWithCoords = lazy(() => import("@/components/MapWithCoords"))
+
 
 export function BusinessPage() {
   const { bookingLink } = useParams<{ bookingLink: string }>();
@@ -210,7 +209,7 @@ export function BusinessPage() {
                 <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                   {business.branches.map((branch) => {
                     const isSelected = selectedBranchId === branch._id;
-                    const dayOfWeek = new Date().getDay();
+                    const dayOfWeek = new Date().getDay() - 1;
                     const todaySchedule = branch.workingHours.find(
                       (wh) => wh.dayOfWeek === dayOfWeek,
                     );
@@ -292,77 +291,6 @@ export function BusinessPage() {
               </div>
             </div>
           </div>
-
-          {/* Working Hours Table */}
-          {selectedBranch && (
-            <div className="bg-white rounded-lg p-6 border border-gray-100">
-              <h2 className="text-xl font-bold text-primary mb-4">
-                Working Hours - {selectedBranch.address.city}
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                        Day
-                      </th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                        Hours
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedBranch.workingHours.map((wh) => {
-                      const dayName = weekdays[wh.dayOfWeek];
-                      const isToday = wh.dayOfWeek === new Date().getDay();
-
-                      return (
-                        <tr
-                          key={wh._id}
-                          className={`border-b border-gray-100 last:border-b-0 ${
-                            isToday ? "bg-primary/5" : ""
-                          }`}
-                        >
-                          <td className="py-3 px-4">
-                            <span
-                              className={`font-medium ${
-                                isToday ? "text-primary" : "text-gray-700"
-                              }`}
-                            >
-                              {dayName}
-                              {isToday && (
-                                <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
-                                  Today
-                                </span>
-                              )}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {wh.isOpen ? (
-                              <div className="text-gray-700">
-                                {wh.openTime} - {wh.closeTime}
-                                {wh.hasBreak &&
-                                  wh.breakStart &&
-                                  wh.breakEnd && (
-                                    <span className="ml-2 text-sm text-gray-500">
-                                      (Break: {wh.breakStart} - {wh.breakEnd})
-                                    </span>
-                                  )}
-                              </div>
-                            ) : (
-                              <span className="text-red-600 font-medium">
-                                Closed
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </Container>
       </div>
 

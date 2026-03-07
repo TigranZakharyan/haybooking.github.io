@@ -7,7 +7,7 @@ import type { TMapPoint } from "@/types";
 
 interface MapProps {
   points: TMapPoint[];
-  selectedPointId?: string | undefined; // changed to ID
+  selectedPointId?: string | undefined;
 }
 
 export function MapWithCoords({ points, selectedPointId }: MapProps) {
@@ -127,3 +127,5 @@ export function MapWithCoords({ points, selectedPointId }: MapProps) {
     />
   );
 }
+
+export default MapWithCoords

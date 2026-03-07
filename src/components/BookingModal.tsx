@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy } from "react";
 import { MapPin, Phone, Clock, DollarSign, X, Check } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
-import { MapWithCoords } from "@/components/MapWithCoords";
 import { GoogleMapButton } from "@/components/GoogleMapButton";
 import { YandexMapButton } from "@/components/YandexMapButton";
 import { bookingService } from "@/services/api";
@@ -16,6 +15,11 @@ import type {
 } from "@/types";
 import { months, weekdays } from "@/constants";
 import { formatPhone } from "@/services/format";
+
+
+// lazy load heavy libs
+const MapWithCoords = lazy(() => import("@/components/MapWithCoords"))
+
 
 interface Props {
   business: TBusiness;
@@ -1427,3 +1431,5 @@ export const BookingModal = ({
     </div>
   );
 };
+
+export default BookingModal

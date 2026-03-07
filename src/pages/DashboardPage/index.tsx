@@ -1,13 +1,14 @@
 import { Calendar } from "@/pages/DashboardPage/Calendar";
-import { QuickBookingBar } from "@/pages/DashboardPage/QuickBookingBar";
 import { Pagination } from "@/components/Pagination"; // adjust path as needed
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy } from "react";
 import { businessService, bookingService } from "../../services/api";
 import { BookingCard } from "./BookingCard";
 import { ChangeStatusModal } from "./ChangeStatusModal";
 import { CalendarDays, SlidersHorizontal, X } from "lucide-react";
 import type { TBooking, TBookingStatus, TBusiness, TPagination } from "@/types";
 import { SectionTitle } from "@/components";
+
+const QuickBookingBar = lazy(() => import("./QuickBookingBar"))
 
 interface FilterValues {
   branch: string;

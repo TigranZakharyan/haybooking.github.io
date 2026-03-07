@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy } from "react";
 import { Calendar, Clock, MapPin, User, Edit3, X, DollarSign } from "lucide-react";
 import {
-  BookingModal,
   Button,
   Card,
   Container,
@@ -10,6 +9,8 @@ import {
 } from "@/components";
 import type { TBooking, TBookingStatus, TBusiness, TPagination } from "@/types";
 import { bookingService, businessService } from "@/services/api";
+
+const BookingModal = lazy(() => import("@/components/BookingModal"))
 
 type FilterType = "all" | TBookingStatus;
 
