@@ -6,6 +6,15 @@ import { ServiceCard } from './ServiceCard';
 
 const BookingModal = lazy(() => import("@/components/BookingModal"))
 
+const CATEGORY_FILTERS = [
+  { label: 'Health',       emoji: '🩺', value: 'health' },
+  { label: 'Beauty',       emoji: '💄', value: 'beauty' },
+  { label: 'Home',         emoji: '🏠', value: 'home' },
+  { label: 'Tourism',      emoji: '🧳', value: 'tourism' },
+  { label: 'Car',          emoji: '🚗', value: 'car' },
+  { label: 'Photography',  emoji: '📷', value: 'photography' },
+];
+
 export function HomePage() {
   const [businesses, setBusinesses] = useState<TBusiness[]>([]);
   const [cities, setCities] = useState<string[]>([]);
@@ -13,6 +22,7 @@ export function HomePage() {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<TPagination>();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<TSearchBusinessParams>({
     q: '',
     city: '',
@@ -43,15 +53,12 @@ export function HomePage() {
   };
 
   const handleSearch = async (page: number = 1) => {
-    setLoading(true);
     try {
       const result = await searchService.searchBusinesses({ ...filters, page });
       setBusinesses(result.businesses);
       setPagination(result.pagination);
     } catch (error) {
       console.error('Search failed:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -65,6 +72,13 @@ export function HomePage() {
       business.bookingLink
     );
     setSelectedBusiness(fetchBusinessDetails);
+  };
+
+  const handleCategoryClick = (value: string) => {
+    const next = activeCategory === value ? null : value;
+    setActiveCategory(next);
+    setFilters((prev) => ({ ...prev, type: next ?? 'all' }));
+    handleSearch()
   };
 
   const handleCloseModal = () => setSelectedBusiness(null);
@@ -83,7 +97,46 @@ export function HomePage() {
   return (
     <>
       <Container>
-        <h2 className="uppercase text-xl sm:text-2xl md:text-3xl">
+
+        {/* ── Category icon filters ── */}
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 py-6">
+          {types.map(({ label, value }) => {
+            const isActive = activeCategory === value;
+            return (
+              <button
+                key={value}
+                onClick={() => handleCategoryClick(value)}
+                className={[
+                  'flex flex-col items-center gap-1.5 group focus:outline-none transition-all duration-200',
+                ].join(' ')}
+              >
+                {/* Icon bubble */}
+                <span
+                  className={[
+                    'flex items-center justify-center w-16 h-16 rounded-2xl text-3xl',
+                    'shadow-sm transition-all duration-200',
+                    isActive
+                      ? 'bg-primary/30 text-white shadow-primary/30 shadow-md'
+                      : 'bg-white text-gray-700 group-hover:bg-primary/10',
+                  ].join(' ')}
+                >
+                  💅🏼
+                </span>
+                {/* Label */}
+                <span
+                  className={[
+                    'text-xs font-medium tracking-wide transition-colors duration-200',
+                    isActive ? 'text-primary font-semibold' : 'text-gray-500 group-hover:text-primary',
+                  ].join(' ')}
+                >
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <h2 className="uppercase text-xl sm:text-2xl md:text-3xl text-center">
           Find &amp; book services
         </h2>
 
@@ -138,9 +191,10 @@ export function HomePage() {
               ]}
               placeholder="All Types"
               value={filters.type}
-              onChange={(value) =>
-                setFilters({ ...filters, type: value as string })
-              }
+              onChange={(value) => {
+                setFilters({ ...filters, type: value as string });
+                setActiveCategory(null);
+              }}
             />
 
             <Button

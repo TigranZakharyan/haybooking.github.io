@@ -56,8 +56,8 @@ export function Input({
               : props.type ?? "text"
           }
           className={`w-full ${paddingLeft} pr-10 py-3 bg-slate-50 border rounded-lg
-            focus:outline-none focus:ring-2 transition-all
-            placeholder:text-slate-400
+            focus:outline-none focus:ring-1 transition-all
+            placeholder:text-slate-400 mx-[1px]
             ${borderVariant}
             ${error ? "!border-red-500 focus:ring-red-500" : ""}`} // ✅ red border on error
         />
