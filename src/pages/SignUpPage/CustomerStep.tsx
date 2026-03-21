@@ -6,6 +6,7 @@ import { isValidEmail } from "@/services/validation";
 import { useNavigate } from "react-router-dom";
 import type { TRegisterCustomerCredentials } from "@/types";
 import { formatPhone } from "@/services/format";
+import { useTranslation } from "react-i18next";
 
 type CustomerStepProps = {
   phone: string;
@@ -15,35 +16,30 @@ type CustomerStepProps = {
 };
 
 export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps) {
-  const navigate = useNavigate()
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Error state only shown after submit
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
   const handleRegister = async () => {
     const newErrors: typeof errors = {};
 
-    if (code.length !== 6) newErrors.code = "Verification code must be 6 digits";
-    if (!firstName.trim()) newErrors.firstName = "First name is required";
-    if (!lastName.trim()) newErrors.lastName = "Last name is required";
-    if (email.trim() && !isValidEmail(email)) newErrors.email = "Email is invalid";
-    if (password.length < 8) newErrors.password = "Password must be at least 8 characters";
-    if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
+    if (code.length !== 6) newErrors.code = t("errors.codeLength");
+    if (!firstName.trim()) newErrors.firstName = t("errors.required");
+    if (!lastName.trim()) newErrors.lastName = t("errors.required");
+    if (email.trim() && !isValidEmail(email)) newErrors.email = t("errors.emailInvalid");
+    if (password.length < 8) newErrors.password = t("errors.passwordLength");
+    if (password !== confirmPassword) newErrors.confirmPassword = t("errors.passwordMatch");
 
-    // Set errors to show them under inputs
     setErrors(newErrors);
-
-    // Stop if any errors
     if (Object.keys(newErrors).length > 0) return;
 
     setIsSubmitting(true);
-
     try {
       const registerData: TRegisterCustomerCredentials = {
         phone: formatPhone(phone),
@@ -54,9 +50,8 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
         password,
         role: "customer",
       };
-
       await authService.registerCustomer(registerData);
-      navigate("/signin")
+      navigate("/signin");
     } catch (err: any) {
       console.error(err.response?.data || err);
     } finally {
@@ -66,32 +61,30 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
 
   return (
     <>
-      {/* Verify */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 font-semibold text-gray-900">
           <CheckCircle className="h-5 w-5 text-green-500" />
-          Verify Your Phone
+          {t("signUp.verifyPhone")}
         </div>
 
         <Input
-          label="Verification Code"
+          label={t("signUp.verificationCode")}
           icon={Lock}
-          placeholder="Enter 6-digit code"
+          placeholder={t("signUp.codePlaceholder")}
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          hint={`Code sent to ${phone}`}
+          hint={t("signUp.codeSentTo", { phone })}
           error={errors.code}
         />
       </div>
 
-      {/* Personal Info */}
       <div className="space-y-4">
-        <h4 className="font-semibold text-gray-900">Personal Information</h4>
+        <h4 className="font-semibold text-gray-900">{t("signUp.personalInfo")}</h4>
 
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="First Name"
+            label={t("settings.firstName")}
             required
             icon={User}
             placeholder="John"
@@ -100,7 +93,7 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
             error={errors.firstName}
           />
           <Input
-            label="Last Name"
+            label={t("settings.lastName")}
             required
             icon={User}
             placeholder="Doe"
@@ -111,7 +104,7 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
         </div>
 
         <Input
-          label="Email (Optional)"
+          label={t("signUp.emailOptional")}
           icon={Mail}
           placeholder="john.doe@example.com"
           value={email}
@@ -121,20 +114,20 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
 
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Password"
+            label={t("settings.newPassword")}
             required
             icon={Lock}
-            placeholder="Min. 6 characters"
+            placeholder={t("signUp.passwordPlaceholder")}
             isPassword
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             error={errors.password}
           />
           <Input
-            label="Confirm Password"
+            label={t("settings.confirmNewPassword")}
             required
             icon={Lock}
-            placeholder="Repeat password"
+            placeholder={t("signUp.repeatPassword")}
             isPassword
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -142,25 +135,18 @@ export function CustomerStep({ phone, code, setCode, onBack }: CustomerStepProps
           />
         </div>
 
-        {/* Buttons */}
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="large"
-            className="w-full"
-            onClick={onBack}
-          >
-            Back
+          <Button variant="outline" size="large" className="w-full" onClick={onBack}>
+            {t("signUp.back")}
           </Button>
-
           <Button
             variant="liberty"
             size="large"
             className="w-full"
             onClick={handleRegister}
-            disabled={isSubmitting} // disabled only while submitting
+            disabled={isSubmitting}
           >
-            {isSubmitting ? "Creating..." : "Create Customer Account"}
+            {isSubmitting ? t("signUp.creating") : t("signUp.createCustomerAccount")}
           </Button>
         </div>
       </div>

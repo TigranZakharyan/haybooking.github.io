@@ -1,5 +1,6 @@
 import { User, Clock, Phone, Mail } from "lucide-react";
 import { Button } from "@/components";
+import { useTranslation } from "react-i18next";
 
 interface BookingCardProps {
   booking: {
@@ -8,23 +9,10 @@ interface BookingCardProps {
     startTime: string;
     endTime: string;
     status: "pending" | "confirmed" | "cancelled" | "completed";
-    customerInfo?: {
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      email?: string;
-    };
-    services?: {
-      _id: string;
-      name: string;
-    }[];
-    specialist?: {
-      _id: string;
-      name: string;
-    };
-    price?: {
-      amount: number;
-    };
+    customerInfo?: { firstName?: string; lastName?: string; phone?: string; email?: string; };
+    services?: { _id: string; name: string; }[];
+    specialist?: { _id: string; name: string; };
+    price?: { amount: number; };
     notes?: string;
     isGuestBooking?: boolean;
   };
@@ -32,55 +20,40 @@ interface BookingCardProps {
 }
 
 export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
+  const { t } = useTranslation();
+
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case "confirmed": return "bg-green-100 text-green-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "cancelled": return "bg-red-100 text-red-800";
+      case "completed": return "bg-blue-100 text-blue-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
   return (
     <div className="bg-white border-2 border-primary rounded-lg p-4 hover:shadow-md transition-shadow">
-      {/* Header - Time, Status, Price, Action */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-        {/* Left: time + status badge */}
         <div className="flex items-center gap-2 flex-wrap">
           <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
           <span className="font-medium text-gray-900 text-sm sm:text-base">
             {booking.startTime} - {booking.endTime}
           </span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal capitalize ${getStatusColor(
-              booking.status
-            )}`}
-          >
-            {booking.status}
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-normal capitalize ${getStatusColor(booking.status)}`}>
+            {t(`statuses.${booking.status}`)}
           </span>
         </div>
-
-        {/* Right: price + button */}
         <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
           <span className="text-base sm:text-lg font-semibold text-gray-900">
             $ {booking.price?.amount || 0}
           </span>
-          <Button
-            onClick={() => onChangeStatus(booking._id)}
-            className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 h-auto"
-          >
-            Change Status
+          <Button onClick={() => onChangeStatus(booking._id)} className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 h-auto">
+            {t("dashboard.changeStatus")}
           </Button>
         </div>
       </div>
 
-      {/* Customer Info */}
       <div className="mb-3">
         <div className="flex items-center gap-2 flex-wrap">
           <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
@@ -88,15 +61,14 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
             {booking.customerInfo?.firstName} {booking.customerInfo?.lastName}
           </span>
           {booking.isGuestBooking && (
-            <span className="text-xs text-gray-500">(Guest)</span>
+            <span className="text-xs text-gray-500">({t("dashboard.guest")})</span>
           )}
         </div>
       </div>
 
-      {/* Service and Specialist */}
       <div className="space-y-1 mb-3 text-sm text-gray-700">
         <div>
-          <span>Services: </span>
+          <span>{t("dashboard.services")}: </span>
           <ul className="font-medium list-disc list-inside">
             {booking.services?.map((service) => (
               <li key={service._id}>{service.name}</li>
@@ -104,11 +76,10 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
           </ul>
         </div>
         <div className="text-gray-600">
-          With {booking.specialist?.name || "Specialist"}
+          {t("dashboard.with")} {booking.specialist?.name || t("dashboard.specialist")}
         </div>
       </div>
 
-      {/* Contact Info */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-x-4 text-sm text-gray-600">
         {booking.customerInfo?.phone && (
           <div className="flex items-center gap-1.5">
@@ -124,7 +95,6 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
         )}
       </div>
 
-      {/* Notes */}
       {booking.notes && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-xs text-gray-500">{booking.notes}</p>

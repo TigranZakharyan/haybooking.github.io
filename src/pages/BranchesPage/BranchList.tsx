@@ -1,6 +1,7 @@
 import { MapPin, Phone, Edit, Trash2, Home } from "lucide-react";
 import { Card, Button, YandexMapButton, GoogleMapButton, Badge } from "@/components";
 import type { TBranch } from "@/types";
+import { useTranslation } from "react-i18next";
 
 interface BranchListProps {
   branches: TBranch[];
@@ -11,26 +12,17 @@ interface BranchListProps {
   onAddNew: () => void;
 }
 
-export const BranchList = ({
-  branches,
-  selectedBranch,
-  onSelectBranch,
-  onEdit,
-  onDelete,
-  onAddNew,
-}: BranchListProps) => {
+export const BranchList = ({ branches, selectedBranch, onSelectBranch, onEdit, onDelete, onAddNew }: BranchListProps) => {
+  const { t } = useTranslation();
+
   if (branches.length === 0) {
     return (
       <Card>
         <div className="text-center py-12">
           <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-4 font-medium">No branches yet</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Add your first branch location to get started
-          </p>
-          <Button onClick={onAddNew}>
-            Add Your First Branch
-          </Button>
+          <p className="text-gray-600 mb-4 font-medium">{t("branches.noBranches")}</p>
+          <p className="text-sm text-gray-500 mb-6">{t("branches.noBranchesHint")}</p>
+          <Button onClick={onAddNew}>{t("branches.addFirstBranch")}</Button>
         </div>
       </Card>
     );
@@ -47,18 +39,12 @@ export const BranchList = ({
               : "hover:bg-gray-50 border-transparent"
           }`}
         >
-          <div
-            className="flex items-stretch justify-between gap-2"
-            onClick={() => onSelectBranch(branch)}
-          >
-            {/* Left Side: Icon and Address Info */}
+          <div className="flex items-stretch justify-between gap-2" onClick={() => onSelectBranch(branch)}>
             <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
               <div className="bg-primary/10 p-2 rounded-lg flex-shrink-0">
-                {branch.isBaseBranch ? (
-                  <Home className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                ) : (
-                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                )}
+                {branch.isBaseBranch
+                  ? <Home className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  : <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-0.5">
@@ -76,41 +62,31 @@ export const BranchList = ({
               </div>
             </div>
 
-            {/* Right Side: Actions */}
             <div className="flex flex-col justify-between items-end flex-shrink-0">
-              {/* Top: Map + Edit + Delete buttons */}
               <div className="flex gap-0.5 sm:gap-1 items-center">
                 <YandexMapButton {...branch.address.coordinates} />
                 <GoogleMapButton {...branch.address.coordinates} />
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(branch);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); onEdit(branch); }}
                   className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                  aria-label="Edit branch"
+                  aria-label={t("branches.editBranch")}
                 >
                   <Edit size={16} className="sm:hidden" />
                   <Edit size={18} className="hidden sm:block" />
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(branch._id);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); onDelete(branch._id); }}
                   className="p-1.5 sm:p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                  aria-label="Delete branch"
+                  aria-label={t("branches.deleteBranch")}
                 >
                   <Trash2 size={16} className="sm:hidden" />
                   <Trash2 size={18} className="hidden sm:block" />
                 </button>
               </div>
-
-              {/* Bottom: Badge */}
               {branch.isBaseBranch && (
-                <Badge variant="info" className="text-xs">BASE</Badge>
+                <Badge variant="info" className="text-xs">{t("branches.base")}</Badge>
               )}
             </div>
           </div>

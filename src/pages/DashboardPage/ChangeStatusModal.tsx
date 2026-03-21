@@ -3,40 +3,31 @@ import { X } from "lucide-react";
 import { Button, Select } from "@/components";
 import type { TBooking, TBookingStatus } from "@/types";
 import { statusOptions } from "@/constants";
+import { useTranslation } from "react-i18next";
 
 interface ChangeStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
   booking: TBooking;
-  onUpdateStatus: (
-    bookingId: string,
-    newStatus: TBookingStatus,
-    reason?: string
-  ) => Promise<void>;
+  onUpdateStatus: (bookingId: string, newStatus: TBookingStatus, reason?: string) => Promise<void>;
 }
 
-export function ChangeStatusModal({
-  isOpen,
-  onClose,
-  booking,
-  onUpdateStatus,
-}: ChangeStatusModalProps) {
-  
+export function ChangeStatusModal({ isOpen, onClose, booking, onUpdateStatus }: ChangeStatusModalProps) {
+  const { t } = useTranslation();
+
   if (!isOpen || !booking) return null;
-  
-  const [selectedStatus, setSelectedStatus] = useState<TBookingStatus | ''>(booking.status);
+
+  const [selectedStatus, setSelectedStatus] = useState<TBookingStatus | "">(booking.status);
   const [reason, setReason] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-
   const handleSubmit = async () => {
     if (!selectedStatus) return;
-
     setIsUpdating(true);
     try {
       await onUpdateStatus(booking._id, selectedStatus, reason);
       onClose();
-      setSelectedStatus('');
+      setSelectedStatus("");
       setReason("");
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -46,85 +37,67 @@ export function ChangeStatusModal({
   };
 
   const handleCancel = () => {
-    setSelectedStatus('');
+    setSelectedStatus("");
     setReason("");
     onClose();
   };
 
   return (
     <div className="fixed w-full h-full top-0 left-0 z-50 flex items-center justify-center">
-      {/* Backdrop with blur */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-all duration-200"
-        onClick={handleCancel}
-      />
-
-      {/* Modal */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-all duration-200" onClick={handleCancel} />
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-        {/* Close Button */}
-        <button
-          onClick={handleCancel}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-        >
+        <button onClick={handleCancel} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Change Booking Status
+          {t("dashboard.modal.title")}
         </h2>
 
-        {/* Booking Info */}
         <div className="mb-4 space-y-1 text-sm">
           <p>
-            <span className="text-gray-600">Customer:</span>{" "}
+            <span className="text-gray-600">{t("dashboard.modal.customer")}:</span>{" "}
             <span className="font-medium text-gray-900">
-              {booking.customerInfo?.firstName}{" "}
-              {booking.customerInfo?.lastName}
+              {booking.customerInfo?.firstName} {booking.customerInfo?.lastName}
             </span>
           </p>
           <p>
-            <span className="text-gray-600">Current Status:</span>{" "}
+            <span className="text-gray-600">{t("dashboard.modal.currentStatus")}:</span>{" "}
             <span className="font-medium text-gray-900 capitalize">
-              {booking.status}
+              {t(`statuses.${booking.status}`)}
             </span>
           </p>
           <p>
-            <span className="text-gray-600">Time:</span>{" "}
-            <span className="font-medium text-gray-900">
-              {booking.startTime}
-            </span>
+            <span className="text-gray-600">{t("dashboard.modal.time")}:</span>{" "}
+            <span className="font-medium text-gray-900">{booking.startTime}</span>
           </p>
         </div>
 
-        {/* Custom Select */}
         <div className="mb-4">
           <Select
-            label="New Status"
+            label={t("dashboard.modal.newStatus")}
             required
-            placeholder="Select Status *"
+            placeholder={t("dashboard.modal.selectStatus")}
             options={statusOptions}
             value={selectedStatus}
             onChange={(value) => setSelectedStatus(value as TBookingStatus)}
-            error={!selectedStatus ? "Status is required" : undefined}
+            error={!selectedStatus ? t("errors.required") : undefined}
           />
         </div>
 
-        {/* Reason Input */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Reason (Optional)
+            {t("dashboard.modal.reason")}
           </label>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Enter reason for status change..."
+            placeholder={t("dashboard.modal.reasonPlaceholder")}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             rows={4}
           />
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-3">
           <Button
             onClick={handleSubmit}
@@ -132,15 +105,10 @@ export function ChangeStatusModal({
             disabled={!selectedStatus || isUpdating}
             className="flex-1"
           >
-            {isUpdating ? "Updating..." : "Update Status"}
+            {isUpdating ? t("dashboard.modal.updating") : t("dashboard.modal.updateStatus")}
           </Button>
-
-          <Button
-            onClick={handleCancel}
-            variant="outline"
-            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
+          <Button onClick={handleCancel} variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50">
+            {t("services.cancel")}
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { Calendar } from "@/pages/DashboardPage/Calendar";
-import { Pagination } from "@/components/Pagination"; // adjust path as needed
+import { Pagination } from "@/components/Pagination";
 import { useState, useEffect, lazy } from "react";
 import { businessService, bookingService } from "../../services/api";
 import { BookingCard } from "./BookingCard";
@@ -7,8 +7,9 @@ import { ChangeStatusModal } from "./ChangeStatusModal";
 import { CalendarDays, SlidersHorizontal, X } from "lucide-react";
 import type { TBooking, TBookingStatus, TBusiness, TPagination } from "@/types";
 import { SectionTitle } from "@/components";
+import { useTranslation } from "react-i18next";
 
-const QuickBookingBar = lazy(() => import("./QuickBookingBar"))
+const QuickBookingBar = lazy(() => import("./QuickBookingBar"));
 
 interface FilterValues {
   branch: string;
@@ -19,6 +20,7 @@ interface FilterValues {
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [business, setBusiness] = useState<TBusiness | null>(null);
   const [bookings, setBookings] = useState<TBooking[]>([]);
@@ -47,22 +49,16 @@ export function DashboardPage() {
 
   const fetchBookings = async (page = 1) => {
     try {
-      console.log(page)
       const bookingsData = await bookingService.getBusinessBookings({ page });
       setBookings(bookingsData.bookings || []);
-      if (bookingsData.pagination) {
-        setPagination(bookingsData.pagination);
-      }
+      if (bookingsData.pagination) setPagination(bookingsData.pagination);
     } catch (error) {
       console.error("Failed to load bookings:", error);
     }
   };
 
-  const handlePageChange = (page: number) => {
-    fetchBookings(page);
-  };
+  const handlePageChange = (page: number) => fetchBookings(page);
 
-  // ... rest of handlers unchanged
   const handleChangeStatus = (bookingId: string) => {
     const booking = bookings.find((b) => b._id === bookingId);
     if (booking) { setSelectedBooking(booking); setIsModalOpen(true); }
@@ -98,8 +94,8 @@ export function DashboardPage() {
     const specialistMatch = filters.specialist === "all" || booking.specialist?._id === filters.specialist;
     let timeMatch = true;
     if (filters.timeRange.start && filters.timeRange.end) {
-      const t = timeToMinutes(booking.startTime);
-      timeMatch = t >= timeToMinutes(filters.timeRange.start) && t <= timeToMinutes(filters.timeRange.end);
+      const time = timeToMinutes(booking.startTime);
+      timeMatch = time >= timeToMinutes(filters.timeRange.start) && time <= timeToMinutes(filters.timeRange.end);
     } else if (filters.timeRange.start) {
       timeMatch = timeToMinutes(booking.startTime) >= timeToMinutes(filters.timeRange.start);
     } else if (filters.timeRange.end) {
@@ -136,15 +132,15 @@ export function DashboardPage() {
   const bookingBarProps = business ? {
     business,
     branchOptions: [
-      { label: "All Branches", value: "all" },
-      ...branches.map((b) => ({ label: b.address?.street || b.address?.city || "Branch", value: b._id })),
+      { label: t("dashboard.filters.allBranches"), value: "all" },
+      ...branches.map((b) => ({ label: b.address?.street || b.address?.city || t("dashboard.filters.branch"), value: b._id })),
     ],
     serviceOptions: [
-      { label: "All Services", value: "all" },
+      { label: t("dashboard.filters.allServices"), value: "all" },
       ...services.map((s) => ({ label: s.name, value: s._id })),
     ],
     specialistOptions: [
-      { label: "All Specialists", value: "all" },
+      { label: t("dashboard.filters.allSpecialists"), value: "all" },
       ...specialists.map((s) => ({ label: s.name, value: s._id })),
     ],
     onFilterChange: handleFilterChange,
@@ -154,17 +150,15 @@ export function DashboardPage() {
   return (
     <div className="h-full overflow-hidden">
 
-      {/* ══════════════════════════════════════
-          DESKTOP (lg+)
-      ══════════════════════════════════════ */}
+      {/* DESKTOP */}
       <div className="hidden lg:grid h-full grid-cols-[1fr_minmax(300px,350px)] gap-2">
         <div className="h-full flex flex-col gap-2 min-h-0">
           <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm min-h-0">
             <div className="relative flex gap-4 px-6 py-4 border-b border-gray-100">
               <div className="flex-shrink-0 items-center">
                 <SectionTitle
-                  title="Bookings"
-                  subtitle={`${filteredBookings.length} booking${filteredBookings.length !== 1 ? "s" : ""}`}
+                  title={t("dashboard.bookings")}
+                  subtitle={`${filteredBookings.length} ${filteredBookings.length !== 1 ? t("dashboard.bookingsPlural") : t("dashboard.bookingsSingular")}`}
                   className="!mb-0"
                 />
               </div>
@@ -182,31 +176,28 @@ export function DashboardPage() {
             </div>
           </div>
         </div>
+
         <aside className="h-full flex flex-col bg-white/40 rounded-2xl p-4 overflow-auto">
-          <h3 className="mb-3 font-medium text-text-body">Calendar</h3>
+          <h3 className="mb-3 font-medium text-text-body">{t("dashboard.calendar")}</h3>
           <Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} getBookingCount={getBookingCountForDate} showGoToToday showShowAll />
           <div className="mt-6 pt-6 border-t space-y-3">
-            <h3 className="font-medium text-text-body mb-3">Statistics</h3>
-            <div className="flex justify-between text-sm"><span>Total Bookings</span><span className="font-semibold">{pagination.total}</span></div>
-            <div className="flex justify-between text-sm"><span>Today</span><span className="font-semibold">{getBookingsForDate(new Date()).length}</span></div>
-            <div className="flex justify-between text-sm"><span>Filtered</span><span className="font-semibold">{filteredBookings.length}</span></div>
-            <div className="flex justify-between text-sm"><span>Pending</span><span className="font-semibold text-yellow-600">{bookings.filter((b) => b.status === "pending").length}</span></div>
+            <h3 className="font-medium text-text-body mb-3">{t("dashboard.statistics")}</h3>
+            <div className="flex justify-between text-sm"><span>{t("dashboard.totalBookings")}</span><span className="font-semibold">{pagination.total}</span></div>
+            <div className="flex justify-between text-sm"><span>{t("dashboard.today")}</span><span className="font-semibold">{getBookingsForDate(new Date()).length}</span></div>
+            <div className="flex justify-between text-sm"><span>{t("dashboard.filtered")}</span><span className="font-semibold">{filteredBookings.length}</span></div>
+            <div className="flex justify-between text-sm"><span>{t("dashboard.pending")}</span><span className="font-semibold text-yellow-600">{bookings.filter((b) => b.status === "pending").length}</span></div>
           </div>
         </aside>
       </div>
 
-      {/* ══════════════════════════════════════
-          MOBILE (< lg)
-      ══════════════════════════════════════ */}
+      {/* MOBILE */}
       <div className="flex flex-col h-full lg:hidden bg-gray-50 overflow-hidden">
-
-        {/* Top bar */}
         <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 pt-3 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Bookings</h2>
+              <h2 className="text-lg font-semibold text-gray-800">{t("dashboard.bookings")}</h2>
               <p className="text-xs text-gray-400">
-                {filteredBookings.length} shown
+                {filteredBookings.length} {t("dashboard.shown")}
                 {selectedDate && (
                   <span className="text-teal-600"> · {selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                 )}
@@ -218,7 +209,7 @@ export function DashboardPage() {
                 className="relative flex items-center gap-1.5 px-3 py-2 bg-gray-100 rounded-xl text-sm font-medium text-gray-700 active:bg-gray-200 transition-colors"
               >
                 <CalendarDays size={15} />
-                <span>Calendar</span>
+                <span>{t("calendar")}</span>
                 {selectedDate && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-teal-600 rounded-full border-2 border-white" />}
               </button>
               <button
@@ -226,7 +217,7 @@ export function DashboardPage() {
                 className="relative flex items-center gap-1.5 px-3 py-2 bg-gray-100 rounded-xl text-sm font-medium text-gray-700 active:bg-gray-200 transition-colors"
               >
                 <SlidersHorizontal size={15} />
-                <span>Filter</span>
+                <span>{t("dashboard.filter")}</span>
                 {(filters.branch !== "all" || filters.service !== "all" || filters.specialist !== "all" || filters.status !== "all" || filters.timeRange.start) && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-teal-600 rounded-full border-2 border-white" />
                 )}
@@ -236,16 +227,15 @@ export function DashboardPage() {
           {bookingBarProps && <QuickBookingBar {...bookingBarProps} />}
         </div>
 
-        {/* Bookings list */}
         <div className="flex-1 overflow-y-auto p-3">
           <BookingsList bookings={filteredBookings} selectedDate={selectedDate} onChangeStatus={handleChangeStatus} />
           <Pagination pagination={pagination} onPageChange={handlePageChange} />
         </div>
       </div>
 
-      {/* ── Mobile Calendar sheet ── */}
+      {/* Mobile Calendar Sheet */}
       {mobileCalendarOpen && (
-        <MobileSheet title="Calendar" onClose={() => setMobileCalendarOpen(false)}>
+        <MobileSheet title={t("calendar")} onClose={() => setMobileCalendarOpen(false)}>
           <div className="flex flex-col items-center">
             <Calendar
               selectedDate={selectedDate}
@@ -256,10 +246,10 @@ export function DashboardPage() {
             />
             <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 gap-3">
               {[
-                { label: "Total Bookings", value: pagination.total, color: "text-gray-900" },
-                { label: "Today", value: getBookingsForDate(new Date()).length, color: "text-teal-700" },
-                { label: "Filtered", value: filteredBookings.length, color: "text-gray-900" },
-                { label: "Pending", value: bookings.filter(b => b.status === "pending").length, color: "text-yellow-600" },
+                { label: t("dashboard.totalBookings"), value: pagination.total, color: "text-gray-900" },
+                { label: t("dashboard.today"), value: getBookingsForDate(new Date()).length, color: "text-teal-700" },
+                { label: t("dashboard.filtered"), value: filteredBookings.length, color: "text-gray-900" },
+                { label: t("dashboard.pending"), value: bookings.filter(b => b.status === "pending").length, color: "text-yellow-600" },
               ].map(item => (
                 <div key={item.label} className="bg-gray-50 rounded-2xl px-4 py-3">
                   <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
@@ -271,30 +261,42 @@ export function DashboardPage() {
         </MobileSheet>
       )}
 
-      {/* ── Mobile Filter sheet ── */}
+      {/* Mobile Filter Sheet */}
       {mobileFiltersOpen && (
-        <MobileSheet title="Filter Bookings" onClose={() => setMobileFiltersOpen(false)}>
+        <MobileSheet title={t("dashboard.filterBookings")} onClose={() => setMobileFiltersOpen(false)}>
           <div className="space-y-5">
-            <FilterGroup label="Branch" options={[{ label: "All", value: "all" }, ...branches.map(b => ({ label: b.address?.street || "Branch", value: b._id }))]}
-              value={filters.branch} onChange={v => setFilters(p => ({ ...p, branch: v }))} />
-            <FilterGroup label="Service" options={[{ label: "All", value: "all" }, ...services.map(s => ({ label: s.name, value: s._id }))]}
-              value={filters.service} onChange={v => setFilters(p => ({ ...p, service: v }))} />
-            <FilterGroup label="Specialist" options={[{ label: "All", value: "all" }, ...specialists.map(s => ({ label: s.name, value: s._id }))]}
-              value={filters.specialist} onChange={v => setFilters(p => ({ ...p, specialist: v }))} />
-            <FilterGroup label="Status" options={["all", "pending", "confirmed", "completed", "cancelled"].map(s => ({ label: s === "all" ? "All" : s, value: s }))}
-              value={filters.status} onChange={v => setFilters(p => ({ ...p, status: v }))} />
+            <FilterGroup
+              label={t("dashboard.filters.branch")}
+              options={[{ label: t("dashboard.filters.all"), value: "all" }, ...branches.map(b => ({ label: b.address?.street || t("dashboard.filters.branch"), value: b._id }))]}
+              value={filters.branch} onChange={v => setFilters(p => ({ ...p, branch: v }))}
+            />
+            <FilterGroup
+              label={t("dashboard.filters.service")}
+              options={[{ label: t("dashboard.filters.all"), value: "all" }, ...services.map(s => ({ label: s.name, value: s._id }))]}
+              value={filters.service} onChange={v => setFilters(p => ({ ...p, service: v }))}
+            />
+            <FilterGroup
+              label={t("dashboard.filters.specialist")}
+              options={[{ label: t("dashboard.filters.all"), value: "all" }, ...specialists.map(s => ({ label: s.name, value: s._id }))]}
+              value={filters.specialist} onChange={v => setFilters(p => ({ ...p, specialist: v }))}
+            />
+            <FilterGroup
+              label={t("dashboard.filters.status")}
+              options={["all", "pending", "confirmed", "completed", "cancelled"].map(s => ({ label: s === "all" ? t("dashboard.filters.all") : t(`statuses.${s}`), value: s }))}
+              value={filters.status} onChange={v => setFilters(p => ({ ...p, status: v }))}
+            />
 
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Time Range</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t("dashboard.filters.timeRange")}</p>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <p className="text-xs text-gray-400 mb-1">From</p>
+                  <p className="text-xs text-gray-400 mb-1">{t("dashboard.filters.from")}</p>
                   <input type="time" value={filters.timeRange.start}
                     onChange={e => setFilters(p => ({ ...p, timeRange: { ...p.timeRange, start: e.target.value } }))}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-gray-400 mb-1">To</p>
+                  <p className="text-xs text-gray-400 mb-1">{t("dashboard.filters.to")}</p>
                   <input type="time" value={filters.timeRange.end}
                     onChange={e => setFilters(p => ({ ...p, timeRange: { ...p.timeRange, end: e.target.value } }))}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
@@ -306,12 +308,12 @@ export function DashboardPage() {
               <button
                 onClick={() => setFilters({ branch: "all", service: "all", specialist: "all", timeRange: { start: "", end: "" }, status: "all" })}
                 className="flex-1 py-3.5 bg-gray-100 text-gray-700 rounded-2xl font-semibold text-sm">
-                Clear All
+                {t("dashboard.filters.clearAll")}
               </button>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
                 className="flex-1 py-3.5 bg-teal-700 text-white rounded-2xl font-semibold text-sm">
-                Apply
+                {t("dashboard.filters.apply")}
               </button>
             </div>
           </div>
@@ -330,17 +332,16 @@ export function DashboardPage() {
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function BookingsList({ bookings, selectedDate, onChangeStatus }: {
   bookings: TBooking[]; selectedDate: Date | null; onChangeStatus: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   if (bookings.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-gray-500 text-sm">No bookings found</p>
+        <p className="text-gray-500 text-sm">{t("dashboard.noBookings")}</p>
         <p className="text-xs text-gray-400 mt-1">
-          {selectedDate ? "Try selecting a different date" : "No bookings match your filters"}
+          {selectedDate ? t("dashboard.tryDifferentDate") : t("dashboard.noBookingsMatch")}
         </p>
       </div>
     );

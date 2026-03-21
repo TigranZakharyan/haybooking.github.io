@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Outlet, NavLink, Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 import {
   Home,
   Box,
@@ -11,22 +12,28 @@ import {
   Menu,
   X,
   MapPin,
+  LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { ProfileAvatar, Tooltip } from "@/components";
-
-const NAV_ITEMS = [
-  { label: "Dashboard", Icon: Home, to: "/dashboard" },
-  { label: "Services", Icon: Box, to: "/dashboard/services" },
-  { label: "Branches", Icon: MapPin, to: "/dashboard/branches" },
-  { label: "Specialists", Icon: Users, to: "/dashboard/specialists" },
-  { label: "Analytics", Icon: BarChart2, to: "/dashboard/analytics" },
-  { label: "Settings", Icon: Settings, to: "/dashboard/settings" },
-];
+import { LanguageSelect } from "@/components/LanguageSelect";
 
 export function DashboardLayout() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const NAV_ITEMS = [
+    { label: t("navigation.dashboard"), Icon: Home, to: "/dashboard" },
+    { label: t("navigation.services"), Icon: Box, to: "/dashboard/services" },
+    { label: t("navigation.branches"), Icon: MapPin, to: "/dashboard/branches" },
+    { label: t("navigation.specialists"), Icon: Users, to: "/dashboard/specialists" },
+    { label: t("navigation.analytics"), Icon: BarChart2, to: "/dashboard/analytics" },
+    { label: t("navigation.settings"), Icon: Settings, to: "/dashboard/settings" },
+  ];
 
   useEffect(() => {
     const onResize = () => {
@@ -63,13 +70,8 @@ export function DashboardLayout() {
         {/* Logo */}
         <Link to="/" onClick={onNavClick} className="flex items-center h-16">
           <div className="h-11 px-2 rounded-xl flex items-center justify-center shrink-0">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="w-8 h-8 object-contain"
-            />
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
           </div>
-
           <span
             className={`text-xl text-business font-semibold font-serif whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
               ${collapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"}
@@ -99,7 +101,6 @@ export function DashboardLayout() {
               <span className="flex items-center justify-center w-5 h-5 shrink-0">
                 <Icon className="w-5 h-5" strokeWidth={1.8} />
               </span>
-
               <span
                 className={`whitespace-nowrap font-medium leading-none text-[13.5px] overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
                   ${collapsed ? "max-w-0 opacity-0 ml-0" : "max-w-[180px] opacity-100 ml-2.5"}
@@ -110,18 +111,55 @@ export function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        {/* Desktop Collapse */}
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          className="hidden md:flex items-center justify-center w-8 h-8 mx-2 rounded-xl bg-white shadow-sm border border-black/5 hover:shadow-md transition-shadow duration-200"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+
+        {/* Bottom action buttons */}
+        <div
+          className={`mt-2 transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+            ${collapsed ? "flex flex-col gap-1 items-center" : "flex flex-row items-center gap-1"}
+          `}
         >
-          <ChevronLeft
-            className={`w-4 h-4 text-gray-500 transition-transform duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
-                  ${collapsed ? "rotate-180" : "rotate-0"}
-                  `}
-          />
-        </button>
+          <div
+            className={`transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+              ${collapsed ? "flex flex-col gap-1 items-center" : "flex flex-row gap-1 items-center"}
+            `}
+          >
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDarkMode((d) => !d)}
+              className="flex items-center justify-center rounded-xl select-none h-11 w-11 shrink-0 text-gray-400 hover:bg-white/50 hover:text-gray-800 transition-colors duration-200"
+              aria-label={darkMode ? t("layout.lightMode") : t("layout.darkMode")}
+            >
+              {darkMode ? (
+                <Sun className="w-4 h-4" strokeWidth={1.8} />
+              ) : (
+                <Moon className="w-4 h-4" strokeWidth={1.8} />
+              )}
+            </button>
+
+            {/* Logout */}
+            <button
+              onClick={logout}
+              className="flex items-center justify-center rounded-xl select-none h-11 w-11 shrink-0 text-gray-400 hover:bg-white/50 hover:text-red-500 transition-colors duration-200"
+              aria-label={t("layout.logout")}
+            >
+              <LogOut className="w-4 h-4" strokeWidth={1.8} />
+            </button>
+          </div>
+
+          {/* Collapse button */}
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className={`hidden md:flex items-center justify-center rounded-xl select-none h-11 w-11 shrink-0 text-gray-400 hover:bg-white/50 hover:text-gray-800 transition-colors duration-200
+              ${collapsed ? "" : "ml-auto"}
+            `}
+            aria-label={collapsed ? t("layout.expandSidebar") : t("layout.collapseSidebar")}
+          >
+            <ChevronLeft
+              className={`w-4 h-4 text-gray-500 transition-transform duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
+                ${collapsed ? "rotate-180" : "rotate-0"}`}
+            />
+          </button>
+        </div>
       </div>
     );
   }
@@ -147,10 +185,10 @@ export function DashboardLayout() {
           <button
             onClick={() => setMobileOpen(false)}
             className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:bg-white/60 transition-colors duration-200"
+            aria-label={t("layout.closeMenu")}
           >
             <X className="w-4 h-4" />
           </button>
-
           <SidebarContent onNavClick={() => setMobileOpen(false)} />
         </aside>
 
@@ -169,34 +207,32 @@ export function DashboardLayout() {
           {/* Header */}
           <header className="flex items-center justify-between px-6 h-16 shrink-0 border-b border-black/5 bg-white/40 backdrop-blur-lg">
             <div className="flex items-center gap-3">
-              {/* Mobile Hamburger */}
               <button
                 onClick={() => setMobileOpen(true)}
                 className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-white/60 transition-colors duration-200"
+                aria-label={t("layout.openMenu")}
               >
                 <Menu className="w-5 h-5" />
               </button>
 
               <Tooltip
-                text="Copied!"
+                text={t("layout.copied")}
                 position="bottom"
                 onClick={() => handleCopyLink(fullLink)}
               >
                 <span className="text-primary">
-                  {/* Small screens */}
                   <span className="sm:hidden">{shortLink}</span>
-
-                  {/* ≥ sm screens */}
                   <span className="hidden sm:inline">{fullLink}</span>
                 </span>
               </Tooltip>
             </div>
 
-            {/* Avatar */}
-            <ProfileAvatar initials={initials} onLogoutClick={logout} />
+            <div className="flex items-center gap-3">
+              <LanguageSelect />
+              <ProfileAvatar initials={initials} />
+            </div>
           </header>
 
-          {/* Content — only this scrolls */}
           <main className="flex-1 overflow-auto p-2 sm:p-8">
             <Outlet />
           </main>

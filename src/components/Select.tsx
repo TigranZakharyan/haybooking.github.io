@@ -8,7 +8,7 @@ interface SelectProps {
   icon?: LucideIcon;
   hint?: string;
   error?: string;
-  variant?: "default" | "primary";
+  variant?: "default" | "primary" | "ghost";
   options: TOption[];
   placeholder?: string;
   value?: string;
@@ -102,10 +102,12 @@ export function Select({
     };
   }, [open]);
 
-  const borderVariant =
+  const buttonVariantClasses =
     variant === "primary"
-      ? "border-primary focus:ring-primary"
-      : "border-slate-200 focus:ring-indigo-500";
+      ? "bg-slate-50 border border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+      : variant === "ghost"
+      ? "bg-transparent border-transparent focus:outline-none focus:ring-0"
+      : "bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500";
 
   const dropdown = (
     <div
@@ -152,9 +154,8 @@ export function Select({
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className={`w-full flex items-center justify-between px-4 py-3 bg-slate-50 border rounded-lg
-        transition-all focus:outline-none focus:ring-2
-        ${error ? "border-red-500 focus:ring-red-500" : borderVariant}`}
+        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all
+        ${error ? "bg-slate-50 border border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500" : buttonVariantClasses}`}
       >
         <div className="flex items-center gap-3">
           {Icon && <Icon className="w-5 h-5 text-slate-400" />}

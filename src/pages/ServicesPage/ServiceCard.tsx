@@ -1,6 +1,7 @@
 import { Trash2, Edit, Eye, EyeOff } from "lucide-react";
 import type { TService } from "@/types";
 import { UploadImage } from "@/components";
+import { useTranslation } from "react-i18next";
 
 interface ServiceCardProps {
   service: TService;
@@ -13,27 +14,14 @@ interface ServiceCardProps {
   onDelete: () => void;
 }
 
-export const ServiceCard = ({
-  service,
-  isEditing,
-  isUploading,
-  onImageChange,
-  onImageDelete,
-  onToggleActive,
-  onEdit,
-  onDelete,
-}: ServiceCardProps) => {
+export const ServiceCard = ({ service, isEditing, isUploading, onImageChange, onImageDelete, onToggleActive, onEdit, onDelete }: ServiceCardProps) => {
+  const { t } = useTranslation();
+
   return (
-    <div
-      className={`w-full p-3 sm:p-4 rounded-xl transition-colors duration-200 ${
-        isEditing
-          ? "bg-blue-50 border-2 border-blue-300"
-          : "bg-primary/5 hover:bg-primary/10"
-      } ${!service.isActive ? "opacity-60" : ""}`}
-    >
+    <div className={`w-full p-3 sm:p-4 rounded-xl transition-colors duration-200 ${isEditing ? "bg-blue-50 border-2 border-blue-300" : "bg-primary/5 hover:bg-primary/10"} ${!service.isActive ? "opacity-60" : ""}`}>
       <div className="flex items-start justify-between gap-3 w-full overflow-hidden">
-        
-        {/* LEFT SIDE */}
+
+        {/* LEFT */}
         <div className="flex gap-3 flex-1 min-w-0">
           <label
             htmlFor={`service-image-${service._id}`}
@@ -51,51 +39,35 @@ export const ServiceCard = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h5
-                className={`font-semibold text-sm sm:text-base break-words ${
-                  !service.isActive ? "text-gray-500" : "text-black"
-                }`}
-              >
+              <h5 className={`font-semibold text-sm sm:text-base break-words ${!service.isActive ? "text-gray-500" : "text-black"}`}>
                 {service.name}
               </h5>
-
               {!service.isActive && (
                 <span className="text-xs bg-gray-300 text-gray-700 px-2 py-0.5 rounded">
-                  INACTIVE
+                  {t("services.inactive")}
                 </span>
               )}
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs sm:text-sm text-gray-700 mt-1">
-              <span>{service.duration} min</span>
+              <span>{service.duration} {t("services.min")}</span>
               <span>•</span>
-              <span>
-                {service.price.amount} {service.price.currency}
-              </span>
+              <span>{service.price.amount} {service.price.currency}</span>
             </div>
 
             {service.description && (
-              <p
-                className={`text-xs sm:text-sm mt-1 break-words ${
-                  !service.isActive ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
+              <p className={`text-xs sm:text-sm mt-1 break-words ${!service.isActive ? "text-gray-400" : "text-gray-600"}`}>
                 {service.description}
               </p>
             )}
 
-            <div
-              className={`text-xs mt-1 break-words ${
-                !service.isActive ? "text-gray-400" : "text-gray-500"
-              }`}
-            >
+            <div className={`text-xs mt-1 break-words ${!service.isActive ? "text-gray-400" : "text-gray-500"}`}>
               <p>
-                Interval: {service.timeInterval || 30} min • Specific Times:{" "}
-                {service.allowSpecificTimes ? "Yes" : "No"}
+                {t("services.interval")}: {service.timeInterval || 30} {t("services.min")} • {t("services.specificTimes")}:{" "}
+                {service.allowSpecificTimes ? t("services.yes") : t("services.no")}
               </p>
-
               <p className="mt-0.5">
-                Branch: {service.branch.address.country},{" "}
+                {t("services.branch")}: {service.branch.address.country},{" "}
                 {service.branch.address.city},{" "}
                 {service.branch.address.street}
               </p>
@@ -103,33 +75,16 @@ export const ServiceCard = ({
           </div>
         </div>
 
-        {/* RIGHT SIDE BUTTONS */}
+        {/* RIGHT */}
         <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-          <button
-            type="button"
-            onClick={onToggleActive}
-            className={`p-2 rounded-lg transition-colors ${
-              service.isActive
-                ? "text-green-600 hover:bg-green-50"
-                : "text-gray-500 hover:bg-gray-100"
-            }`}
-          >
+          <button type="button" onClick={onToggleActive}
+            className={`p-2 rounded-lg transition-colors ${service.isActive ? "text-green-600 hover:bg-green-50" : "text-gray-500 hover:bg-gray-100"}`}>
             {service.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
-
-          <button
-            type="button"
-            onClick={onEdit}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          >
+          <button type="button" onClick={onEdit} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
             <Edit size={18} />
           </button>
-
-          <button
-            type="button"
-            onClick={onDelete}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
+          <button type="button" onClick={onDelete} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
             <Trash2 size={18} />
           </button>
         </div>

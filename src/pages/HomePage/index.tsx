@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Container, Input, Select, Pagination } from "@/components";
 import { businessService, searchService } from '@/services/api';
 import type { TBusiness, TBusinessType, TPagination, TSearchBusinessParams } from '@/types';
@@ -6,16 +7,8 @@ import { ServiceCard } from './ServiceCard';
 
 const BookingModal = lazy(() => import("@/components/BookingModal"))
 
-const CATEGORY_FILTERS = [
-  { label: 'Health',       emoji: '🩺', value: 'health' },
-  { label: 'Beauty',       emoji: '💄', value: 'beauty' },
-  { label: 'Home',         emoji: '🏠', value: 'home' },
-  { label: 'Tourism',      emoji: '🧳', value: 'tourism' },
-  { label: 'Car',          emoji: '🚗', value: 'car' },
-  { label: 'Photography',  emoji: '📷', value: 'photography' },
-];
-
 export function HomePage() {
+  const { t } = useTranslation();
   const [businesses, setBusinesses] = useState<TBusiness[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [types, setTypes] = useState<TBusinessType[]>([]);
@@ -78,7 +71,7 @@ export function HomePage() {
     const next = activeCategory === value ? null : value;
     setActiveCategory(next);
     setFilters((prev) => ({ ...prev, type: next ?? 'all' }));
-    handleSearch()
+    handleSearch();
   };
 
   const handleCloseModal = () => setSelectedBusiness(null);
@@ -106,11 +99,8 @@ export function HomePage() {
               <button
                 key={value}
                 onClick={() => handleCategoryClick(value)}
-                className={[
-                  'flex flex-col items-center gap-1.5 group focus:outline-none transition-all duration-200',
-                ].join(' ')}
+                className="flex flex-col items-center gap-1.5 group focus:outline-none transition-all duration-200"
               >
-                {/* Icon bubble */}
                 <span
                   className={[
                     'flex items-center justify-center w-16 h-16 rounded-2xl text-3xl',
@@ -122,7 +112,6 @@ export function HomePage() {
                 >
                   💅🏼
                 </span>
-                {/* Label */}
                 <span
                   className={[
                     'text-xs font-medium tracking-wide transition-colors duration-200',
@@ -137,22 +126,20 @@ export function HomePage() {
         </div>
 
         <h2 className="uppercase text-xl sm:text-2xl md:text-3xl text-center">
-          Find &amp; book services
+          {t('homePage.findAndBook')}
         </h2>
 
-        {/* ── Search filters ── */}
-
-        {/* Mobile toggle */}
+        {/* ── Mobile filter toggle ── */}
         <div className="mt-4 mb-2 sm:hidden">
           <Button
             onClick={() => setFiltersOpen((prev) => !prev)}
             className="w-full bg-primary/10 text-primary font-semibold border border-primary/30"
           >
-            {filtersOpen ? '▲ Hide Filters' : '▼ Show Filters'}
+            {filtersOpen ? t('homePage.hideFilters') : t('homePage.showFilters')}
           </Button>
         </div>
 
-        {/* Filters panel */}
+        {/* ── Filters panel ── */}
         <div
           className={[
             'overflow-hidden transition-all duration-300',
@@ -163,33 +150,26 @@ export function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-4 sm:my-8">
             <Input
               variant="primary"
-              placeholder="Search..."
+              placeholder={t('homePage.searchPlaceholder')}
               value={filters.q}
-              onChange={(e) =>
-                setFilters({ ...filters, q: e.target.value })
-              }
+              onChange={(e) => setFilters({ ...filters, q: e.target.value })}
             />
 
             <Select
               variant="primary"
-              options={cities.map((city) => ({
-                value: city,
-                label: city,
-              }))}
-              placeholder="All Cities"
+              options={cities.map((city) => ({ value: city, label: city }))}
+              placeholder={t('homePage.allCities')}
               value={filters.city}
-              onChange={(value) =>
-                setFilters({ ...filters, city: value as string })
-              }
+              onChange={(value) => setFilters({ ...filters, city: value as string })}
             />
 
             <Select
               variant="primary"
               options={[
-                { value: 'all', label: 'All Types' },
+                { value: 'all', label: t('homePage.allTypes') },
                 ...types,
               ]}
-              placeholder="All Types"
+              placeholder={t('homePage.allTypes')}
               value={filters.type}
               onChange={(value) => {
                 setFilters({ ...filters, type: value as string });
@@ -201,31 +181,20 @@ export function HomePage() {
               onClick={() => handleSearch(1)}
               className="bg-primary text-white font-bold hover:bg-primary/95 shadow-xl w-full"
             >
-              {loading ? 'Searching...' : 'Search'}
+              {loading ? t('homePage.searching') : t('homePage.search')}
             </Button>
           </div>
         </div>
 
         {/* ── Results grid ── */}
-        <div
-          className="
-            grid 
-            grid-cols-1 
-            sm:grid-cols-2 
-            lg:grid-cols-3 
-            gap-6 
-            mb-8
-            justify-items-center 
-            sm:justify-items-stretch
-          "
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 justify-items-center sm:justify-items-stretch">
           {businesses.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-xl font-semibold text-gray-700">
-                No businesses found.
+                {t('homePage.noBusinesses')}
               </p>
               <p className="text-gray-500 mt-2">
-                Try adjusting your search filters.
+                {t('homePage.adjustFilters')}
               </p>
             </div>
           ) : (
@@ -237,7 +206,7 @@ export function HomePage() {
                   specialists={business.specialists?.length || 0}
                   services={business.services?.length || 0}
                   priceFrom={business.services?.[0]?.price?.amount || 0}
-                  buttonText="Book Now"
+                  buttonText={t('dashboard.bookNow')}
                   onButtonClick={() => handleBookingClick(business)}
                 />
               </div>
@@ -247,10 +216,7 @@ export function HomePage() {
 
         {/* ── Pagination ── */}
         {pagination && (
-          <Pagination
-            pagination={pagination}
-            onPageChange={handlePageChange}
-          />
+          <Pagination pagination={pagination} onPageChange={handlePageChange} />
         )}
       </Container>
 

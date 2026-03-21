@@ -1,9 +1,9 @@
 import { lazy } from "react";
 import { Badge, Card } from "@/components";
 import type { TBranch } from "@/types";
+import { useTranslation } from "react-i18next";
 
-// lazy load heavy libs
-const MapWithCoords = lazy(() => import("@/components/MapWithCoords"))
+const MapWithCoords = lazy(() => import("@/components/MapWithCoords"));
 
 interface BranchMapProps {
   branches: TBranch[];
@@ -11,11 +11,11 @@ interface BranchMapProps {
 }
 
 export const BranchMap = ({ branches, selectedBranch }: BranchMapProps) => {
-  console.log(branches, selectedBranch)
+  const { t } = useTranslation();
+
   return (
     <Card className="h-full">
       <div className="h-full space-y-4 flex flex-col">
-        {/* Map — constrained height on mobile so it doesn't overflow */}
         <div className="flex-1 min-h-[240px] sm:min-h-[320px]">
           <MapWithCoords
             points={branches
@@ -27,13 +27,10 @@ export const BranchMap = ({ branches, selectedBranch }: BranchMapProps) => {
                 label: e.address.street,
                 isBase: e.isBaseBranch,
               }))}
-            selectedPointId={
-              selectedBranch ? selectedBranch._id : undefined
-            }
+            selectedPointId={selectedBranch ? selectedBranch._id : undefined}
           />
         </div>
 
-        {/* Selected Branch Details */}
         {selectedBranch && (
           <div className="border-t pt-4 flex-shrink-0">
             <div className="flex items-start justify-between mb-3">
@@ -43,12 +40,11 @@ export const BranchMap = ({ branches, selectedBranch }: BranchMapProps) => {
                 </h3>
                 <p className="text-sm text-gray-600">
                   {selectedBranch.address.city}, {selectedBranch.address.country}
-                  {selectedBranch.address.state &&
-                    `, ${selectedBranch.address.state}`}
+                  {selectedBranch.address.state && `, ${selectedBranch.address.state}`}
                 </p>
               </div>
               {selectedBranch.isBaseBranch && (
-                <Badge variant="info">Base Branch</Badge>
+                <Badge variant="info">{t("branches.baseBranch")}</Badge>
               )}
             </div>
           </div>

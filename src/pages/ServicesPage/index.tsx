@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { businessService, serviceService, uploadService } from "@/services/api";
 import { Button, Input } from "@/components";
 import { NumberInput, SectionTitle, Select, Card } from "@/components";
@@ -7,6 +7,7 @@ import { UploadImage } from "@/components";
 import type { TBranch, TCreateService, TService } from "@/types";
 import { currencies } from "@/constants/currencies";
 import { formatPrice } from "@/services/format";
+import { useTranslation } from "react-i18next";
 
 interface ValidationErrors {
   serviceName: string;
@@ -26,6 +27,7 @@ const initialService: TCreateService = {
 };
 
 export const ServicesPage = () => {
+  const { t } = useTranslation();
   const [services, setServices] = useState<TService[]>([]);
   const [branches, setBranches] = useState<TBranch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -34,7 +36,6 @@ export const ServicesPage = () => {
   const [serviceImageUploading, setServiceImageUploading] = useState<Record<string, boolean>>({});
   const [mobilePanel, setMobilePanel] = useState<"list" | "form">("list");
 
-  // New service form image state
   const [newServiceImageFile, setNewServiceImageFile] = useState<File | null>(null);
   const [newServiceImagePreview, setNewServiceImagePreview] = useState<string>("");
   const [newServiceImageUploading, setNewServiceImageUploading] = useState<boolean>(false);
@@ -48,23 +49,21 @@ export const ServicesPage = () => {
   });
 
   const validateServiceName = (value: string): string => {
-    if (!value || !value.trim()) return "Service name is required";
+    if (!value || !value.trim()) return t("errors.nameRequired");
     return "";
   };
 
   const validateServiceDuration = (value: number): string => {
-    if (!value || value <= 0) return "Duration must be greater than 0";
+    if (!value || value <= 0) return t("errors.durationInvalid");
     return "";
   };
 
   const validateServicePrice = (value: number): string => {
-    if (value === null || value === undefined || value < 0) return "Price must be 0 or greater";
+    if (value === null || value === undefined || value < 0) return t("errors.priceInvalid");
     return "";
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async (): Promise<void> => {
     setLoading(true);
@@ -73,15 +72,11 @@ export const ServicesPage = () => {
         serviceService.getMyServices(),
         businessService.getMyBusiness(),
       ]);
-
       setServices(servicesData);
       setBranches(businessData.branches || []);
-
       const baseBranch =
         businessData.branches?.find((b: TBranch) => b.isBaseBranch)?._id ||
-        businessData.branches?.[0]?._id ||
-        "";
-
+        businessData.branches?.[0]?._id || "";
       if (baseBranch && !newService.branch) {
         setNewService((prev) => ({ ...prev, branch: baseBranch }));
       }
@@ -92,24 +87,16 @@ export const ServicesPage = () => {
     }
   };
 
-  const handleServiceImageChange = async (
-    serviceId: string,
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleServiceImageChange = async (serviceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
-
     const formData = new FormData();
     formData.append("image", file);
-
     setServiceImageUploading((prev) => ({ ...prev, [serviceId]: true }));
     try {
       const image = await uploadService.uploadServiceImage(serviceId, formData);
       if (image) {
-        setServices((prev) =>
-          prev.map((s) => (s._id === serviceId ? { ...s, image } : s)),
-        );
-        // If editing this service, update editingService so the preview reflects the new image
+        setServices((prev) => prev.map((s) => (s._id === serviceId ? { ...s, image } : s)));
         if (editingService?._id === serviceId) {
           setEditingService((prev) => prev ? { ...prev, image } : prev);
         }
@@ -126,9 +113,8 @@ export const ServicesPage = () => {
     try {
       await uploadService.deleteServiceImage(serviceId);
       setServices((prev) =>
-        prev.map((s) => (s._id === serviceId ? { ...s, image: { key: "", url: "" } } : s)),
+        prev.map((s) => (s._id === serviceId ? { ...s, image: { key: "", url: "" } } : s))
       );
-      // If editing this service, clear the image in editingService too
       if (editingService?._id === serviceId) {
         setEditingService((prev) => prev ? { ...prev, image: { key: "", url: "" } } : prev);
       }
@@ -139,7 +125,6 @@ export const ServicesPage = () => {
     }
   };
 
-  // Handle image selection in the "new service" form (preview only, no upload yet)
   const handleNewServiceImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
@@ -153,8 +138,7 @@ export const ServicesPage = () => {
   };
 
   const resetForm = () => {
-    const baseBranch =
-      branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
+    const baseBranch = branches.find((b) => b.isBaseBranch)?._id || branches[0]?._id || "";
     setNewService({ ...initialService, branch: baseBranch });
     setValidationErrors({ serviceName: "", serviceDuration: "", servicePrice: "" });
     setNewServiceImageFile(null);
@@ -165,32 +149,25 @@ export const ServicesPage = () => {
     const nameError = validateServiceName(newService.name);
     const durationError = validateServiceDuration(newService.duration);
     const priceError = validateServicePrice(newService.price.amount);
-
     setValidationErrors({ serviceName: nameError, serviceDuration: durationError, servicePrice: priceError });
     if (nameError || durationError || priceError) return;
 
     setCreatingService(true);
     try {
-      // 1st call: create the service
       const createdService = await serviceService.createService(newService);
-
-      // 2nd call: upload image if one was selected
       if (newServiceImageFile) {
         setNewServiceImageUploading(true);
         try {
           const formData = new FormData();
           formData.append("image", newServiceImageFile);
           const image = await uploadService.uploadServiceImage(createdService._id, formData);
-          if (image) {
-            createdService.image = image;
-          }
+          if (image) createdService.image = image;
         } catch (err) {
           console.error("Failed to upload service image:", err);
         } finally {
           setNewServiceImageUploading(false);
         }
       }
-
       setServices((prev) => [...prev, createdService]);
       resetForm();
       setMobilePanel("list");
@@ -213,35 +190,27 @@ export const ServicesPage = () => {
       allowSpecificTimes: service.allowSpecificTimes || false,
       isActive: service.isActive !== undefined ? service.isActive : true,
     });
-    // Clear new-service image state when switching to edit mode
     setNewServiceImageFile(null);
     setNewServiceImagePreview("");
     setMobilePanel("form");
-
     setTimeout(() => {
       const editSection = document.getElementById("edit-service");
-      if (editSection) {
-        editSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      if (editSection) editSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   };
 
   const handleUpdateService = async (): Promise<void> => {
     if (!editingService) return;
-
     const nameError = validateServiceName(newService.name);
     const durationError = validateServiceDuration(newService.duration);
     const priceError = validateServicePrice(newService.price.amount);
-
     setValidationErrors({ serviceName: nameError, serviceDuration: durationError, servicePrice: priceError });
     if (nameError || durationError || priceError) return;
 
     setCreatingService(true);
     try {
       const updatedService = await serviceService.updateService(editingService._id, newService);
-      setServices((prev) =>
-        prev.map((s) => (s._id === editingService._id ? updatedService : s)),
-      );
+      setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
       setEditingService(null);
       resetForm();
       setMobilePanel("list");
@@ -269,16 +238,12 @@ export const ServicesPage = () => {
 
   const handleToggleServiceActive = async (serviceId: string, currentStatus: boolean) => {
     const newStatus = !currentStatus;
-    setServices((prev) =>
-      prev.map((s) => (s._id === serviceId ? { ...s, isActive: newStatus } : s)),
-    );
+    setServices((prev) => prev.map((s) => (s._id === serviceId ? { ...s, isActive: newStatus } : s)));
     try {
       await serviceService.updateService(serviceId, { isActive: newStatus });
     } catch (error) {
       console.error("Failed to toggle service status:", error);
-      setServices((prev) =>
-        prev.map((s) => (s._id === serviceId ? { ...s, isActive: currentStatus } : s)),
-      );
+      setServices((prev) => prev.map((s) => (s._id === serviceId ? { ...s, isActive: currentStatus } : s)));
     }
   };
 
@@ -287,10 +252,10 @@ export const ServicesPage = () => {
       <Card>
         <div className="flex flex-col items-center justify-center py-12">
           <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20"></div>
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent absolute top-0 left-0"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20" />
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent absolute top-0 left-0" />
           </div>
-          <p className="text-gray-600 mt-4 font-medium">Loading services...</p>
+          <p className="text-gray-600 mt-4 font-medium">{t("services.loading")}</p>
         </div>
       </Card>
     );
@@ -305,10 +270,9 @@ export const ServicesPage = () => {
     <Card className="flex-1 overflow-auto">
       <div id="edit-service" className="flex justify-between">
         <SectionTitle
-          title={editingService ? "Edit Service" : "Add New Service"}
-          subtitle={editingService ? "Update service details" : "Create a new service offering"}
+          title={editingService ? t("services.editService") : t("services.addNewService")}
+          subtitle={editingService ? t("services.updateDetails") : t("services.createNewService")}
         />
-        {/* Image upload — shown in both create and edit mode */}
         <label
           htmlFor={editingService ? `service-image-${editingService._id}` : "new-service-image"}
           className="relative h-12 w-12 rounded-full border border-dashed border-gray-300 bg-white flex justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition flex-shrink-0"
@@ -316,40 +280,24 @@ export const ServicesPage = () => {
           <UploadImage
             id={editingService ? `service-image-${editingService._id}` : "new-service"}
             imageUrl={editingService ? (editingService.image?.url || "") : newServiceImagePreview}
-            altText={editingService ? editingService.name : "New service"}
-            isUploading={
-              editingService
-                ? (serviceImageUploading[editingService._id] || false)
-                : newServiceImageUploading
-            }
-            onChange={
-              editingService
-                ? (e) => handleServiceImageChange(editingService._id, e)
-                : handleNewServiceImageChange
-            }
-            onDelete={
-              editingService
-                ? () => handleDeleteServiceImage(editingService._id)
-                : handleNewServiceImageDelete
-            }
+            altText={editingService ? editingService.name : t("services.newService")}
+            isUploading={editingService ? (serviceImageUploading[editingService._id] || false) : newServiceImageUploading}
+            onChange={editingService ? (e) => handleServiceImageChange(editingService._id, e) : handleNewServiceImageChange}
+            onDelete={editingService ? () => handleDeleteServiceImage(editingService._id) : handleNewServiceImageDelete}
           />
         </label>
       </div>
 
       <div className="space-y-4">
-
         <Input
           required
-          label="Service Name"
+          label={t("services.serviceName")}
           variant="primary"
-          placeholder="e.g., Haircut, Massage, Consultation"
+          placeholder={t("services.serviceNamePlaceholder")}
           value={newService.name}
           onChange={(e) => {
             setNewService({ ...newService, name: e.target.value });
-            setValidationErrors((prev) => ({
-              ...prev,
-              serviceName: validateServiceName(e.target.value),
-            }));
+            setValidationErrors((prev) => ({ ...prev, serviceName: validateServiceName(e.target.value) }));
           }}
           error={validationErrors.serviceName}
         />
@@ -357,68 +305,51 @@ export const ServicesPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
           <Input
             value={newService.duration}
-            label="Duration (minutes)"
+            label={t("services.duration")}
             variant="primary"
             required
             onChange={(e) => {
               const value = e.target.value;
               const cleaned = value.replace(/[^\d.]/g, "");
               const parts = cleaned.split(".");
-              const formatted =
-                parts[0].replace(/^0+(?=\d)/, "") +
-                (parts[1] ? "." + parts[1].slice(0, 2) : "");
+              const formatted = parts[0].replace(/^0+(?=\d)/, "") + (parts[1] ? "." + parts[1].slice(0, 2) : "");
               const duration = formatted ? parseFloat(formatted) : 0;
               setNewService({ ...newService, duration });
-              setValidationErrors((prev) => ({
-                ...prev,
-                serviceDuration: validateServiceDuration(duration),
-              }));
+              setValidationErrors((prev) => ({ ...prev, serviceDuration: validateServiceDuration(duration) }));
             }}
             onKeyPress={(e) => {
               if (!/[\d.]/.test(e.key) && e.key !== "Backspace") e.preventDefault();
-              if (e.key === "." && (e.target as HTMLInputElement).value.includes("."))
-                e.preventDefault();
+              if (e.key === "." && (e.target as HTMLInputElement).value.includes(".")) e.preventDefault();
             }}
             error={validationErrors.serviceDuration}
             placeholder="60"
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex-1">
-              <Input
-                variant="primary"
-                label="Price"
-                inputMode="decimal"
-                required
-                value={newService.price.amount || "0"}
-                onChange={(e) => {
-                  const amount = formatPrice(e.target.value);
-                  setNewService({
-                    ...newService,
-                    price: { ...newService.price, amount },
-                  });
-                  setValidationErrors((prev) => ({
-                    ...prev,
-                    servicePrice: validateServicePrice(amount),
-                  }));
-                }}
-                onKeyPress={(e) => {
-                  if (!/[\d.]/.test(e.key) && e.key !== "Backspace") e.preventDefault();
-                  if (e.key === "." && (e.target as HTMLInputElement).value.includes("."))
-                    e.preventDefault();
-                }}
-                error={validationErrors.servicePrice}
-                placeholder="0.00"
-              />
-            </div>
+            <Input
+              variant="primary"
+              label={t("services.price")}
+              inputMode="decimal"
+              required
+              value={newService.price.amount || "0"}
+              onChange={(e) => {
+                const amount = formatPrice(e.target.value);
+                setNewService({ ...newService, price: { ...newService.price, amount } });
+                setValidationErrors((prev) => ({ ...prev, servicePrice: validateServicePrice(amount) }));
+              }}
+              onKeyPress={(e) => {
+                if (!/[\d.]/.test(e.key) && e.key !== "Backspace") e.preventDefault();
+                if (e.key === "." && (e.target as HTMLInputElement).value.includes(".")) e.preventDefault();
+              }}
+              error={validationErrors.servicePrice}
+              placeholder="0.00"
+            />
             <Select
-              label="Currency"
+              label={t("services.currency")}
               variant="primary"
               options={currencies}
               value={newService.price.currency}
-              onChange={(e) =>
-                setNewService({ ...newService, price: { ...newService.price, currency: e } })
-              }
+              onChange={(e) => setNewService({ ...newService, price: { ...newService.price, currency: e } })}
             />
           </div>
         </div>
@@ -428,7 +359,7 @@ export const ServicesPage = () => {
             variant="primary"
             required
             options={branchOptions}
-            label="Select Branch"
+            label={t("services.selectBranch")}
             className="w-full"
             value={newService.branch}
             onChange={(value) => setNewService({ ...newService, branch: value })}
@@ -437,10 +368,10 @@ export const ServicesPage = () => {
 
         <div>
           <label className="block text-sm font-medium mb-2 tracking-wide">
-            Description <span className="text-gray-500">(optional)</span>
+            {t("services.description")} <span className="text-gray-500">({t("services.optional")})</span>
           </label>
           <textarea
-            placeholder="Describe what this service includes..."
+            placeholder={t("services.descriptionPlaceholder")}
             value={newService.description}
             onChange={(e) => setNewService({ ...newService, description: e.target.value })}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
@@ -449,30 +380,22 @@ export const ServicesPage = () => {
         </div>
 
         <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-          <h4 className="font-semibold text-base mb-2 text-gray-900">Booking Settings</h4>
-          <p className="text-gray-700 text-sm mb-4">Configure how customers can book this service</p>
+          <h4 className="font-semibold text-base mb-2 text-gray-900">{t("services.bookingSettings")}</h4>
+          <p className="text-gray-700 text-sm mb-4">{t("services.configureBooking")}</p>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-800">
-                Time Interval (minutes) <span className="text-red-500">*</span>
+                {t("services.timeInterval")} <span className="text-red-500">*</span>
               </label>
               <div className="flex justify-center">
                 <NumberInput
-                  min={5}
-                  max={240}
-                  step={5}
+                  min={5} max={240} step={5}
                   value={newService.timeInterval || 30}
-                  onChange={(value: number) =>
-                    setNewService({ ...newService, timeInterval: value })
-                  }
+                  onChange={(value: number) => setNewService({ ...newService, timeInterval: value })}
                 />
               </div>
-              <p className="text-xs text-gray-600 mt-2">
-                This determines the time slots available for booking. Enter any multiple of 5
-                minutes. For example, if set to 30 minutes, customers can book at 9:00, 9:30,
-                10:00, etc.
-              </p>
+              <p className="text-xs text-gray-600 mt-2">{t("services.timeIntervalHint")}</p>
             </div>
 
             <div className="border border-gray-200 rounded-lg p-3 bg-white">
@@ -480,19 +403,14 @@ export const ServicesPage = () => {
                 <input
                   type="checkbox"
                   checked={newService.allowSpecificTimes || false}
-                  onChange={(e) =>
-                    setNewService({ ...newService, allowSpecificTimes: e.target.checked })
-                  }
+                  onChange={(e) => setNewService({ ...newService, allowSpecificTimes: e.target.checked })}
                   className="h-5 w-5 text-blue-600 rounded border-gray-300 cursor-pointer mt-0.5"
                 />
                 <div>
                   <span className="block text-sm font-semibold text-gray-900">
-                    Allow Specific Times
+                    {t("services.allowSpecificTimes")}
                   </span>
-                  <p className="text-xs text-gray-600 mt-1">
-                    When enabled, customers can only book at exact times you specify. When
-                    disabled, they can book at any available time slot based on your time interval.
-                  </p>
+                  <p className="text-xs text-gray-600 mt-1">{t("services.allowSpecificTimesHint")}</p>
                 </div>
               </label>
             </div>
@@ -502,17 +420,14 @@ export const ServicesPage = () => {
                 <input
                   type="checkbox"
                   checked={newService.isActive !== false}
-                  onChange={(e) =>
-                    setNewService({ ...newService, isActive: e.target.checked })
-                  }
+                  onChange={(e) => setNewService({ ...newService, isActive: e.target.checked })}
                   className="h-5 w-5 text-green-600 rounded border-gray-300 cursor-pointer mt-0.5"
                 />
                 <div>
-                  <span className="block text-sm font-semibold text-gray-900">Service Active</span>
-                  <p className="text-xs text-gray-600 mt-1">
-                    When unchecked, this service will be hidden from customers and cannot be
-                    booked.
-                  </p>
+                  <span className="block text-sm font-semibold text-gray-900">
+                    {t("services.serviceActive")}
+                  </span>
+                  <p className="text-xs text-gray-600 mt-1">{t("services.serviceActiveHint")}</p>
                 </div>
               </label>
             </div>
@@ -528,22 +443,22 @@ export const ServicesPage = () => {
           >
             {creatingService ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                 <span>
                   {editingService
-                    ? "Updating..."
+                    ? t("services.updating")
                     : newServiceImageFile
-                    ? "Adding & uploading image..."
-                    : "Adding..."}
+                    ? t("services.addingWithImage")
+                    : t("services.adding")}
                 </span>
               </>
             ) : (
-              <span>{editingService ? "Update Service" : "Add Service"}</span>
+              <span>{editingService ? t("services.saveChanges") : t("services.addService")}</span>
             )}
           </Button>
           {editingService && (
             <Button variant="outline" onClick={handleCancelEditService} className="flex-1">
-              Cancel
+              {t("services.cancel")}
             </Button>
           )}
         </div>
@@ -555,18 +470,10 @@ export const ServicesPage = () => {
     <div className="h-full flex flex-col gap-4 overflow-hidden">
       {/* Mobile header */}
       <div className="flex-shrink-0 flex items-center justify-between lg:hidden">
-        <h1 className="text-xl font-bold text-gray-900">Services</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t("services.title")}</h1>
         {mobilePanel === "list" ? (
-          <Button
-            variant="default"
-            onClick={() => {
-              setEditingService(null);
-              resetForm();
-              setMobilePanel("form");
-            }}
-            className="text-sm"
-          >
-            Add
+          <Button variant="default" onClick={() => { setEditingService(null); resetForm(); setMobilePanel("form"); }} className="text-sm">
+            {t("services.add")}
           </Button>
         ) : (
           <button
@@ -576,27 +483,18 @@ export const ServicesPage = () => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to list
+            {t("services.backToList")}
           </button>
         )}
       </div>
 
-      {/* Desktop: side-by-side. Mobile: single panel */}
       <div className="flex-1 overflow-hidden flex flex-col lg:flex-row lg:gap-5">
-
-        {/* Services list */}
         {services.length > 0 && (
-          <div
-            className={`
-              lg:flex-1 overflow-y-auto
-              ${mobilePanel === "list" ? "flex flex-col gap-4" : "hidden"}
-              lg:flex lg:flex-col lg:gap-4
-            `}
-          >
+          <div className={`lg:flex-1 overflow-y-auto ${mobilePanel === "list" ? "flex flex-col gap-4" : "hidden"} lg:flex lg:flex-col lg:gap-4`}>
             <Card className="flex-1 max-w-full">
               <SectionTitle
-                title="Your Services"
-                subtitle="Manage your service offerings and pricing"
+                title={t("services.yourServices")}
+                subtitle={t("services.manageOfferings")}
               />
               <div className="max-w-full grid gap-4">
                 {services.map((service) => (
@@ -617,14 +515,7 @@ export const ServicesPage = () => {
           </div>
         )}
 
-        {/* Form panel */}
-        <div
-          className={`
-            lg:flex-1 overflow-y-auto flex flex-col
-            ${mobilePanel === "form" || services.length === 0 ? "flex" : "hidden"}
-            lg:flex
-          `}
-        >
+        <div className={`lg:flex-1 overflow-y-auto flex flex-col ${mobilePanel === "form" || services.length === 0 ? "flex" : "hidden"} lg:flex`}>
           {formPanel}
         </div>
       </div>
