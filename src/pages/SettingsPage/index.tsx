@@ -7,14 +7,26 @@ import { BusinessTab } from "./BusinessTab";
 import { Avatar } from "./ui/Avatar";
 import { useTranslation } from "react-i18next";
 
-
 export function SettingsPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const tabs = ["business", "profile", "security"];
+  const tabs = [
+    {
+      label: t("settings.business"),
+      value: "business",
+    },
+    {
+      label: t("settings.profile"),
+      value: "profile",
+    },
+    {
+      label: t("settings.security"),
+      value: "security",
+    },
+  ];
 
-  const [activeTab, setActiveTab] = useState(tabs[0]);
+  const [activeTab, setActiveTab] = useState(tabs[0].value);
 
   if (!user) return null;
 
@@ -31,9 +43,11 @@ export function SettingsPage() {
               <Avatar user={user} />
             </div>
             <SwitchTabs
-              tabs={tabs}
-              activeTab={activeTab}
-              onChange={setActiveTab}
+              tabs={tabs.map((e) => e.label)}
+              activeTab={tabs.find(e => e.value === activeTab)?.label as string}
+              onChange={(e: string) =>
+                setActiveTab(tabs.find(({ label }) => label === e)?.value as string)
+              }
             />
           </div>
           <div className="hidden lg:block flex-shrink-0">

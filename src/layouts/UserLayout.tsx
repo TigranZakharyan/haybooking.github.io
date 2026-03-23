@@ -28,7 +28,7 @@ export function UserLayout() {
             <h1 className="text-xl font-bold text-business">Haybooking</h1>
           </Link>
 
-          <nav className={`flex gap-4 md:gap-8 ${textColor}`}>
+          <nav className={`flex items-center gap-4 md:gap-8 ${textColor}`}>
             <Link to="/pricing" className={navLinkClass}>
               <CircleDollarSign className="w-6 h-6 md:hidden" />
               <span className="hidden md:block text-lg font-medium">

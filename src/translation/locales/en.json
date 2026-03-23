@@ -56,6 +56,7 @@
     "noBookings": "No bookings found",
     "tryDifferentDate": "Try selecting a different date",
     "noBookingsMatch": "No bookings match your filters",
+    "bookNow": "Book Now",
     "filters": {
       "all": "All",
       "allBranches": "All Branches",
@@ -164,6 +165,9 @@
   },
   "settings": {
     "title": "Settings",
+    "business": "Business",
+    "profile": "Profile",
+    "security": "Security",
     "accountInformation": "Account Information",
     "basicInformation": "Basic Information",
     "businessName": "Business Name",
@@ -198,7 +202,8 @@
     "inactive": "Inactive",
     "passwordSubtitle": "Password must be at least 8 characters.",
     "saving": "Saving…",
-    "phoneHint": "Main contact number for your business"
+    "phoneHint": "Main contact number for your business",
+    "passwordChangedSuccessfully": "Password changed successfully!"
   },
   "serviceCard": {
     "specialists": "{{count}} specialists",

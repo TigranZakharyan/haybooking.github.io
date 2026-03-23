@@ -1,11 +1,49 @@
-import { useState, useEffect, lazy } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect, lazy } from "react";
+import { useTranslation } from "react-i18next";
 import { Button, Container, Input, Select, Pagination } from "@/components";
-import { businessService, searchService } from '@/services/api';
-import type { TBusiness, TBusinessType, TPagination, TSearchBusinessParams } from '@/types';
-import { ServiceCard } from './ServiceCard';
+import { businessService, searchService } from "@/services/api";
+import type {
+  TBusiness,
+  TBusinessType,
+  TPagination,
+  TSearchBusinessParams,
+} from "@/types";
+import { ServiceCard } from "./ServiceCard";
 
-const BookingModal = lazy(() => import("@/components/BookingModal"))
+const BookingModal = lazy(() => import("@/components/BookingModal"));
+
+const TOP_FILTERS = [
+  {
+    value: "health",
+    label: "Health",
+    icon: "/healthcare.png"
+  },
+  {
+    value: "beauty",
+    label: "Beauty",
+    icon: "/products.png"
+  },
+  {
+    value: "home",
+    label: "Home",
+    icon: "/house.png"
+  },
+  {
+    value: "tourism",
+    label: "Tourism",
+    icon: "/tour-guide.png"
+  },
+  {
+    value: "car",
+    label: "Car",
+    icon: "/car.png"
+  },
+  {
+    value: "photography",
+    label: "Photography",
+    icon: "/photo.png"
+  },
+];
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -17,11 +55,13 @@ export function HomePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<TSearchBusinessParams>({
-    q: '',
-    city: '',
-    type: 'all',
+    q: "",
+    city: "",
+    type: "all",
   });
-  const [selectedBusiness, setSelectedBusiness] = useState<TBusiness | null>(null);
+  const [selectedBusiness, setSelectedBusiness] = useState<TBusiness | null>(
+    null,
+  );
 
   useEffect(() => {
     fetchInitialData();
@@ -39,7 +79,7 @@ export function HomePage() {
       setBusinesses(businessesData.businesses);
       setPagination(businessesData.pagination);
     } catch (error) {
-      console.error('Failed to load data:', error);
+      console.error("Failed to load data:", error);
     } finally {
       setLoading(false);
     }
@@ -51,18 +91,18 @@ export function HomePage() {
       setBusinesses(result.businesses);
       setPagination(result.pagination);
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error("Search failed:", error);
     }
   };
 
   const handlePageChange = (page: number) => {
     handleSearch(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleBookingClick = async (business: TBusiness) => {
     const fetchBusinessDetails = await businessService.getBusinessByLink(
-      business.bookingLink
+      business.bookingLink,
     );
     setSelectedBusiness(fetchBusinessDetails);
   };
@@ -70,7 +110,7 @@ export function HomePage() {
   const handleCategoryClick = (value: string) => {
     const next = activeCategory === value ? null : value;
     setActiveCategory(next);
-    setFilters((prev) => ({ ...prev, type: next ?? 'all' }));
+    setFilters((prev) => ({ ...prev, type: next ?? "all" }));
     handleSearch();
   };
 
@@ -90,10 +130,9 @@ export function HomePage() {
   return (
     <>
       <Container>
-
         {/* ── Category icon filters ── */}
         <div className="flex flex-wrap justify-center gap-4 sm:gap-6 py-6">
-          {types.map(({ label, value }) => {
+          {TOP_FILTERS.map(({ label, value, icon }) => {
             const isActive = activeCategory === value;
             return (
               <button
@@ -103,20 +142,23 @@ export function HomePage() {
               >
                 <span
                   className={[
-                    'flex items-center justify-center w-16 h-16 rounded-2xl text-3xl',
-                    'shadow-sm transition-all duration-200',
+                    "flex items-center justify-center p-2 w-16 h-16 rounded-2xl text-3xl",
+                    "transition-all duration-200",
                     isActive
-                      ? 'bg-primary/30 text-white shadow-primary/30 shadow-md'
-                      : 'bg-white text-gray-700 group-hover:bg-primary/10',
-                  ].join(' ')}
+                      ? "bg-primary/30 text-white shadow-primary/30 shadow-md"
+                      : "",
+                  ].join(" ")}
                 >
-                  💅🏼
+                  <img src={icon} alt="" className="" />
                 </span>
+                
                 <span
                   className={[
-                    'text-xs font-medium tracking-wide transition-colors duration-200',
-                    isActive ? 'text-primary font-semibold' : 'text-gray-500 group-hover:text-primary',
-                  ].join(' ')}
+                    "text-secondary font-medium tracking-wide transition-colors duration-200",
+                    isActive
+                      ? "text-primary font-semibold"
+                      : "text-gray-500 group-hover:text-primary",
+                  ].join(" ")}
                 >
                   {label}
                 </span>
@@ -126,7 +168,7 @@ export function HomePage() {
         </div>
 
         <h2 className="uppercase text-xl sm:text-2xl md:text-3xl text-center">
-          {t('homePage.findAndBook')}
+          {t("homePage.findAndBook")}
         </h2>
 
         {/* ── Mobile filter toggle ── */}
@@ -135,54 +177,60 @@ export function HomePage() {
             onClick={() => setFiltersOpen((prev) => !prev)}
             className="w-full bg-primary/10 text-primary font-semibold border border-primary/30"
           >
-            {filtersOpen ? t('homePage.hideFilters') : t('homePage.showFilters')}
+            {filtersOpen
+              ? t("homePage.hideFilters")
+              : t("homePage.showFilters")}
           </Button>
         </div>
 
-        {/* ── Filters panel ── */}
-        <div
-          className={[
-            'overflow-hidden transition-all duration-300',
-            filtersOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0',
-            'sm:max-h-none sm:opacity-100',
-          ].join(' ')}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-4 sm:my-8">
-            <Input
-              variant="primary"
-              placeholder={t('homePage.searchPlaceholder')}
-              value={filters.q}
-              onChange={(e) => setFilters({ ...filters, q: e.target.value })}
-            />
+        {/* ── Filters panel with horizontal padding ── */}
+        <div className="px-4 sm:px-6 md:px-8">
+          <div
+            className={[
+              "overflow-hidden transition-all duration-300",
+              filtersOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0",
+              "sm:max-h-none sm:opacity-100",
+            ].join(" ")}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-4 sm:my-8">
+              <Input
+                variant="primary"
+                placeholder={t("homePage.searchPlaceholder")}
+                value={filters.q}
+                onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+              />
 
-            <Select
-              variant="primary"
-              options={cities.map((city) => ({ value: city, label: city }))}
-              placeholder={t('homePage.allCities')}
-              value={filters.city}
-              onChange={(value) => setFilters({ ...filters, city: value as string })}
-            />
+              <Select
+                variant="primary"
+                options={cities.map((city) => ({ value: city, label: city }))}
+                placeholder={t("homePage.allCities")}
+                value={filters.city}
+                onChange={(value) =>
+                  setFilters({ ...filters, city: value as string })
+                }
+              />
 
-            <Select
-              variant="primary"
-              options={[
-                { value: 'all', label: t('homePage.allTypes') },
-                ...types,
-              ]}
-              placeholder={t('homePage.allTypes')}
-              value={filters.type}
-              onChange={(value) => {
-                setFilters({ ...filters, type: value as string });
-                setActiveCategory(null);
-              }}
-            />
+              <Select
+                variant="primary"
+                options={[
+                  { value: "all", label: t("homePage.allTypes") },
+                  ...types,
+                ]}
+                placeholder={t("homePage.allTypes")}
+                value={filters.type}
+                onChange={(value) => {
+                  setFilters({ ...filters, type: value as string });
+                  setActiveCategory(null);
+                }}
+              />
 
-            <Button
-              onClick={() => handleSearch(1)}
-              className="bg-primary text-white font-bold hover:bg-primary/95 shadow-xl w-full"
-            >
-              {loading ? t('homePage.searching') : t('homePage.search')}
-            </Button>
+              <Button
+                onClick={() => handleSearch(1)}
+                className="bg-primary text-white font-bold hover:bg-primary/95 shadow-xl w-full"
+              >
+                {loading ? t("homePage.searching") : t("homePage.search")}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -191,10 +239,10 @@ export function HomePage() {
           {businesses.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-xl font-semibold text-gray-700">
-                {t('homePage.noBusinesses')}
+                {t("homePage.noBusinesses")}
               </p>
               <p className="text-gray-500 mt-2">
-                {t('homePage.adjustFilters')}
+                {t("homePage.adjustFilters")}
               </p>
             </div>
           ) : (
@@ -206,7 +254,7 @@ export function HomePage() {
                   specialists={business.specialists?.length || 0}
                   services={business.services?.length || 0}
                   priceFrom={business.services?.[0]?.price?.amount || 0}
-                  buttonText={t('dashboard.bookNow')}
+                  buttonText={t("dashboard.bookNow")}
                   onButtonClick={() => handleBookingClick(business)}
                 />
               </div>

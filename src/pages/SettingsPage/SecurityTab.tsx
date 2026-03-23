@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Lock, ShieldCheck, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button, Input } from "@/components";
 import { Card } from "../../components/Card";
 import { SectionTitle } from "../../components/SectionTitle";
@@ -10,6 +11,7 @@ import {
 import { authService } from "@/services/api";
 
 export function SecurityTab() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -54,10 +56,19 @@ export function SecurityTab() {
         currentPassword: form.currentPassword,
         newPassword: form.newPassword,
       });
-    } catch {
+      setStatus({
+        type: "success",
+        message: t("settings.passwordChangedSuccessfully"),
+      });
+      setForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
       setStatus({
         type: "error",
-        message: "An unexpected error occurred.",
+        message: error?.message || t("errors.unexpectedError"),
       });
     } finally {
       setLoading(false);
@@ -68,13 +79,13 @@ export function SecurityTab() {
     <div className="flex flex-col gap-5">
       <Card>
         <SectionTitle
-          title="Change Password"
-          subtitle="Password must be at least 8 characters."
+          title={t("settings.changePassword")}
+          subtitle={t("settings.passwordSubtitle")}
         />
 
         <div className="flex flex-col gap-4">
           <Input
-            label="Current Password"
+            label={t("settings.currentPassword")}
             value={form.currentPassword}
             placeholder="********"
             onChange={set("currentPassword")}
@@ -83,7 +94,7 @@ export function SecurityTab() {
           />
 
           <Input
-            label="New Password"
+            label={t("settings.newPassword")}
             value={form.newPassword}
             onChange={set("newPassword")}
             placeholder="********"
@@ -91,24 +102,28 @@ export function SecurityTab() {
             isPassword
             error={
               form.newPassword.length > 0 && !isLengthValid
-                ? "Password must be at least 8 characters"
+                ? t("errors.passwordLength")
                 : undefined
             }
           />
 
           <Input
-            label="Confirm New Password"
+            label={t("settings.confirmNewPassword")}
             value={form.confirmPassword}
             onChange={set("confirmPassword")}
             placeholder="********"
             variant="primary"
             isPassword
-            error={!isMatchValid ? "Passwords do not match" : undefined}
+            error={!isMatchValid ? t("errors.passwordMatch") : undefined}
           />
         </div>
 
         {status.type && (
-          <StatusBanner type={status.type} message={status.message} />
+          <StatusBanner
+            type={status.type}
+            message={status.message}
+            t={t}
+          />
         )}
 
         <div className="flex justify-end mt-6">
@@ -123,18 +138,18 @@ export function SecurityTab() {
             ) : (
               <Lock className="w-4 h-4" />
             )}
-            {loading ? "Saving…" : "Update Password"}
+            {loading ? t("settings.saving") : t("settings.updatePassword")}
           </Button>
         </div>
       </Card>
 
       <Card>
-        <SectionTitle title="Password Tips" subtitle="" />
+        <SectionTitle title={t("settings.passwordTips")} subtitle="" />
         <ul className="flex flex-col gap-2">
           {[
-            "Use at least 8 characters",
-            "Avoid common words",
-            "Do not reuse old passwords",
+            t("settings.tip1"),
+            t("settings.tip2"),
+            t("settings.tip3"),
           ].map((tip) => (
             <li
               key={tip}
@@ -156,6 +171,7 @@ function StatusBanner({
 }: {
   type: "success" | "error";
   message: string;
+  t: (key: string) => string;
 }) {
   return (
     <div

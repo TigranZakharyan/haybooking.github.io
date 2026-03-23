@@ -15,6 +15,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  BellDot,
 } from "lucide-react";
 import { ProfileAvatar, Tooltip } from "@/components";
 import { LanguageSelect } from "@/components/LanguageSelect";
@@ -29,10 +30,26 @@ export function DashboardLayout() {
   const NAV_ITEMS = [
     { label: t("navigation.dashboard"), Icon: Home, to: "/dashboard" },
     { label: t("navigation.services"), Icon: Box, to: "/dashboard/services" },
-    { label: t("navigation.branches"), Icon: MapPin, to: "/dashboard/branches" },
-    { label: t("navigation.specialists"), Icon: Users, to: "/dashboard/specialists" },
-    { label: t("navigation.analytics"), Icon: BarChart2, to: "/dashboard/analytics" },
-    { label: t("navigation.settings"), Icon: Settings, to: "/dashboard/settings" },
+    {
+      label: t("navigation.branches"),
+      Icon: MapPin,
+      to: "/dashboard/branches",
+    },
+    {
+      label: t("navigation.specialists"),
+      Icon: Users,
+      to: "/dashboard/specialists",
+    },
+    {
+      label: t("navigation.analytics"),
+      Icon: BarChart2,
+      to: "/dashboard/analytics",
+    },
+    {
+      label: t("navigation.settings"),
+      Icon: Settings,
+      to: "/dashboard/settings",
+    },
   ];
 
   useEffect(() => {
@@ -70,7 +87,11 @@ export function DashboardLayout() {
         {/* Logo */}
         <Link to="/" onClick={onNavClick} className="flex items-center h-16">
           <div className="h-11 px-2 rounded-xl flex items-center justify-center shrink-0">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <span
             className={`text-xl text-business font-semibold font-serif whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
@@ -127,7 +148,9 @@ export function DashboardLayout() {
             <button
               onClick={() => setDarkMode((d) => !d)}
               className="flex items-center justify-center rounded-xl select-none h-11 w-11 shrink-0 text-gray-400 hover:bg-white/50 hover:text-gray-800 transition-colors duration-200"
-              aria-label={darkMode ? t("layout.lightMode") : t("layout.darkMode")}
+              aria-label={
+                darkMode ? t("layout.lightMode") : t("layout.darkMode")
+              }
             >
               {darkMode ? (
                 <Sun className="w-4 h-4" strokeWidth={1.8} />
@@ -152,7 +175,11 @@ export function DashboardLayout() {
             className={`hidden md:flex items-center justify-center rounded-xl select-none h-11 w-11 shrink-0 text-gray-400 hover:bg-white/50 hover:text-gray-800 transition-colors duration-200
               ${collapsed ? "" : "ml-auto"}
             `}
-            aria-label={collapsed ? t("layout.expandSidebar") : t("layout.collapseSidebar")}
+            aria-label={
+              collapsed
+                ? t("layout.expandSidebar")
+                : t("layout.collapseSidebar")
+            }
           >
             <ChevronLeft
               className={`w-4 h-4 text-gray-500 transition-transform duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]
@@ -227,9 +254,10 @@ export function DashboardLayout() {
               </Tooltip>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center">
               <LanguageSelect />
-              <ProfileAvatar initials={initials} />
+              <BellDot className="text-primary mr-4 hover:text-primary/80 cursor-pointer" />
+              <ProfileAvatar initials={initials} link="/dashboard/settings" />
             </div>
           </header>
 
