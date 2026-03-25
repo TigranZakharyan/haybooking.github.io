@@ -135,7 +135,8 @@
     "selectBranch": "Select branch this team member will be assigned to",
     "services": "Services",
     "statusAndActions": "Active Status & Actions",
-    "memberActive": "Team Member Active"
+    "memberActive": "Team Member Active",
+    "memberActiveDisabledHint": "When unchecked, this team member will be hidden and cannot be assigned to bookings. Useful for temporarily disabling team members without deleting them."
   },
   "analytics": {
     "title": "Analytics",
@@ -265,44 +266,103 @@
   },
   "pricing": {
     "title": "Simple, Transparent Pricing",
-    "subtitle": "All plans are billed monthly. Choose the features that best fit your business.",
+    "subtitle": "Every plan includes the full feature set. Pay only for the duration that suits your business.",
     "yourPlan": "Your Plan",
     "currentPlan": "Current Plan",
     "selectPlan": "Select Plan",
-    "perMonth": "/mo",
-    "billedMonthly": "Billed Monthly",
+    "whatsIncluded": "What's Included",
+    "mostPopular": "Most Popular",
+    "bestValue": "Best Value",
     "plan": "Plan",
     "plans": {
-      "basic": {
-        "name": "Basic",
+      "free": {
+        "name": "Free",
+        "priceLabel": "First 2 months, no card needed",
         "features": [
-          "Up to 100 bookings/month",
-          "Basic analytics",
-          "Email support",
-          "2 team members included",
-          "Mobile app access"
+          "Flexible Booking Engine",
+          "Advanced Analytics",
+          "Unlimited Branches",
+          "Unlimited Specialists",
+          "Messaging & Reminders",
+          "24h Support",
+          "Mobile App Access"
+        ],
+        "descs": [
+          "Multi-slot, recurring & custom booking flows",
+          "Booking trends, peak hours & revenue overview",
+          "Add & manage all your locations freely",
+          "No cap on staff — add your full team",
+          "Auto SMS/email alerts for clients & staff",
+          "Round-the-clock help via chat & email",
+          "Manage bookings on the go"
         ]
       },
-      "professional": {
-        "name": "Professional",
+      "monthly": {
+        "name": "Monthly",
+        "priceLabel": "Billed monthly, cancel anytime",
         "features": [
-          "Unlimited bookings",
-          "Advanced analytics & reporting",
-          "Priority 24/7 support",
-          "Custom branding & domain",
-          "Up to 10 team members",
-          "API access & integrations"
+          "Flexible Booking Engine",
+          "Advanced Analytics",
+          "Unlimited Branches",
+          "Unlimited Specialists",
+          "Messaging & Reminders",
+          "24h Support",
+          "API Access"
+        ],
+        "descs": [
+          "Multi-slot, recurring, group & waitlist bookings",
+          "Live dashboards, export reports & client insights",
+          "Centralized control across all your locations",
+          "Individual schedules, roles & performance stats",
+          "Custom templates, scheduled sends & no-show alerts",
+          "Priority response with dedicated support queue",
+          "Integrate with your existing tools"
         ]
       },
-      "enterprise": {
-        "name": "Enterprise",
+      "halfyear": {
+        "name": "Half-Year",
+        "priceLabel": "Every 6 months",
+        "savings": "Save 17%",
         "features": [
-          "Everything in Professional",
-          "Unlimited team members",
-          "Dedicated account manager",
-          "Custom development/SLA",
-          "White-label solution",
-          "Advanced security features"
+          "Flexible Booking Engine",
+          "Advanced Analytics",
+          "Unlimited Branches",
+          "Unlimited Specialists",
+          "Messaging & Reminders",
+          "24h Support",
+          "Full API Access"
+        ],
+        "descs": [
+          "Online, in-app & API bookings with full calendar sync",
+          "Forecasting, custom KPIs & multi-branch comparison",
+          "Geo-based routing & per-branch custom settings",
+          "Smart load balancing & auto-assignment rules",
+          "Multi-channel: SMS, email, push & WhatsApp",
+          "Named account manager + escalation guarantee",
+          "Webhooks, custom integrations & developer tools"
+        ]
+      },
+      "yearly": {
+        "name": "Yearly",
+        "priceLabel": "Billed annually",
+        "savings": "Save 25%",
+        "features": [
+          "Flexible Booking Engine",
+          "Advanced Analytics",
+          "Unlimited Branches",
+          "Unlimited Specialists",
+          "Messaging & Reminders",
+          "24h Support",
+          "Enterprise Integrations"
+        ],
+        "descs": [
+          "White-label flows, custom rules & enterprise integrations",
+          "AI-driven insights, revenue predictions & BI export",
+          "Enterprise-grade multi-location management & audit logs",
+          "Role-based permissions, payroll hooks & HR integrations",
+          "Branded campaigns, drip sequences & engagement analytics",
+          "Dedicated team, SLA contract & onboarding assistance",
+          "ERP, CRM & custom API connectors"
         ]
       }
     }
@@ -417,6 +477,55 @@
     "notOperating": "Not operating on this day",
     "noHoursConfigured": "No working hours configured",
     "noHoursHint": "Working hours will be initialized when you save the branch"
+  },
+  "booking": {
+    "selectBranch": "Select Branch",
+    "step1": "1. Select Branch",
+    "step2": "2. Service & Specialist",
+    "step3": "3. Date & Time",
+    "step4": "4. Your Info",
+    "step5": "5. Phone Verify",
+    "mainBranch": "Main Branch",
+    "continueToService": "Continue to Service Selection",
+    "selectServices": "Select Services",
+    "backToBranches": "Back to Branches",
+    "nextDateTime": "Next: Date & Time",
+    "selectSpecialist": "Select Specialist",
+    "selected": "Selected",
+    "total": "Total",
+    "selectedCount": "selected",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "nextYourInfo": "Next: Your Info",
+    "backToSelection": "Back to Selection",
+    "availableTimeSlots": "Available Time Slots",
+    "available": "Available",
+    "booked": "Booked",
+    "customTime": "— or enter a custom time —",
+    "workingHours": "Working Hours",
+    "yourInformation": "Your Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "emailAddress": "Email Address",
+    "phoneNumber": "Phone Number",
+    "additionalNotes": "Additional Notes (Optional)",
+    "anySpecialRequests": "Any special requests...",
+    "phoneVerificationRequired": "Phone Verification Required",
+    "smsNotice": "We'll send a 4-digit code to your phone to confirm your booking.",
+    "nextVerify": "Next: Verify",
+    "phoneVerification": "Phone Verification",
+    "codeSentTo": "Code sent to:",
+    "enter4DigitCode": "Enter 4-Digit Code",
+    "resendCode": "Resend code",
+    "confirmBooking": "Confirm Booking"
+  },
+  "businessTypes": {
+    "dentalClinic": "Dental Clinic",
+    "hairSalon": "Hair Salon",
+    "makeupStudio": "Makeup Studio",
+    "spaWellness": "Spa & Wellness",
+    "car": "Car",
+    "other": "Other"
   },
   "errors": {
     "required": "Required",

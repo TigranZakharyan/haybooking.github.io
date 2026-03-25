@@ -4,7 +4,7 @@ interface MapLinkProps {
 }
 
 export function YandexMapButton({ latitude, longitude }: MapLinkProps) {
-  const url = `https://yandex.com/maps/?ll=${longitude},${latitude}&z=16`;
+  const url = `https://yandex.ru/maps/?ll=${longitude},${latitude}&pt=${longitude},${latitude}&z=16&l=map`;
 
   return (
     <button
@@ -14,7 +14,6 @@ export function YandexMapButton({ latitude, longitude }: MapLinkProps) {
         window.open(url, "_blank");
       }}
       className="p-2 text-gray-600 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
-      aria-label="Open in Yandex Maps"
     >
       <img src="/yandex-map.png" className="w-5 h-5" />
     </button>
