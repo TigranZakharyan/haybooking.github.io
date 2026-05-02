@@ -31,9 +31,112 @@
     "search": "Search",
     "searching": "Searching...",
     "noBusinesses": "No businesses found.",
-    "adjustFilters": "Try adjusting your search filters."
+    "adjustFilters": "Try adjusting your search filters.",
+    "categories": {
+      "health": "Health",
+      "beauty": "Beauty",
+      "home": "Home",
+      "tourism": "Tourism",
+      "car": "Car",
+      "photography": "Photography"
+    }
   },
   "dashboard": {
+    "booking": {
+      "filters": {
+        "allBranches": "All Branches",
+        "allServices": "All Services",
+        "allSpecialists": "All Specialists",
+        "anyTime": "Any Time",
+        "from": "From",
+        "to": "To",
+        "timeRange": "Time Range",
+        "startTime": "Start",
+        "endTime": "End",
+        "clear": "Clear",
+        "apply": "Apply"
+      },
+      "form": {
+        "branch": "Branch",
+        "service": "Service",
+        "services": "Services",
+        "specialist": "Specialist",
+        "date": "Date",
+        "time": "Time",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "bookNow": "Book Now",
+        "selectServices": "Select Services",
+        "clearAll": "Clear all",
+        "selectedServices": "{{count}} Services",
+        "noServices": "No services at this branch",
+        "noSpecialists": "No specialists for selected services",
+        "customTime": "or enter a custom time",
+        "setTime": "Set This Time",
+        "validating": "Validating...",
+        "timeSet": "Custom time set:",
+        "timeNotAvailable": "This time is not available"
+      },
+      "calendar": {
+        "workingHours": "Working Hours:",
+        "closed": "Closed"
+      },
+      "mobileWizard": {
+        "chooseBranch": "Choose Branch",
+        "chooseServices": "Choose Services",
+        "chooseSpecialist": "Choose Specialist",
+        "pickDate": "Pick a Date",
+        "pickTime": "Pick a Time",
+        "confirmBooking": "Confirm Booking",
+        "step": "Step",
+        "of": "of",
+        "bookingConfirmed": "Booking Confirmed!",
+        "closing": "Closing...",
+        "reviewDetails": "Review your booking details before confirming.",
+        "continueWith": "Continue with",
+        "continue": "Continue",
+        "review": "Review Booking",
+        "confirm": "Confirm Booking",
+        "confirming": "Confirming...",
+        "main": "Main",
+        "canPerform": "Can perform all {{count}} selected services",
+        "selected": "Selected:",
+        "availableSlots": "Available Slots",
+        "available": "Available",
+        "booked": "Booked",
+        "noSlots": "No slots available for this date.",
+        "failedToLoad": "Failed to load available slots",
+        "noSpecialistsAvailable": "No specialists available for all selected services.",
+        "adjustServices": "Adjust services",
+        "noServicesAvailable": "No services available at this branch.",
+        "loadingTimes": "Loading available times..."
+      },
+      "bookingBar": {
+        "bookNow": "Book Now",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "bookingConfirmed": "Booking confirmed!",
+        "successMessage": "Admin booking created successfully"
+      },
+      "timeSlots": {
+        "available": "Available",
+        "booked": "Booked"
+      },
+      "summary": {
+        "services": "Services",
+        "totalDuration": "{{duration}} min total",
+        "totalPrice": "${{price}}"
+      },
+      "errors": {
+        "noAvailableSlots": "No time slots available for this date. Please try another date.",
+        "bookingFailed": "Failed to create booking",
+        "failedToLoadSlots": "Failed to load available slots"
+      },
+      "labels": {
+        "serviceSelected": "{{count}} service selected",
+        "servicesSelected": "{{count}} services selected"
+      }
+    },
     "bookings": "Bookings",
     "bookingsSingular": "booking",
     "bookingsPlural": "bookings",
@@ -96,9 +199,24 @@
       "fri": "Fri",
       "sat": "Sat",
       "sun": "Sun"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
     }
   },
   "statuses": {
+    "all": "All",
     "pending": "Pending",
     "confirmed": "Confirmed",
     "completed": "Completed",
@@ -150,6 +268,7 @@
     "last30Days": "Last 30 days",
     "last7Days": "Last 7 days",
     "last90Days": "Last 90 days",
+    "lastYear": "Last year",
     "export": "Export",
     "generalStats": "General Stats",
     "statusSplit": "Status Split",
@@ -196,6 +315,7 @@
     "tip1": "Use at least 8 characters",
     "tip2": "Avoid common words",
     "tip3": "Do not reuse old passwords",
+    "photoSize": "The photo should be 500x500",
     "subtitle": "View and manage your account details.",
     "updatePersonalDetails": "Update your personal details",
     "updateContactDetails": "Update your contact details",
@@ -209,8 +329,7 @@
   "serviceCard": {
     "specialists": "{{count}} specialists",
     "services": "{{count}} services",
-    "priceFrom": "From {{price}} {{currency}}",
-    "defaultCurrency": "Dram"
+    "priceFrom": "From {{price}} {{currency}}"
   },
   "signIn": {
     "title": "Sign In",
@@ -244,7 +363,7 @@
     "codeSentTo": "Code sent to {{phone}}",
     "personalInfo": "Personal Information",
     "emailOptional": "Email (Optional)",
-    "passwordPlaceholder": "Min. 6 characters",
+    "passwordPlaceholder": "Min. 8 characters",
     "repeatPassword": "Repeat password",
     "back": "Back",
     "continue": "Continue",
@@ -442,10 +561,11 @@
     "updateBranch": "Update Branch",
     "createBranch": "Create Branch",
     "tabs": {
-      "location": "Location",
-      "phones": "Phones",
-      "hours": "Hours"
+      "location": "location",
+      "phones": "phones",
+      "hours": "hours"
     },
+    "phoneNumber": "Phone Number",
     "locationDetails": "Location Details",
     "enterAddress": "Enter the branch address information",
     "streetAddress": "Street Address",
@@ -548,5 +668,52 @@
     "specialistNameRequired": "Specialist name is required",
     "atLeastOneService": "At least one service must be selected",
     "unexpectedError": "An unexpected error occurred."
+  },
+  "myBookings": {
+    "title": "My Bookings",
+    "loading": "Loading bookings...",
+    "noBookings": "No bookings found",
+    "noBookingsYet": "You don't have any bookings yet.",
+    "noFilteredBookings": "You don't have any {{status}} bookings.",
+    "modify": "Modify",
+    "cancel": "Cancel",
+    "bookingCancelled": "Booking cancelled",
+    "bookingCompleted": "Booking completed",
+    "services": "Services",
+    "totalDuration": "{{totalDuration}} min",
+    "confirmCancel": "Are you sure you want to cancel this booking?",
+    "cancelFailed": "Failed to cancel booking. Please try again.",
+    "loadingDetails": "Loading booking details...",
+    "fetchError": "Failed to fetch bookings",
+    "businessFetchError": "Failed to fetch business data"
+  },
+  "businessPage": {
+    "loading": "Loading business information...",
+    "error": {
+      "notFound": "Business not found",
+      "failedToLoad": "Failed to load business information",
+      "goBackHome": "Go Back Home"
+    },
+    "aboutUs": "About Us",
+    "quickInfo": {
+      "contact": "Contact",
+      "locations": "Locations",
+      "specialists": "Specialists",
+      "available": "Available",
+      "branch": "Branch",
+      "branches": "Branches"
+    },
+    "branches": {
+      "title": "Select Branch",
+      "mainBranch": "Main Branch",
+      "closed": "Closed",
+      "today": "Today"
+    },
+    "map": {
+      "title": "Our Locations"
+    },
+    "booking": {
+      "bookNow": "Book Now"
+    }
   }
 }

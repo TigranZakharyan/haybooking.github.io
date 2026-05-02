@@ -60,6 +60,7 @@ export function PhoneInput({
   className = "",
   value,
   onChange,
+  placeholder = "Phone Number",
   ...props
 }: PhoneInputProps) {
   const defaultCountry =
@@ -181,7 +182,7 @@ export function PhoneInput({
             placeholder:text-slate-400
             ${borderVariant}
             ${error ? "!border-red-500 focus:ring-red-500" : ""}`}
-          placeholder="Phone number"
+          placeholder={placeholder}
         />
       </div>
 

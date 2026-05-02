@@ -12,7 +12,7 @@ interface BookingCardProps {
     customerInfo?: { firstName?: string; lastName?: string; phone?: string; email?: string; };
     services?: { _id: string; name: string; }[];
     specialist?: { _id: string; name: string; };
-    price?: { amount: number; };
+    price?: { amount: number; currency: string };
     notes?: string;
     isGuestBooking?: boolean;
   };
@@ -31,7 +31,7 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
       default: return "bg-gray-100 text-gray-800";
     }
   };
-
+  console.log(booking)
   return (
     <div className="bg-white border-2 border-primary rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
@@ -46,7 +46,7 @@ export function BookingCard({ booking, onChangeStatus }: BookingCardProps) {
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
           <span className="text-base sm:text-lg font-semibold text-gray-900">
-            $ {booking.price?.amount || 0}
+            {booking.price?.amount || 0} {booking.price?.currency}
           </span>
           <Button onClick={() => onChangeStatus(booking._id)} className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 h-auto">
             {t("dashboard.changeStatus")}

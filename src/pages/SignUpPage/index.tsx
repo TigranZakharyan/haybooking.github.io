@@ -124,7 +124,7 @@ export function SignUpPage() {
       </div>
 
       <div className="w-full h-full md:block hidden">
-        <div className="fixed w-1/2 h-full top-0 bg-[url(/booking.png)] bg-cover bg-[position:10%_center]" />
+        <div className="fixed w-1/2 h-full top-0 bg-[url(/booking.jpg)] bg-cover bg-[position:10%_center]" />
       </div>
     </div>
   );

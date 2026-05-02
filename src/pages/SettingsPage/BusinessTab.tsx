@@ -124,7 +124,7 @@ export function BusinessTab() {
               )}
             </label>
             <span className="text-xs text-gray-400">
-              The photo should be 500x500
+              {t("settings.photoSize")}
             </span>
           </div>
         </div>

@@ -164,7 +164,7 @@ export function DashboardPage() {
               </div>
               {bookingBarProps && (
                 <div className="flex-1 flex justify-center">
-                  <div className="w-full max-w-3xl">
+                  <div className="w-full">
                     <QuickBookingBar {...bookingBarProps} />
                   </div>
                 </div>

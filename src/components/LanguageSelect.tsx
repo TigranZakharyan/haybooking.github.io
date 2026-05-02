@@ -2,9 +2,9 @@ import { Select } from "@/components";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGE_OPTIONS = [
-  { value: "en", label: "🇬🇧 EN" },
-  { value: "ru", label: "🇷🇺 RU" },
-  { value: "hy", label: "🇦🇲 HY" },
+  { value: "en", label: "🇬🇧 English" },
+  { value: "ru", label: "🇷🇺 Русский" },
+  { value: "hy", label: "🇦🇲 Հայերեն" },
 ];
 
 export function LanguageSelect() {

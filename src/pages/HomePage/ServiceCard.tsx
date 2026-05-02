@@ -83,7 +83,7 @@ export function ServiceCard({
           <span>
             {t("serviceCard.priceFrom", {
               price: priceFrom,
-              currency: currency ?? t("serviceCard.defaultCurrency"),
+              currency: currency,
             })}
           </span>
         </div>
@@ -94,7 +94,7 @@ export function ServiceCard({
           className="w-full py-2.5 rounded-xl bg-primary hover:bg-primaryz active:bg-primary text-white text-sm font-semibold transition-colors"
         >
           {buttonText ??
-            `${priceFrom} ${currency ?? t("serviceCard.defaultCurrency")}`}
+            `${priceFrom} ${currency}`}
         </button>
       </div>
     </div>

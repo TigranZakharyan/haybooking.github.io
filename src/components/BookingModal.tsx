@@ -919,8 +919,7 @@ export const BookingModal = ({
                               <Clock className="h-3.5 w-3.5" /> {service.duration} min
                             </span>
                             <span className="flex items-center font-bold text-base text-white">
-                              <DollarSign className="h-3.5 w-3.5" />
-                              {service.price.amount}
+                              {service.price.amount} {service.price.currency}
                             </span>
                           </div>
                         </div>
@@ -954,7 +953,6 @@ export const BookingModal = ({
                           Total: <strong className="ml-1 text-[#3D2B2B]">{totalDuration} min</strong>
                         </span>
                         <span className="flex items-center gap-0.5 font-bold text-sm text-[#3D2B2B]">
-                          <DollarSign className="h-3.5 w-3.5" />
                           {totalPrice} {priceCurrency}
                         </span>
                       </div>

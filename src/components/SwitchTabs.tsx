@@ -1,7 +1,12 @@
 import { useRef, useEffect, useState } from "react";
 
+interface TabItem {
+  label: string;
+  value: string;
+}
+
 interface SwitchTabsProps {
-  tabs: string[];
+  tabs: TabItem[];
   activeTab: string;
   onChange: (tab: string) => void;
 }
@@ -14,11 +19,11 @@ export function SwitchTabs({ tabs, activeTab, onChange }: SwitchTabsProps) {
   const updateSlider = () => {
     const container = containerRef.current;
     const activeButton = tabRefs.current.get(activeTab);
-    
+
     if (container && activeButton) {
       const containerRect = container.getBoundingClientRect();
       const buttonRect = activeButton.getBoundingClientRect();
-      
+
       setSliderStyle({
         left: buttonRect.left - containerRect.left,
         width: buttonRect.width,
@@ -28,20 +33,18 @@ export function SwitchTabs({ tabs, activeTab, onChange }: SwitchTabsProps) {
 
   useEffect(() => {
     updateSlider();
-    
-    // Update on window resize
+
     window.addEventListener("resize", updateSlider);
     return () => window.removeEventListener("resize", updateSlider);
   }, [activeTab, tabs]);
 
-  // Update when any tab button size changes (e.g., font loading)
   useEffect(() => {
     const observer = new ResizeObserver(() => updateSlider());
-    
+
     tabRefs.current.forEach((button) => {
       observer.observe(button);
     });
-    
+
     return () => observer.disconnect();
   }, [tabs]);
 
@@ -52,22 +55,22 @@ export function SwitchTabs({ tabs, activeTab, onChange }: SwitchTabsProps) {
     >
       {tabs.map((tab) => (
         <button
-          key={tab}
+          key={tab.value}
           ref={(el) => {
-            if (el) tabRefs.current.set(tab, el);
-            else tabRefs.current.delete(tab);
+            if (el) tabRefs.current.set(tab.value, el);
+            else tabRefs.current.delete(tab.value);
           }}
-          onClick={() => onChange(tab)}
+          onClick={() => onChange(tab.value)}
           className={`
             relative z-10 whitespace-nowrap px-5 py-2 text-sm font-medium capitalize transition-colors duration-200
             ${
-              tab === activeTab
+              tab.value === activeTab
                 ? "text-primary"
                 : "text-gray-600 hover:text-primary"
             }
           `}
         >
-          {tab}
+          {tab.label}
         </button>
       ))}
 

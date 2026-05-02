@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   Building2, Briefcase, User2, CalendarDays, Clock,
   Check, ChevronDown, X, Zap, CheckCircle2, DollarSign,
@@ -114,8 +115,6 @@ const ScrollPicker = ({ length, value, onChange }: { length: number; value: stri
 };
 
 // ── usePortalDropdown ─────────────────────────────────────────────────────────
-// pos.left stores the CENTER X of the trigger button.
-// All dropdowns use transform: translateX(-50%) so they open centered.
 function usePortalDropdown() {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -127,7 +126,7 @@ function usePortalDropdown() {
     const rect = btnRef.current.getBoundingClientRect();
     setPos({
       top: rect.bottom + 8,
-      left: rect.left + rect.width / 2, // center X of trigger
+      left: rect.left + rect.width / 2,
       width: Math.max(rect.width, 220),
     });
   }, []);
@@ -170,7 +169,6 @@ const BookingTrigger = React.forwardRef<HTMLButtonElement, {
         active ? "text-gray-900 cursor-pointer" : "text-gray-500 cursor-pointer hover:text-gray-700"].join(" ")}>
       <span className={done ? "text-teal-700" : "text-gray-400"}>{icon}</span>
       <div className="flex flex-col items-start min-w-0">
-        {/* FIX: increased max-w from 140px to 180px for better readability */}
         <span className={`leading-tight truncate max-w-[180px] ${done ? "text-gray-900 font-semibold text-xs" : "text-sm"}`}>{label}</span>
         {sublabel && <span className="text-[10px] text-gray-400 leading-tight truncate max-w-[180px]">{sublabel}</span>}
       </div>
@@ -190,6 +188,7 @@ function FilterDropdown({ icon, placeholder, options, selected, onSelect, disabl
   icon: React.ReactNode; placeholder: string; options: FilterOption[];
   selected: string | null; onSelect: (v: string) => void; disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   const label = selected ? options.find(o => o.value === selected)?.label ?? placeholder : placeholder;
   return (
@@ -201,7 +200,6 @@ function FilterDropdown({ icon, placeholder, options, selected, onSelect, disabl
         <ChevronDown size={12} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && createPortal(
-        // FilterDropdown already used translateX(-50%) — keeping as-is
         <div ref={menuRef}
           style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", zIndex: 9999 }}
           className="min-w-[180px] bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
@@ -222,11 +220,11 @@ function FilterDropdown({ icon, placeholder, options, selected, onSelect, disabl
 function TimeRangeFilter({ timeRange, onChange }: {
   timeRange: { start: string; end: string }; onChange: (s: string, e: string) => void;
 }) {
+  const { t } = useTranslation();
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   const [ls, setLs] = useState(timeRange.start);
   const [le, setLe] = useState(timeRange.end);
 
-  // FIX: friendlier label formatting
   const formatTime = (t: string) => {
     if (!t) return "";
     const [h, m] = t.split(":");
@@ -239,8 +237,8 @@ function TimeRangeFilter({ timeRange, onChange }: {
   const label = timeRange.start && timeRange.end
     ? `${formatTime(timeRange.start)} – ${formatTime(timeRange.end)}`
     : timeRange.start
-    ? `From ${formatTime(timeRange.start)}`
-    : "Any Time";
+    ? `${t("dashboard.booking.filters.from")} ${formatTime(timeRange.start)}`
+    : t("dashboard.booking.filters.anyTime");
 
   return (
     <>
@@ -251,27 +249,26 @@ function TimeRangeFilter({ timeRange, onChange }: {
         <ChevronDown size={12} className={`text-white/70 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && createPortal(
-        // TimeRangeFilter intentionally right-anchored — keeping as-is
         <div ref={menuRef}
           style={{ position: "fixed", top: pos.top, right: window.innerWidth - pos.left - pos.width / 2, zIndex: 9999 }}
           className="w-64 bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4 space-y-3">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Time Range</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t("dashboard.booking.filters.timeRange")}</p>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">Start</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{t("dashboard.booking.filters.startTime")}</label>
               <input type="time" value={ls} onChange={e => setLs(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-700" />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 mb-1 block">End</label>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">{t("dashboard.booking.filters.endTime")}</label>
               <input type="time" value={le} onChange={e => setLe(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-700" />
             </div>
             <div className="flex gap-2 pt-1">
               <button onClick={() => { setLs(""); setLe(""); onChange("", ""); setOpen(false); }}
-                className="flex-1 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Clear</button>
+                className="flex-1 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">{t("dashboard.booking.filters.clear")}</button>
               <button onClick={() => { onChange(ls, le); setOpen(false); }}
-                className="flex-1 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg hover:opacity-90 transition-opacity">Apply</button>
+                className="flex-1 py-2 text-sm font-medium text-white bg-teal-700 rounded-lg hover:opacity-90 transition-opacity">{t("dashboard.booking.filters.apply")}</button>
             </div>
           </div>
         </div>,
@@ -284,12 +281,12 @@ function TimeRangeFilter({ timeRange, onChange }: {
 function BranchBookingDropdown({ branches, selected, onSelect, disabled }: {
   branches: any[]; selected: any; onSelect: (b: any) => void; disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
 
-  // FIX: friendlier label — show city as sublabel
   const label = selected
-    ? selected.address?.street || "Branch"
-    : "Branch";
+    ? selected.address?.street || t("dashboard.booking.form.branch")
+    : t("dashboard.booking.form.branch");
   const sublabel = selected
     ? selected.address?.city
     : undefined;
@@ -302,7 +299,6 @@ function BranchBookingDropdown({ branches, selected, onSelect, disabled }: {
         done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => onSelect(null) : undefined} />
       {open && createPortal(
-        // FIX: added transform: translateX(-50%) to center under trigger
         <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: pos.width, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
           {branches.map(b => (
@@ -311,7 +307,7 @@ function BranchBookingDropdown({ branches, selected, onSelect, disabled }: {
               <div>
                 <div className="font-semibold flex items-center gap-1.5">
                   {b.address?.street}
-                  {b.isBaseBranch && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selected?._id === b._id ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>Main</span>}
+                  {b.isBaseBranch && <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selected?._id === b._id ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>{t("dashboard.booking.mobileWizard.main")}</span>}
                 </div>
                 <div className={`text-xs mt-0.5 ${selected?._id === b._id ? "text-white/60" : "text-gray-400"}`}>{b.address?.city}</div>
               </div>
@@ -332,20 +328,20 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
   onToggle: (s: TService) => void;
   disabled?: boolean;
 }) {
-  const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
+  const { t } = useTranslation();
+  const { open, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
 
-  // FIX: more readable label and sublabel with proper spacing
   const label = selected.length === 0
-    ? "Service"
+    ? t("dashboard.booking.form.service")
     : selected.length === 1
       ? selected[0].name
-      : `${selected.length} Services`;
+      : t("dashboard.booking.form.selectedServices", { count: selected.length });
 
   const totalDuration = selected.reduce((a, s) => a + s.duration, 0);
-  const totalPrice = selected.reduce((a, s) => a + (s.price?.amount ?? 0), 0);
+  const totalPrice = selected.reduce((a, s) => a + (s.price?.amount ?? 0), 0) + " " + selected.reduce((a, s) => a + (s.price?.currency ?? ""), "");
 
   const sublabel = selected.length > 0
-    ? `${totalDuration} min · $${totalPrice}`
+    ? `${totalDuration} ${t("booking.summary.minTotal")} · ${totalPrice}`
     : undefined;
 
   return (
@@ -355,45 +351,42 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
         done={selected.length > 0} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected.length > 0 ? () => selected.forEach(s => onToggle(s)) : undefined} />
       {open && createPortal(
-        // FIX: added transform: translateX(-50%) to center under trigger
         <div ref={menuRef}
           style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: Math.max(pos.width, 240), zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
           <div className="px-4 pt-3 pb-2 border-b border-gray-100">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Select Services</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t("dashboard.booking.form.selectServices")}</p>
             {selected.length > 0 && (
               <div className="flex items-center justify-between mt-1.5">
-                <span className="text-xs text-teal-700 font-semibold">{selected.length} selected</span>
+                <span className="text-xs text-teal-700 font-semibold">
+                  {t("dashboard.booking.labels.servicesSelected", { count: selected.length })}
+                </span>
                 <button
                   onClick={() => selected.forEach(s => onToggle(s))}
                   className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                  Clear all
+                  {t("dashboard.booking.form.clearAll")}
                 </button>
               </div>
             )}
           </div>
 
-          {/* Service list */}
           <div className="py-1.5 overflow-y-auto">
             {services.length === 0
-              ? <p className="px-4 py-3 text-sm text-gray-400">No services at this branch</p>
+              ? <p className="px-4 py-3 text-sm text-gray-400">{t("dashboard.booking.form.noServices")}</p>
               : services.map(s => {
                 const isSelected = selected.some(sel => sel._id === s._id);
                 return (
                   <button key={s._id}
                     onClick={() => onToggle(s)}
                     className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 transition-colors ${isSelected ? "bg-teal-50" : "hover:bg-gray-50"}`}>
-                    {/* Checkbox */}
                     <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? "bg-teal-700 border-teal-700" : "border-gray-300"}`}>
                       {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className={`font-semibold truncate ${isSelected ? "text-teal-800" : "text-gray-700"}`}>{s.name}</div>
-                      {/* FIX: friendlier duration/price display */}
                       <div className="flex items-center gap-2 text-xs mt-0.5 text-gray-400">
                         <span className="flex items-center gap-0.5"><Clock size={10} />{s.duration} min</span>
-                        <span className="flex items-center gap-0.5"><DollarSign size={10} />{s.price?.amount}</span>
+                        <span className="flex items-center gap-0.5">{s.price?.amount} {s.price.currency}</span>
                       </div>
                     </div>
                     {isSelected && <Check size={14} className="text-teal-700 flex-shrink-0" />}
@@ -402,16 +395,13 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
               })}
           </div>
 
-          {/* Footer summary */}
           {selected.length > 0 && (
             <div className="px-4 py-3 border-t border-gray-100 bg-teal-50 flex items-center justify-between">
               <div className="flex items-center gap-1 text-xs text-teal-700">
                 <Clock size={11} />
-                {/* FIX: space between number and unit */}
-                <span className="font-semibold">{totalDuration} min total</span>
+                <span className="font-semibold">{totalDuration} {t("booking.summary.minTotal")}</span>
               </div>
               <div className="flex items-center gap-0.5 text-xs font-bold text-teal-700">
-                <DollarSign size={11} />
                 {totalPrice}
               </div>
             </div>
@@ -426,19 +416,19 @@ function ServiceBookingDropdown({ services, selected, onToggle, disabled }: {
 function SpecialistBookingDropdown({ specialists, selected, onSelect, disabled }: {
   specialists: TSpecialist[]; selected: TSpecialist | null; onSelect: (s: TSpecialist) => void; disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   return (
     <>
       <BookingTrigger ref={btnRef} icon={<User2 size={14} />}
-        label={selected ? selected.name : "Specialist"}
+        label={selected ? selected.name : t("dashboard.booking.form.specialist")}
         done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => onSelect(null as any) : undefined} />
       {open && createPortal(
-        // FIX: added transform: translateX(-50%) to center under trigger
         <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: pos.width, zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl py-1.5 overflow-hidden">
           {specialists.length === 0
-            ? <p className="px-4 py-3 text-sm text-gray-400">No specialists for selected services</p>
+            ? <p className="px-4 py-3 text-sm text-gray-400">{t("dashboard.booking.form.noSpecialists")}</p>
             : specialists.map(sp => (
               <button key={sp._id} onClick={() => { onSelect(sp); setOpen(false); }}
                 className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 transition-colors ${selected?._id === sp._id ? "bg-teal-700 text-white" : "text-gray-700 hover:bg-gray-50"}`}>
@@ -457,6 +447,7 @@ function SpecialistBookingDropdown({ specialists, selected, onSelect, disabled }
 function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
   selected: string | null; onSelect: (ds: string) => void; workingHours: any; disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   const [calDate, setCalDate] = useState(new Date());
   const today = new Date(new Date().setHours(0, 0, 0, 0));
@@ -464,10 +455,9 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
   const monthYearLabel = `${months[calDate.getMonth()]} ${calDate.getFullYear()}`;
   const changeMonth = (dir: number) => setCalDate(p => { const d = new Date(p); d.setMonth(p.getMonth() + dir); return d; });
 
-  // FIX: include weekday name for better readability e.g. "Mon, Mar 10"
   const displayLabel = selected
     ? new Date(selected + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
-    : "Date";
+    : t("dashboard.booking.form.date");
 
   return (
     <>
@@ -475,7 +465,6 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
         label={displayLabel} done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => { onSelect(null as any); } : undefined} />
       {open && createPortal(
-        // FIX: added transform: translateX(-50%) to center under trigger
         <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           <div className="rounded-2xl p-4 bg-teal-50 border-0">
@@ -510,12 +499,12 @@ function DateBookingDropdown({ selected, onSelect, workingHours, disabled }: {
           {selected && workingHours && (
             <div className="mx-3 mb-3 rounded-xl p-2.5 flex items-center gap-2 text-xs bg-teal-50 border border-teal-200 text-teal-700">
               <Clock className="h-3.5 w-3.5 flex-shrink-0 text-teal-700" />
-              <span className="font-semibold">Working Hours:</span>
+              <span className="font-semibold">{t("dashboard.booking.calendar.workingHours")}</span>
               <span className="text-teal-600">
                 {(() => {
                   const day = new Date(selected + "T00:00:00").getDay();
                   const s = workingHours.find((wh: any) => wh.dayOfWeek === day);
-                  if (!s?.isOpen) return "Closed";
+                  if (!s?.isOpen) return t("dashboard.booking.calendar.closed");
                   if (s.hasBreak && s.breakStart && s.breakEnd) return `${s.openTime} – ${s.breakStart}, ${s.breakEnd} – ${s.closeTime}`;
                   return `${s.openTime} – ${s.closeTime}`;
                 })()}
@@ -534,18 +523,18 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
   slots: TimeSlot[]; loading: boolean; error: string | null;
   services: TService[]; specialist: TSpecialist | null; date: string | null; disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const { open, setOpen, pos, btnRef, menuRef, openDropdown } = usePortalDropdown();
   const [customHour, setCustomHour] = useState("00");
   const [customMinute, setCustomMinute] = useState("00");
   const [customTimeError, setCustomTimeError] = useState("");
   const [validatingTime, setValidatingTime] = useState(false);
 
-  // FIX: show start–end range when selected, e.g. "10:00 – 10:45"
   const label = selected
     ? selected.endTime
       ? `${selected.startTime} – ${selected.endTime}`
       : selected.startTime
-    : "Time";
+    : t("dashboard.booking.form.time");
 
   const anyAllowsCustomTime = services.some(s => s.allowSpecificTimes);
 
@@ -565,7 +554,7 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
         setOpen(false);
       }
     } catch (err) {
-      setCustomTimeError(getErrorMessage(err, "This time is not available"));
+      setCustomTimeError(t("dashboard.booking.form.timeNotAvailable"));
     } finally {
       setValidatingTime(false);
     }
@@ -589,24 +578,23 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
         label={label} done={!!selected} locked={disabled} active={open} onClick={openDropdown}
         onClear={selected ? () => onSelect(null) : undefined} />
       {open && createPortal(
-        // FIX: added transform: translateX(-50%) to center under trigger
         <div ref={menuRef} style={{ position: "fixed", top: pos.top, left: pos.left, transform: "translateX(-50%)", minWidth: Math.max(pos.width, 300), zIndex: 9999 }}
           className="bg-white border border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           <div className="p-4">
             {loading ? (
               <div className="text-center py-6">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-700 mx-auto" />
-                <p className="mt-2 text-sm text-gray-500">Loading available times...</p>
+                <p className="mt-2 text-sm text-gray-500">{t("dashboard.booking.mobileWizard.loadingTimes")}</p>
               </div>
             ) : error && !slots.length ? (
               <div className="text-center py-3 rounded-2xl text-sm bg-amber-50 border border-amber-200 text-amber-700">{error}</div>
             ) : (
               <>
                 <div className="rounded-2xl p-4 bg-gray-50 border border-teal-100">
-                  <h4 className="text-sm font-semibold mb-3 text-teal-700">Available Time Slots</h4>
+                  <h4 className="text-sm font-semibold mb-3 text-teal-700">{t("dashboard.booking.mobileWizard.availableSlots")}</h4>
                   <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-green-50 border border-green-300" /> Available</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-red-50 border border-red-200" /> Booked</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-green-50 border border-green-300" /> {t("dashboard.booking.timeSlots.available")}</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-red-50 border border-red-200" /> {t("dashboard.booking.timeSlots.booked")}</span>
                   </div>
                   <div className="max-h-56 overflow-y-auto pr-1">
                     <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
@@ -627,7 +615,7 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
                 </div>
                 {anyAllowsCustomTime && (
                   <div className="rounded-2xl p-5 mt-3 bg-teal-50 border border-teal-100">
-                    <p className="text-center text-sm mb-4 text-teal-600">— or enter a custom time —</p>
+                    <p className="text-center text-sm mb-4 text-teal-600">— {t("dashboard.booking.form.customTime")} —</p>
                     <div className="flex items-center justify-center gap-4 mb-4">
                       <ScrollPicker length={24} value={customHour} onChange={setCustomHour} />
                       <span className="text-3xl font-bold text-teal-700/50">:</span>
@@ -640,12 +628,12 @@ function TimeBookingDropdown({ selected, onSelect, slots, loading, error, servic
                       <div className="text-center">
                         <button onClick={validateCustomTime} disabled={validatingTime}
                           className="bg-teal-700 text-white rounded-full py-3 px-8 text-sm font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity">
-                          {validatingTime ? "Validating..." : "Set This Time"}
+                          {validatingTime ? t("dashboard.booking.form.validating") : t("dashboard.booking.form.setTime")}
                         </button>
                       </div>
                     )}
                     {selected?.isCustomTime && !customTimeError && (
-                      <p className="mt-3 p-3 rounded-lg text-sm bg-green-50 border border-green-300 text-green-800">✓ Custom time set: <strong>{selected.startTime}</strong></p>
+                      <p className="mt-3 p-3 rounded-lg text-sm bg-green-50 border border-green-300 text-green-800">✓ {t("dashboard.booking.form.timeSet")} <strong>{selected.startTime}</strong></p>
                     )}
                     {customTimeError && (
                       <p className="mt-3 p-3 rounded-lg text-sm bg-red-50 border border-red-200 text-red-600">⚠️ {customTimeError}</p>
@@ -675,6 +663,7 @@ interface MobileWizardProps {
 }
 
 function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps) {
+  const { t } = useTranslation();
   const branches = business.branches ?? [];
   const allServices = business.services ?? [];
   const allSpecialists = business.specialists ?? [];
@@ -754,9 +743,9 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
         date: bookDate,
       });
       setSlots((data.slots ?? []) as TimeSlot[]);
-      if (!data.slots?.length) setSlotsError("No slots available for this date.");
+      if (!data.slots?.length) setSlotsError(t("dashboard.booking.mobileWizard.noSlots"));
     } catch (err) {
-      setSlotsError(getErrorMessage(err, "Failed to load available slots"));
+      setSlotsError(t("dashboard.booking.mobileWizard.failedToLoad"));
     } finally {
       setLoadingSlots(false);
     }
@@ -780,7 +769,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
         setBookTime({ startTime: res.startTime as string, endTime: res.endTime as string, isAvailable: true, isCustomTime: true, duration: res.duration as number });
       }
     } catch (err) {
-      setCustomTimeError(getErrorMessage(err, "This time is not available"));
+      setCustomTimeError(t("dashboard.booking.form.timeNotAvailable"));
     } finally {
       setValidatingTime(false);
     }
@@ -798,7 +787,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
         specialistId: bookSpecialist._id,
         bookingDate: bookDate,
         startTime: bookTime.startTime,
-        customerInfo: { firstName: "Admin", lastName: "Admin", email: "admin@admin.com", phone: "" },
+        customerInfo: { firstName: "Admin", lastName: "Admin", email: "admin@admin.com", phone: business.phone },
         notes: "",
         isGuestBooking: false,
       });
@@ -806,9 +795,10 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
       onBooked();
       setTimeout(() => { onClose(); }, 1800);
     } catch (err) {
-      console.error("Booking failed:", getErrorMessage(err, "Failed to create booking"));
+      console.error("Booking failed:", getErrorMessage(err, t("dashboard.booking.errors.bookingFailed")));
     } finally {
       setConfirming(false);
+      onClose()
     }
   };
 
@@ -820,9 +810,12 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
   const totalPrice = bookServices.reduce((a, s) => a + (s.price?.amount ?? 0), 0);
 
   const STEP_LABELS: Record<WizardStep, string> = {
-    branch: "Choose Branch", service: "Choose Services",
-    specialist: "Choose Specialist", date: "Pick a Date",
-    time: "Pick a Time", confirm: "Confirm Booking",
+    branch: t("dashboard.booking.mobileWizard.chooseBranch"),
+    service: t("dashboard.booking.mobileWizard.chooseServices"),
+    specialist: t("dashboard.booking.mobileWizard.chooseSpecialist"),
+    date: t("dashboard.booking.mobileWizard.pickDate"),
+    time: t("dashboard.booking.mobileWizard.pickTime"),
+    confirm: t("dashboard.booking.mobileWizard.confirmBooking"),
   };
 
   const STEP_ICONS: Record<WizardStep, React.ReactNode> = {
@@ -855,11 +848,11 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
               <h3 className="font-semibold text-gray-900">{STEP_LABELS[currentStep]}</h3>
               {currentStep === "service" && bookServices.length > 0 && (
                 <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-semibold">
-                  {bookServices.length} selected
+                  {t("dashboard.booking.labels.servicesSelected", { count: bookServices.length })}
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">Step {stepIdx + 1} of {steps.length}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t("dashboard.booking.mobileWizard.step")} {stepIdx + 1} {t("dashboard.booking.mobileWizard.of")} {steps.length}</p>
           </div>
           <button onClick={onClose}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors flex-shrink-0">
@@ -871,12 +864,12 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
         {stepIdx > 0 && (
           <div className="flex gap-2 px-5 pb-3 overflow-x-auto flex-shrink-0 scrollbar-hide">
             {bookBranch && hasBranchChoice && (
-              <Chip icon={<Building2 size={11} />} label={bookBranch.address?.street || "Branch"} onClick={() => setStepIdx(steps.indexOf("branch"))} />
+              <Chip icon={<Building2 size={11} />} label={bookBranch.address?.street || t("dashboard.booking.form.branch")} onClick={() => setStepIdx(steps.indexOf("branch"))} />
             )}
             {bookServices.length > 0 && (
               <Chip
                 icon={<Briefcase size={11} />}
-                label={bookServices.length === 1 ? bookServices[0].name : `${bookServices.length} services`}
+                label={bookServices.length === 1 ? bookServices[0].name : t("dashboard.booking.form.selectedServices", { count: bookServices.length })}
                 onClick={() => setStepIdx(steps.indexOf("service"))}
               />
             )}
@@ -884,13 +877,11 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
               <Chip icon={<User2 size={11} />} label={bookSpecialist.name} onClick={() => setStepIdx(steps.indexOf("specialist"))} />
             )}
             {bookDate && (
-              // FIX: include weekday in chip label
               <Chip icon={<CalendarDays size={11} />}
                 label={new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                 onClick={() => setStepIdx(steps.indexOf("date"))} />
             )}
             {bookTime && (
-              // FIX: show time range in chip
               <Chip icon={<Clock size={11} />}
                 label={bookTime.endTime ? `${bookTime.startTime} – ${bookTime.endTime}` : bookTime.startTime}
                 onClick={() => setStepIdx(steps.indexOf("time"))} />
@@ -913,7 +904,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                     <div>
                       <div className="font-semibold text-gray-900 flex items-center gap-2">
                         {b.address?.street}
-                        {b.isBaseBranch && <span className="text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-bold">Main</span>}
+                        {b.isBaseBranch && <span className="text-[10px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-bold">{t("dashboard.booking.mobileWizard.main")}</span>}
                       </div>
                       <div className="text-sm text-gray-500 mt-0.5">{b.address?.city}</div>
                     </div>
@@ -928,7 +919,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
           {currentStep === "service" && (
             <div className="space-y-3">
               {branchServices.length === 0 && (
-                <p className="text-center text-gray-400 text-sm py-8">No services available at this branch.</p>
+                <p className="text-center text-gray-400 text-sm py-8">{t("dashboard.booking.mobileWizard.noServicesAvailable")}</p>
               )}
               {(branchServices as TService[]).map(s => {
                 const isSelected = bookServices.some(sel => sel._id === s._id);
@@ -944,7 +935,6 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className={`font-semibold ${isSelected ? "text-teal-800" : "text-gray-900"}`}>{s.name}</div>
-                      {/* FIX: space between number and unit */}
                       <div className="flex items-center gap-3 text-sm text-gray-500 mt-0.5">
                         <span className="flex items-center gap-1"><Clock size={12} />{s.duration} min</span>
                         <span className="flex items-center gap-1"><DollarSign size={12} />{s.price?.amount}</span>
@@ -958,9 +948,8 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
               {bookServices.length > 0 && (
                 <div className="sticky bottom-0 mt-2 p-4 bg-teal-50 border border-teal-200 rounded-2xl">
                   <div className="flex items-center justify-between mb-2">
-                    {/* FIX: friendlier summary label */}
                     <p className="text-xs font-bold text-teal-700 uppercase tracking-wide">
-                      {bookServices.length} service{bookServices.length > 1 ? "s" : ""} selected
+                      {t("dashboard.booking.labels.servicesSelected", { count: bookServices.length })}
                     </p>
                     <div className="flex items-center gap-3 text-xs font-semibold text-teal-700">
                       <span className="flex items-center gap-1"><Clock size={11} />{totalDuration} min</span>
@@ -988,10 +977,10 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
             <div className="space-y-3">
               {filteredSpecialists.length === 0 && (
                 <div className="text-center text-gray-400 text-sm py-8 px-4">
-                  <p>No specialists available for all selected services.</p>
+                  <p>{t("dashboard.booking.mobileWizard.noSpecialistsAvailable")}</p>
                   <button onClick={() => setStepIdx(steps.indexOf("service"))}
                     className="mt-2 text-teal-700 text-xs font-semibold underline">
-                    Adjust services
+                    {t("dashboard.booking.mobileWizard.adjustServices")}
                   </button>
                 </div>
               )}
@@ -1003,7 +992,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                     <div>
                       <span className="font-semibold text-gray-900">{sp.name}</span>
                       {bookServices.length > 1 && (
-                        <p className="text-xs text-gray-400 mt-0.5">Can perform all {bookServices.length} selected services</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{t("dashboard.booking.mobileWizard.canPerform", { count: bookServices.length })}</p>
                       )}
                     </div>
                   </div>
@@ -1050,10 +1039,9 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                 </div>
               </div>
               {bookDate && (
-                // FIX: full readable date e.g. "Monday, March 10, 2025"
                 <div className="mt-3 flex items-center gap-2 px-4 py-3 bg-teal-50 rounded-xl border border-teal-200 text-sm text-teal-700">
                   <Check size={16} className="flex-shrink-0" />
-                  <span>Selected: <strong>{new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</strong></span>
+                  <span>{t("dashboard.booking.mobileWizard.selected")} <strong>{new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</strong></span>
                 </div>
               )}
             </div>
@@ -1065,17 +1053,17 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
               {loadingSlots ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-700" />
-                  <p className="mt-3 text-sm text-gray-500">Loading available times...</p>
+                  <p className="mt-3 text-sm text-gray-500">{t("dashboard.booking.mobileWizard.loadingTimes")}</p>
                 </div>
               ) : slotsError && !slots.length ? (
                 <div className="mt-2 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 text-sm text-center">{slotsError}</div>
               ) : (
                 <>
                   <div className="rounded-2xl p-4 bg-gray-50 border border-teal-100">
-                    <h4 className="text-sm font-bold text-teal-700 mb-3">Available Slots</h4>
+                    <h4 className="text-sm font-bold text-teal-700 mb-3">{t("dashboard.booking.mobileWizard.availableSlots")}</h4>
                     <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-green-50 border border-green-300" /> Available</span>
-                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-red-50 border border-red-200" /> Booked</span>
+                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-green-50 border border-green-300" /> {t("dashboard.booking.timeSlots.available")}</span>
+                      <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block bg-red-50 border border-red-200" /> {t("dashboard.booking.timeSlots.booked")}</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                       {slots.map((slot, idx) => {
@@ -1097,7 +1085,7 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
 
                   {anyAllowsCustomTime && (
                     <div className="mt-4 rounded-2xl p-5 bg-teal-50 border border-teal-100">
-                      <p className="text-center text-sm font-medium text-teal-600 mb-4">— or enter a custom time —</p>
+                      <p className="text-center text-sm font-medium text-teal-600 mb-4">— {t("dashboard.booking.form.customTime")} —</p>
                       <div className="flex items-center justify-center gap-4 mb-4">
                         <ScrollPicker length={24} value={customHour} onChange={setCustomHour} />
                         <span className="text-3xl font-bold text-teal-700/50">:</span>
@@ -1105,11 +1093,11 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                       </div>
                       <button onClick={validateCustomTime} disabled={validatingTime}
                         className="w-full py-3 bg-teal-700 text-white rounded-xl font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity">
-                        {validatingTime ? "Validating..." : `Set ${customHour}:${customMinute}`}
+                        {validatingTime ? t("dashboard.booking.form.validating") : `${t("dashboard.booking.form.setTime")} ${customHour}:${customMinute}`}
                       </button>
                       {customTimeError && <p className="mt-2 text-sm text-red-600 text-center">{customTimeError}</p>}
                       {bookTime?.isCustomTime && !customTimeError && (
-                        <p className="mt-2 text-sm text-green-700 text-center font-medium">✓ Custom time: {bookTime.startTime}</p>
+                        <p className="mt-2 text-sm text-green-700 text-center font-medium">✓ {t("dashboard.booking.form.timeSet")} {bookTime.startTime}</p>
                       )}
                     </div>
                   )}
@@ -1126,32 +1114,29 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
                   <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center">
                     <CheckCircle2 size={36} className="text-teal-700" />
                   </div>
-                  <p className="text-lg font-bold text-gray-900">Booking Confirmed!</p>
-                  <p className="text-sm text-gray-500">Closing...</p>
+                  <p className="text-lg font-bold text-gray-900">{t("dashboard.booking.mobileWizard.bookingConfirmed")}</p>
+                  <p className="text-sm text-gray-500">{t("dashboard.booking.mobileWizard.closing")}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-500 mb-4">Review your booking details before confirming.</p>
-                  <SummaryRow icon={<Building2 size={16} />} label="Branch" value={bookBranch?.address?.street || "—"} sub={bookBranch?.address?.city} />
+                  <p className="text-sm text-gray-500 mb-4">{t("dashboard.booking.mobileWizard.reviewDetails")}</p>
+                  <SummaryRow icon={<Building2 size={16} />} label={t("dashboard.booking.form.branch")} value={bookBranch?.address?.street || "—"} sub={bookBranch?.address?.city} />
                   <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl">
                     <div className="w-9 h-9 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0 text-teal-700">
                       <Briefcase size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-400 font-medium">Services</p>
+                      <p className="text-xs text-gray-400 font-medium">{t("dashboard.booking.summary.services")}</p>
                       {bookServices.map(s => (
                         <p key={s._id} className="text-sm font-semibold text-gray-900">{s.name}</p>
                       ))}
-                      {/* FIX: space between number and unit */}
-                      <p className="text-xs text-gray-400 mt-1">{totalDuration} min total · ${totalPrice}</p>
+                      <p className="text-xs text-gray-400 mt-1">{t("dashboard.booking.summary.totalDuration", { duration: totalDuration })} · ${totalPrice}</p>
                     </div>
                   </div>
-                  <SummaryRow icon={<User2 size={16} />} label="Specialist" value={bookSpecialist?.name || "—"} />
-                  {/* FIX: full readable date */}
-                  <SummaryRow icon={<CalendarDays size={16} />} label="Date"
+                  <SummaryRow icon={<User2 size={16} />} label={t("dashboard.booking.form.specialist")} value={bookSpecialist?.name || "—"} />
+                  <SummaryRow icon={<CalendarDays size={16} />} label={t("dashboard.booking.form.date")}
                     value={bookDate ? new Date(bookDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) : "—"} />
-                  {/* FIX: show start – end time */}
-                  <SummaryRow icon={<Clock size={16} />} label="Time"
+                  <SummaryRow icon={<Clock size={16} />} label={t("dashboard.booking.form.time")}
                     value={bookTime ? `${bookTime.startTime} – ${bookTime.endTime}` : "—"} />
                 </div>
               )}
@@ -1166,24 +1151,29 @@ function MobileBookingWizard({ business, onClose, onBooked }: MobileWizardProps)
               <button onClick={handleConfirm} disabled={confirming}
                 className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-opacity active:scale-[0.98]">
                 {confirming ? <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Zap size={18} />}
-                {confirming ? "Confirming..." : "Confirm Booking"}
+                {confirming ? t("dashboard.booking.mobileWizard.confirming") : t("dashboard.booking.mobileWizard.confirm")}
               </button>
             ) : currentStep === "service" ? (
               <button onClick={goNext} disabled={bookServices.length === 0}
                 className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:opacity-90 transition-opacity active:scale-[0.98]">
-                Continue with {bookServices.length > 0 ? `${bookServices.length} service${bookServices.length > 1 ? "s" : ""}` : "services"} <ChevronRight size={18} />
+                {t("dashboard.booking.mobileWizard.continueWith")} {bookServices.length > 0 ? `${bookServices.length} ${bookServices.length > 1 ? t("dashboard.booking.form.services") : t("dashboard.booking.form.service")}` : t("dashboard.booking.form.services")} <ChevronRight size={18} />
               </button>
             ) : currentStep === "date" ? (
               <button onClick={goNext} disabled={!bookDate}
                 className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:opacity-90 transition-opacity active:scale-[0.98]">
-                Continue <ChevronRight size={18} />
+                {t("dashboard.booking.mobileWizard.continue")} <ChevronRight size={18} />
               </button>
             ) : currentStep === "time" ? (
               <button onClick={goNext} disabled={!bookTime}
                 className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 disabled:opacity-40 hover:opacity-90 transition-opacity active:scale-[0.98]">
-                Review Booking <ChevronRight size={18} />
+                {t("dashboard.booking.mobileWizard.review")} <ChevronRight size={18} />
               </button>
-            ) : null}
+            ) : currentStep !== "confirm" && (
+              <button onClick={goNext}
+                className="w-full py-4 bg-teal-700 text-white rounded-2xl text-base font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity active:scale-[0.98]">
+                {t("dashboard.booking.mobileWizard.continue")} <ChevronRight size={18} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1236,6 +1226,7 @@ export interface QuickBookingBarProps {
 export function QuickBookingBar({
   business, branchOptions, serviceOptions, specialistOptions, onFilterChange, onBooked,
 }: QuickBookingBarProps) {
+  const { t } = useTranslation();
   const [bookingMode, setBookingMode] = useState(false);
   const [mobileWizardOpen, setMobileWizardOpen] = useState(false);
 
@@ -1297,9 +1288,9 @@ export function QuickBookingBar({
         date: bookDate,
       });
       setSlots((data.slots ?? []) as TimeSlot[]);
-      if (!data.slots?.length) setSlotsError("No time slots available for this date. Please try another date.");
+      if (!data.slots?.length) setSlotsError(t("dashboard.booking.errors.noAvailableSlots"));
     } catch (err) {
-      setSlotsError(getErrorMessage(err, "Failed to load available slots"));
+      setSlotsError(t("dashboard.booking.errors.failedToLoadSlots"));
     } finally {
       setLoadingSlots(false);
     }
@@ -1329,7 +1320,7 @@ export function QuickBookingBar({
         serviceIds: bookServices.map(s => s._id),
         specialistId: bookSpecialist._id,
         bookingDate: bookDate, startTime: bookTime.startTime,
-        customerInfo: { firstName: "Admin", lastName: "Admin", email: "admin@admin.com", phone: "" },
+        customerInfo: { firstName: "Admin", lastName: "Admin", email: "admin@admin.com", phone: business.phone },
         notes: "", isGuestBooking: false,
       });
       setLastBooked(booking);
@@ -1339,9 +1330,10 @@ export function QuickBookingBar({
       setSlots([]); setSlotsError(null);
       setTimeout(() => setLastBooked(null), 3000);
     } catch (err) {
-      console.error("Booking failed:", getErrorMessage(err, "Failed to create booking"));
+      console.error("Booking failed:", getErrorMessage(err, t("dashboard.booking.errors.bookingFailed")));
     } finally {
       setConfirming(false);
+      setBookingMode(false)
     }
   };
 
@@ -1354,11 +1346,11 @@ export function QuickBookingBar({
         <div className="flex justify-between items-center flex-1 min-w-0">
           {!bookingMode ? (
             <>
-              <FilterDropdown icon={<Building2 size={14} />} placeholder="All Branches" options={branchOptions} selected={filterBranch} onSelect={setFilterBranch} />
+              <FilterDropdown icon={<Building2 size={14} />} placeholder={t("dashboard.booking.filters.allBranches")} options={branchOptions} selected={filterBranch} onSelect={setFilterBranch} />
               <div className="w-px h-5 bg-gray-200 flex-shrink-0" />
-              <FilterDropdown icon={<Briefcase size={14} />} placeholder="All Services" options={serviceOptions} selected={filterService} onSelect={setFilterService} />
+              <FilterDropdown icon={<Briefcase size={14} />} placeholder={t("dashboard.booking.filters.allServices")} options={serviceOptions} selected={filterService} onSelect={setFilterService} />
               <div className="w-px h-5 bg-gray-200 flex-shrink-0" />
-              <FilterDropdown icon={<User2 size={14} />} placeholder="All Specialists" options={specialistOptions} selected={filterSpecialist} onSelect={setFilterSpecialist} />
+              <FilterDropdown icon={<User2 size={14} />} placeholder={t("dashboard.booking.filters.allSpecialists")} options={specialistOptions} selected={filterSpecialist} onSelect={setFilterSpecialist} />
               <div className="w-px h-5 bg-gray-200 flex-shrink-0" />
               <div className="bg-teal-700 rounded-full my-1 ml-1 flex-shrink-0">
                 <TimeRangeFilter timeRange={timeRange} onChange={(s, e) => setTimeRange({ start: s, end: e })} />
@@ -1393,12 +1385,12 @@ export function QuickBookingBar({
             <button onClick={handleConfirm} disabled={!bookingReady || confirming}
               className={`flex items-center gap-2 mx-1.5 px-4 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${bookingReady && !confirming ? "bg-teal-700 text-white hover:opacity-90" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
               {confirming ? <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-500 animate-spin" /> : <Zap size={14} />}
-              Confirm
+              {t("dashboard.booking.bookingBar.confirm")}
             </button>
           )}
           <button onClick={() => setBookingMode(p => !p)}
             className={`flex items-center gap-2 mr-0.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${bookingMode ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-teal-700 text-white hover:opacity-90 shadow-md"}`}>
-            {bookingMode ? <><X size={14} /> Cancel</> : <><Zap size={14} /> Book Now</>}
+            {bookingMode ? <><X size={14} /> {t("dashboard.booking.bookingBar.cancel")}</> : <><Zap size={14} /> {t("dashboard.booking.bookingBar.bookNow")}</>}
           </button>
         </div>
       </div>
@@ -1408,7 +1400,7 @@ export function QuickBookingBar({
         onClick={() => setMobileWizardOpen(true)}
         className="md:hidden flex items-center justify-center gap-2 w-full px-5 py-3 bg-teal-700 text-white rounded-2xl text-sm font-bold shadow-md hover:opacity-90 transition-opacity active:scale-[0.98]">
         <Zap size={16} />
-        Book Now
+        {t("dashboard.booking.bookingBar.bookNow")}
       </button>
 
       {mobileWizardOpen && (
@@ -1423,8 +1415,8 @@ export function QuickBookingBar({
         <div className="fixed bottom-6 right-6 bg-teal-700 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 z-[100]">
           <CheckCircle2 size={18} className="text-emerald-400 flex-shrink-0" />
           <div>
-            <p className="text-sm font-bold">Booking confirmed!</p>
-            <p className="text-xs text-white/60">Admin booking created successfully</p>
+            <p className="text-sm font-bold">{t("dashboard.booking.bookingBar.bookingConfirmed")}</p>
+            <p className="text-xs text-white/60">{t("dashboard.booking.bookingBar.successMessage")}</p>
           </div>
         </div>
       )}

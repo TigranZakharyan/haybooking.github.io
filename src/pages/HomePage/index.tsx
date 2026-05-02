@@ -15,33 +15,33 @@ const BookingModal = lazy(() => import("@/components/BookingModal"));
 const TOP_FILTERS = [
   {
     value: "health",
-    label: "Health",
-    icon: "/healthcare.png"
+    translationKey: "homePage.categories.health",
+    icon: "/healthcare.png",
   },
   {
     value: "beauty",
-    label: "Beauty",
-    icon: "/products.png"
+    translationKey: "homePage.categories.beauty",
+    icon: "/products.png",
   },
   {
     value: "home",
-    label: "Home",
-    icon: "/house.png"
+    translationKey: "homePage.categories.home",
+    icon: "/house.png",
   },
   {
     value: "tourism",
-    label: "Tourism",
-    icon: "/tour-guide.png"
+    translationKey: "homePage.categories.tourism",
+    icon: "/tour-guide.png",
   },
   {
     value: "car",
-    label: "Car",
-    icon: "/car.png"
+    translationKey: "homePage.categories.car",
+    icon: "/car.png",
   },
   {
     value: "photography",
-    label: "Photography",
-    icon: "/photo.png"
+    translationKey: "homePage.categories.photography",
+    icon: "/photo.png",
   },
 ];
 
@@ -130,9 +130,10 @@ export function HomePage() {
   return (
     <>
       <Container>
+      <div className="w-full h-full absolute -z-10 bg-[url(/home-bg.jpg)] opacity-[.60] top-0 left-0" />
         {/* ── Category icon filters ── */}
         <div className="flex flex-wrap justify-center gap-4 sm:gap-6 py-6">
-          {TOP_FILTERS.map(({ label, value, icon }) => {
+          {TOP_FILTERS.map(({ label, value, translationKey, icon }) => {
             const isActive = activeCategory === value;
             return (
               <button
@@ -149,9 +150,9 @@ export function HomePage() {
                       : "",
                   ].join(" ")}
                 >
-                  <img src={icon} alt="" className="" />
+                  <img src={icon} alt={t(translationKey)} className="w-10 h-10 object-contain" />
                 </span>
-                
+
                 <span
                   className={[
                     "text-secondary font-medium tracking-wide transition-colors duration-200",
@@ -160,7 +161,7 @@ export function HomePage() {
                       : "text-gray-500 group-hover:text-primary",
                   ].join(" ")}
                 >
-                  {label}
+                  {t(translationKey)}
                 </span>
               </button>
             );
@@ -214,7 +215,7 @@ export function HomePage() {
                 variant="primary"
                 options={[
                   { value: "all", label: t("homePage.allTypes") },
-                  ...types,
+                  ...types.map(type => ({ ...type, label: t(`businessTypes.${type.value}`, type.label) })),
                 ]}
                 placeholder={t("homePage.allTypes")}
                 value={filters.type}
@@ -246,19 +247,33 @@ export function HomePage() {
               </p>
             </div>
           ) : (
-            businesses.map((business) => (
-              <div key={business.id} className="w-full max-w-xs">
-                <ServiceCard
-                  title={business.businessName}
-                  logo={business.logo}
-                  specialists={business.specialists?.length || 0}
-                  services={business.services?.length || 0}
-                  priceFrom={business.services?.[0]?.price?.amount || 0}
-                  buttonText={t("dashboard.bookNow")}
-                  onButtonClick={() => handleBookingClick(business)}
-                />
-              </div>
-            ))
+            businesses.map((business) => {
+              const prices = business.services
+                ?.map((s) => s.price)
+                ?.filter((p) => p && typeof p.amount === "number");
+
+              const lowestPrice = prices?.length
+                ? prices.reduce(
+                    (min, p) => (p.amount < min.amount ? p : min),
+                    prices[0],
+                  )
+                : null;
+
+              return (
+                <div key={business.id} className="w-full max-w-xs">
+                  <ServiceCard
+                    title={business.businessName}
+                    logo={business.logo}
+                    specialists={business.specialists?.length || 0}
+                    services={business.services?.length || 0}
+                    priceFrom={lowestPrice?.amount || 0}
+                    currency={lowestPrice?.currency || ""}
+                    buttonText={t("dashboard.bookNow")}
+                    onButtonClick={() => handleBookingClick(business)}
+                  />
+                </div>
+              );
+            })
           )}
         </div>
 

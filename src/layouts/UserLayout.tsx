@@ -20,7 +20,7 @@ export function UserLayout() {
   const underlineClass = `absolute left-0 -bottom-1 w-0 h-0.5 ${bgColor} transition-all duration-300 group-hover:w-full`;
 
   return (
-    <div className="min-h-full h-auto grid grid-rows-[auto_1fr_auto] bg-gray-50">
+    <div className="min-h-full h-auto grid grid-rows-[auto_1fr_auto]">
       <header className="py-8 relative z-2">
         <Container className="flex justify-between items-center">
           <Link to="/" className="flex items-center justify-center gap-3">

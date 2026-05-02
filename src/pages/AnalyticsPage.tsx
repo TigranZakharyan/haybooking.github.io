@@ -10,6 +10,7 @@ import {
 import { businessService, bookingService } from "@/services/api";
 import { Button, SectionTitle, Select } from "@/components";
 import { useTranslation } from "react-i18next";
+import type { TBusiness } from "@/types";
 
 interface Price { amount: number; currency?: string; }
 interface Service { name: string; }
@@ -23,7 +24,6 @@ interface Booking {
   service?: Service;
   specialist?: Specialist;
 }
-interface Business { businessName: string; }
 interface DailyDataEntry {
   date: string; bookings: number; revenue: number;
   completed: number; confirmed: number; pending: number; cancelled: number;
@@ -35,7 +35,7 @@ interface RadialDataEntry { name: string; value: number; fill: string; }
 
 export const AnalyticsPage = () => {
   const { t } = useTranslation();
-  const [business, setBusiness] = useState<Business | null>(null);
+  const [business, setBusiness] = useState<TBusiness | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [timeRange, setTimeRange] = useState<string>("30");
@@ -251,7 +251,7 @@ export const AnalyticsPage = () => {
 
         <KpiCard
           label={t("analytics.revenue")}
-          value={`$${totalRevenue.toFixed(0)}`}
+          value={`${totalRevenue.toFixed(0)} ${business?.services?.[0].price.currency}`}
           sub={
             <p className="text-text-body text-xs mt-1">
               ${(totalRevenue / Math.max(totalBookings, 1)).toFixed(0)} {t("analytics.avgPerBooking")}

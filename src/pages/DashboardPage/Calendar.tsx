@@ -10,7 +10,13 @@ type BookingCalendarProps = {
   showShowAll?: boolean;
 };
 
-export function Calendar({ selectedDate, onDateSelect, getBookingCount, showGoToToday, showShowAll }: BookingCalendarProps) {
+export function Calendar({
+  selectedDate,
+  onDateSelect,
+  getBookingCount,
+  showGoToToday,
+  showShowAll,
+}: BookingCalendarProps) {
   const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -25,15 +31,24 @@ export function Calendar({ selectedDate, onDateSelect, getBookingCount, showGoTo
 
   const goToPrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const goToNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
-  const goToToday = () => { const today = new Date(); setCurrentMonth(today); onDateSelect(today); };
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentMonth(today);
+    onDateSelect(today);
+  };
   const showAllBookings = () => onDateSelect(null);
 
   const today = new Date();
   const isToday = (date: Date) => date.toDateString() === today.toDateString();
 
   const weekdays = [
-    t("calendar.weekdays.mon"), t("calendar.weekdays.tue"), t("calendar.weekdays.wed"),
-    t("calendar.weekdays.thu"), t("calendar.weekdays.fri"), t("calendar.weekdays.sat"), t("calendar.weekdays.sun"),
+    t("calendar.weekdays.mon"),
+    t("calendar.weekdays.tue"),
+    t("calendar.weekdays.wed"),
+    t("calendar.weekdays.thu"),
+    t("calendar.weekdays.fri"),
+    t("calendar.weekdays.sat"),
+    t("calendar.weekdays.sun"),
   ];
 
   const days = [];
@@ -46,7 +61,8 @@ export function Calendar({ selectedDate, onDateSelect, getBookingCount, showGoTo
     } else {
       const date = new Date(year, month, dayNumber);
       const count = getBookingCount(date);
-      const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+      const isSelected =
+        selectedDate && date.toDateString() === selectedDate.toDateString();
       const todayCell = isToday(date);
 
       days.push(
@@ -56,17 +72,21 @@ export function Calendar({ selectedDate, onDateSelect, getBookingCount, showGoTo
             className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150
               ${isSelected ? "bg-primary text-white shadow-md" : todayCell ? "bg-rose-50 ring-1 ring-rose-200" : "hover:bg-gray-50"}`}
           >
-            <span className={`text-base font-bold leading-none ${isSelected ? "text-white" : todayCell ? "text-primary" : "text-gray-800"}`}>
+            <span
+              className={`text-base font-bold leading-none ${isSelected ? "text-white" : todayCell ? "text-primary" : "text-gray-800"}`}
+            >
               {dayNumber}
             </span>
             {count > 0 && (
-              <span className={`absolute left-1/2 -translate-x-1/2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none
-                ${isSelected ? "bg-white text-primary -bottom-2" : "text-primary -bottom-1"}`}>
+              <span
+                className={`absolute left-1/2 -translate-x-1/2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[10px] font-bold leading-none
+                ${isSelected ? "bg-white text-primary -bottom-2" : "text-primary -bottom-1"}`}
+              >
                 {count}
               </span>
             )}
           </button>
-        </div>
+        </div>,
       );
     }
   }
@@ -74,16 +94,33 @@ export function Calendar({ selectedDate, onDateSelect, getBookingCount, showGoTo
   return (
     <div className="w-full max-w-md bg-transparent rounded-2xl shadow-sm border border-gray-100 p-5 font-sans">
       <div className="flex items-center justify-between mb-5">
-        <button onClick={goToPrevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition hover:text-gray-800">←</button>
+        <button
+          onClick={goToPrevMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition hover:text-gray-800"
+        >
+          ←
+        </button>
         <h2 className="font-semibold text-base tracking-wide">
-          {currentMonth.toLocaleString("default", { month: "long" })} {year}
+          {t(
+            `calendar.months.${currentMonth
+              .toLocaleString("default", { month: "long" })
+              .toLowerCase()}`,
+          )}{" "}
+          {year}
         </h2>
-        <button onClick={goToNextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition hover:text-gray-800">→</button>
+        <button
+          onClick={goToNextMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition hover:text-gray-800"
+        >
+          →
+        </button>
       </div>
 
       <div className="grid grid-cols-7 text-center mb-1">
         {weekdays.map((day) => (
-          <div key={day} className="text-xs font-medium text-gray-400 py-1">{day}</div>
+          <div key={day} className="text-xs font-medium text-gray-400 py-1">
+            {day}
+          </div>
         ))}
       </div>
 
@@ -91,12 +128,20 @@ export function Calendar({ selectedDate, onDateSelect, getBookingCount, showGoTo
 
       <div className="flex justify-between gap-2 mt-4 pt-3 border-t border-gray-100">
         {showGoToToday && (
-          <Button variant="liberty" className="bg-primary flex-1" onClick={goToToday}>
+          <Button
+            variant="liberty"
+            className="bg-primary flex-1"
+            onClick={goToToday}
+          >
             {t("dashboard.today")}
           </Button>
         )}
         {showShowAll && (
-          <Button variant="liberty" className="bg-gray-600 flex-1" onClick={showAllBookings}>
+          <Button
+            variant="liberty"
+            className="bg-gray-600 flex-1"
+            onClick={showAllBookings}
+          >
             {t("dashboard.showAll")}
           </Button>
         )}

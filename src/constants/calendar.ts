@@ -1,6 +1,6 @@
-export const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const weekdays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 export const months = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
+  'january','february','march','ppril','may','june',
+  'july','august','september','october','november','december',
 ];

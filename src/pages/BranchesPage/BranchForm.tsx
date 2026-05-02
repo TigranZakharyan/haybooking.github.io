@@ -145,7 +145,7 @@ export const BranchForm = ({ form, setForm, editingBranch, saving, onSave, onCan
               {editingBranch ? t("branches.editBranchTitle") : t("branches.addBranchTitle")}
             </h2>
             <div className="w-full my-2">
-              <SwitchTabs tabs={tabs.map(tab => tab.id)} activeTab={activeTab} onChange={setActiveTab} />
+              <SwitchTabs tabs={tabs.map(tab => ({label: tab.label, value: tab.id }))} activeTab={activeTab} onChange={setActiveTab} />
             </div>
           </div>
           <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-lg transition-colors absolute right-0 top-0" aria-label={t("branches.close")}>
@@ -270,6 +270,7 @@ export const BranchForm = ({ form, setForm, editingBranch, saving, onSave, onCan
                         required={i === 0}
                         value={phone}
                         onChange={(value) => updatePhone(i, value)}
+                        placeholder={t("branches.phoneNumber")}
                       />
                     </div>
                     {form.phones.length > 1 && (
@@ -335,7 +336,7 @@ export const BranchForm = ({ form, setForm, editingBranch, saving, onSave, onCan
                       className={`border rounded-xl p-4 transition-all ${wh.isOpen ? "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm" : "border-gray-200 bg-gray-50"}`}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <span className="font-semibold text-gray-900">{weekdays[wh.dayOfWeek]}</span>
+                        <span className="font-semibold text-gray-900">{t(`calendar.weekdays.${weekdays[wh.dayOfWeek]}`)}</span>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"

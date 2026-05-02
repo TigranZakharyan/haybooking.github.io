@@ -43,11 +43,9 @@ export function SettingsPage() {
               <Avatar user={user} />
             </div>
             <SwitchTabs
-              tabs={tabs.map((e) => e.label)}
-              activeTab={tabs.find(e => e.value === activeTab)?.label as string}
-              onChange={(e: string) =>
-                setActiveTab(tabs.find(({ label }) => label === e)?.value as string)
-              }
+              tabs={tabs}
+              activeTab={activeTab}
+              onChange={setActiveTab}
             />
           </div>
           <div className="hidden lg:block flex-shrink-0">
