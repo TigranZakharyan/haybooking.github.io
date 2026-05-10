@@ -715,5 +715,28 @@
     "booking": {
       "bookNow": "Забронировать сейчас"
     }
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "markAllSeen": "Отметить все прочитанными",
+    "loading": "Загрузка…",
+    "empty": "Всё спокойно",
+    "loadMore": "Загрузить ещё",
+    "types": {
+      "new_booking": "Новое",
+      "booking_confirmed": "Подтверждено",
+      "booking_cancelled": "Отменено",
+      "booking_completed": "Завершено",
+      "no_show": "Неявка"
+    },
+    "groupLabels": {
+      "today": "Сегодня",
+      "yesterday": "Вчера"
+    },
+    "footerHint": "нажмите на непрочитанное чтобы скрыть",
+    "unread": "непрочитанное",
+    "unreads": "непрочитанных",
+    "closeAriaLabel": "Закрыть",
+    "deleteAriaLabel": "Удалить уведомление"
   }
 }

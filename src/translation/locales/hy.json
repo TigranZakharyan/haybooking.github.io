@@ -715,5 +715,28 @@
     "booking": {
       "bookNow": "Ամրագրել Հիմա"
     }
+  },
+  "notifications": {
+    "title": "Ծանուցումներ",
+    "markAllSeen": "Նշել բոլորը որպես կարդացված",
+    "loading": "Բեռնում…",
+    "empty": "Ամեն ինչ կարգին է",
+    "loadMore": "Բեռնել ավելին",
+    "types": {
+      "new_booking": "Նոր",
+      "booking_confirmed": "Հաստատված",
+      "booking_cancelled": "Չեղարկված",
+      "booking_completed": "Ավարտված",
+      "no_show": "Չներկայացում"
+    },
+    "groupLabels": {
+      "today": "Այսօր",
+      "yesterday": "Երեկ"
+    },
+    "footerHint": "հպեք չկարդացվածին՝ հեռացնելու համար",
+    "unread": "չկարդացված",
+    "unreads": "չկարդացված",
+    "closeAriaLabel": "Փակել",
+    "deleteAriaLabel": "Ջնջել ծանուցումը"
   }
 }

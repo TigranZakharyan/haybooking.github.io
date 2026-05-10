@@ -715,5 +715,26 @@
     "booking": {
       "bookNow": "Book Now"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllSeen": "Mark all read",
+    "loading": "Loading…",
+    "empty": "All caught up",
+    "loadMore": "Load more",
+    "types": {
+      "new_booking": "New",
+      "booking_confirmed": "Confirmed",
+      "booking_cancelled": "Cancelled",
+      "booking_completed": "Completed",
+      "no_show": "No-show"
+    },
+    "groupLabels": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "footerHint": "tap unread to dismiss",
+    "unreadCount": "unread",
+    "unreadCount_plural": "unreads"
   }
 }

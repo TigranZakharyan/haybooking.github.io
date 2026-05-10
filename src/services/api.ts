@@ -311,3 +311,41 @@ export const branchesService = {
     await api.delete(`/branches/${branchId}`);
   }
 }
+
+export const notificationService = {
+  getNotifications: async (params?: {
+    page?: number;
+    limit?: number;
+    branchId?: string;
+    lang?: "en" | "hy" | "ru";
+  }) => {
+    const response = await api.get("/notifications", { params });
+    return response.data as {
+      unseenCount: number;
+      notifications: any[];
+      pagination: { page: number; limit: number; total: number; pages: number };
+    };
+  },
+ 
+  // branchId is optional — only sent when a branch is selected in Filter
+  getUnseenCount: async (branchId?: string | null): Promise<{ unseenCount: number }> => {
+    const response = await api.get("/notifications/unseen-count", {
+      params: branchId ? { branchId } : undefined,
+    });
+    return response.data;
+  },
+ 
+  markAllSeen: async (): Promise<{ markedSeen: number }> => {
+    const response = await api.put("/notifications/mark-all-seen");
+    return response.data;
+  },
+ 
+  markSeen: async (id: string) => {
+    const response = await api.put(`/notifications/${id}/seen`);
+    return response.data.notification;
+  },
+ 
+  deleteNotification: async (id: string) => {
+    await api.delete(`/notifications/${id}`);
+  },
+};

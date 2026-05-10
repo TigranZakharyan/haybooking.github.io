@@ -8,6 +8,7 @@ import { CalendarDays, SlidersHorizontal, X } from "lucide-react";
 import type { TBooking, TBookingStatus, TBusiness, TPagination } from "@/types";
 import { SectionTitle } from "@/components";
 import { useTranslation } from "react-i18next";
+import { useFilter } from "@/context/FilterContext";
 
 const QuickBookingBar = lazy(() => import("./QuickBookingBar"));
 
@@ -21,21 +22,32 @@ interface FilterValues {
 
 export function DashboardPage() {
   const { t } = useTranslation();
+  const { setSelectedBranchId } = useFilter();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [business, setBusiness] = useState<TBusiness | null>(null);
   const [bookings, setBookings] = useState<TBooking[]>([]);
-  const [pagination, setPagination] = useState<TPagination>({ page: 1, limit: 20, total: 0, pages: 1 });
+  const [pagination, setPagination] = useState<TPagination>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 1,
+  });
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterValues>({
-    branch: "all", service: "all", specialist: "all",
-    timeRange: { start: "", end: "" }, status: "all",
+    branch: "all",
+    service: "all",
+    specialist: "all",
+    timeRange: { start: "", end: "" },
+    status: "all",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<TBooking | null>(null);
   const [mobileCalendarOpen, setMobileCalendarOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -61,10 +73,16 @@ export function DashboardPage() {
 
   const handleChangeStatus = (bookingId: string) => {
     const booking = bookings.find((b) => b._id === bookingId);
-    if (booking) { setSelectedBooking(booking); setIsModalOpen(true); }
+    if (booking) {
+      setSelectedBooking(booking);
+      setIsModalOpen(true);
+    }
   };
 
-  const handleUpdateStatus = async (bookingId: string, newStatus: TBookingStatus) => {
+  const handleUpdateStatus = async (
+    bookingId: string,
+    newStatus: TBookingStatus,
+  ) => {
     try {
       await bookingService.updateBookingStatus(bookingId, newStatus);
       await fetchBookings(pagination.page);
@@ -80,28 +98,55 @@ export function DashboardPage() {
   };
 
   const getBookingsForDate = (date: Date) =>
-    bookings.filter((b) => normalizeDate(b.bookingDate) === normalizeDate(date));
+    bookings.filter(
+      (b) => normalizeDate(b.bookingDate) === normalizeDate(date),
+    );
 
-  const getBookingCountForDate = (date: Date) => getBookingsForDate(date).length;
+  const getBookingCountForDate = (date: Date) =>
+    getBookingsForDate(date).length;
 
-  const timeToMinutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+  const timeToMinutes = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
 
   const filteredBookings = bookings.filter((booking) => {
-    const dateMatch = selectedDate ? normalizeDate(booking.bookingDate) === normalizeDate(selectedDate) : true;
-    const branchMatch = filters.branch === "all" || booking.branch?._id === filters.branch;
-    const statusMatch = filters.status === "all" || booking.status === filters.status;
-    const serviceMatch = filters.service === "all" || booking.services.find((e) => e._id === filters.service);
-    const specialistMatch = filters.specialist === "all" || booking.specialist?._id === filters.specialist;
+    const dateMatch = selectedDate
+      ? normalizeDate(booking.bookingDate) === normalizeDate(selectedDate)
+      : true;
+    const branchMatch =
+      filters.branch === "all" || booking.branch?._id === filters.branch;
+    const statusMatch =
+      filters.status === "all" || booking.status === filters.status;
+    const serviceMatch =
+      filters.service === "all" ||
+      booking.services.find((e) => e._id === filters.service);
+    const specialistMatch =
+      filters.specialist === "all" ||
+      booking.specialist?._id === filters.specialist;
     let timeMatch = true;
     if (filters.timeRange.start && filters.timeRange.end) {
       const time = timeToMinutes(booking.startTime);
-      timeMatch = time >= timeToMinutes(filters.timeRange.start) && time <= timeToMinutes(filters.timeRange.end);
+      timeMatch =
+        time >= timeToMinutes(filters.timeRange.start) &&
+        time <= timeToMinutes(filters.timeRange.end);
     } else if (filters.timeRange.start) {
-      timeMatch = timeToMinutes(booking.startTime) >= timeToMinutes(filters.timeRange.start);
+      timeMatch =
+        timeToMinutes(booking.startTime) >=
+        timeToMinutes(filters.timeRange.start);
     } else if (filters.timeRange.end) {
-      timeMatch = timeToMinutes(booking.startTime) <= timeToMinutes(filters.timeRange.end);
+      timeMatch =
+        timeToMinutes(booking.startTime) <=
+        timeToMinutes(filters.timeRange.end);
     }
-    return dateMatch && branchMatch && statusMatch && serviceMatch && specialistMatch && timeMatch;
+    return (
+      dateMatch &&
+      branchMatch &&
+      statusMatch &&
+      serviceMatch &&
+      specialistMatch &&
+      timeMatch
+    );
   });
 
   const branches = business?.branches || [];
@@ -109,8 +154,10 @@ export function DashboardPage() {
   const specialists = business?.specialists || [];
 
   const handleFilterChange = (filterValues: {
-    branch: string | null; service: string | null;
-    specialist: string | null; timeRange: { start: string; end: string };
+    branch: string | null;
+    service: string | null;
+    specialist: string | null;
+    timeRange: { start: string; end: string };
   }) => {
     setFilters((prev) => ({
       ...prev,
@@ -119,6 +166,13 @@ export function DashboardPage() {
       specialist: filterValues.specialist || "all",
       timeRange: filterValues.timeRange || { start: "", end: "" },
     }));
+
+    // Sync to context — only send actual ID, not "all"
+    const branchId =
+      filterValues.branch && filterValues.branch !== "all"
+        ? filterValues.branch
+        : null;
+    setSelectedBranchId(branchId); // ← add this
   };
 
   if (loading) {
@@ -129,27 +183,34 @@ export function DashboardPage() {
     );
   }
 
-  const bookingBarProps = business ? {
-    business,
-    branchOptions: [
-      { label: t("dashboard.filters.allBranches"), value: "all" },
-      ...branches.map((b) => ({ label: b.address?.street || b.address?.city || t("dashboard.filters.branch"), value: b._id })),
-    ],
-    serviceOptions: [
-      { label: t("dashboard.filters.allServices"), value: "all" },
-      ...services.map((s) => ({ label: s.name, value: s._id })),
-    ],
-    specialistOptions: [
-      { label: t("dashboard.filters.allSpecialists"), value: "all" },
-      ...specialists.map((s) => ({ label: s.name, value: s._id })),
-    ],
-    onFilterChange: handleFilterChange,
-    onBooked: fetchBookings,
-  } : null;
+  const bookingBarProps = business
+    ? {
+        business,
+        branchOptions: [
+          { label: t("dashboard.filters.allBranches"), value: "all" },
+          ...branches.map((b) => ({
+            label:
+              b.address?.street ||
+              b.address?.city ||
+              t("dashboard.filters.branch"),
+            value: b._id,
+          })),
+        ],
+        serviceOptions: [
+          { label: t("dashboard.filters.allServices"), value: "all" },
+          ...services.map((s) => ({ label: s.name, value: s._id })),
+        ],
+        specialistOptions: [
+          { label: t("dashboard.filters.allSpecialists"), value: "all" },
+          ...specialists.map((s) => ({ label: s.name, value: s._id })),
+        ],
+        onFilterChange: handleFilterChange,
+        onBooked: fetchBookings,
+      }
+    : null;
 
   return (
     <div className="h-full overflow-hidden">
-
       {/* DESKTOP */}
       <div className="hidden lg:grid h-full grid-cols-[1fr_minmax(300px,350px)] gap-2">
         <div className="h-full flex flex-col gap-2 min-h-0">
@@ -171,21 +232,54 @@ export function DashboardPage() {
               )}
             </div>
             <div className="flex-1 overflow-auto min-h-0 p-6">
-              <BookingsList bookings={filteredBookings} selectedDate={selectedDate} onChangeStatus={handleChangeStatus} />
-              <Pagination pagination={pagination} onPageChange={handlePageChange} />
+              <BookingsList
+                bookings={filteredBookings}
+                selectedDate={selectedDate}
+                onChangeStatus={handleChangeStatus}
+              />
+              <Pagination
+                pagination={pagination}
+                onPageChange={handlePageChange}
+              />
             </div>
           </div>
         </div>
 
         <aside className="h-full flex flex-col bg-white/40 rounded-2xl p-4 overflow-auto">
-          <h3 className="mb-3 font-medium text-text-body">{t("dashboard.calendar")}</h3>
-          <Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} getBookingCount={getBookingCountForDate} showGoToToday showShowAll />
+          <h3 className="mb-3 font-medium text-text-body">
+            {t("dashboard.calendar")}
+          </h3>
+          <Calendar
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+            getBookingCount={getBookingCountForDate}
+            showGoToToday
+            showShowAll
+          />
           <div className="mt-6 pt-6 border-t space-y-3">
-            <h3 className="font-medium text-text-body mb-3">{t("dashboard.statistics")}</h3>
-            <div className="flex justify-between text-sm"><span>{t("dashboard.totalBookings")}</span><span className="font-semibold">{pagination.total}</span></div>
-            <div className="flex justify-between text-sm"><span>{t("dashboard.today")}</span><span className="font-semibold">{getBookingsForDate(new Date()).length}</span></div>
-            <div className="flex justify-between text-sm"><span>{t("dashboard.filtered")}</span><span className="font-semibold">{filteredBookings.length}</span></div>
-            <div className="flex justify-between text-sm"><span>{t("dashboard.pending")}</span><span className="font-semibold text-yellow-600">{bookings.filter((b) => b.status === "pending").length}</span></div>
+            <h3 className="font-medium text-text-body mb-3">
+              {t("dashboard.statistics")}
+            </h3>
+            <div className="flex justify-between text-sm">
+              <span>{t("dashboard.totalBookings")}</span>
+              <span className="font-semibold">{pagination.total}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>{t("dashboard.today")}</span>
+              <span className="font-semibold">
+                {getBookingsForDate(new Date()).length}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>{t("dashboard.filtered")}</span>
+              <span className="font-semibold">{filteredBookings.length}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>{t("dashboard.pending")}</span>
+              <span className="font-semibold text-yellow-600">
+                {bookings.filter((b) => b.status === "pending").length}
+              </span>
+            </div>
           </div>
         </aside>
       </div>
@@ -195,11 +289,20 @@ export function DashboardPage() {
         <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 pt-3 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">{t("dashboard.bookings")}</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                {t("dashboard.bookings")}
+              </h2>
               <p className="text-xs text-gray-400">
                 {filteredBookings.length} {t("dashboard.shown")}
                 {selectedDate && (
-                  <span className="text-teal-600"> · {selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                  <span className="text-teal-600">
+                    {" "}
+                    ·{" "}
+                    {selectedDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
                 )}
               </p>
             </div>
@@ -210,7 +313,9 @@ export function DashboardPage() {
               >
                 <CalendarDays size={15} />
                 <span>{t("calendar")}</span>
-                {selectedDate && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-teal-600 rounded-full border-2 border-white" />}
+                {selectedDate && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-teal-600 rounded-full border-2 border-white" />
+                )}
               </button>
               <button
                 onClick={() => setMobileFiltersOpen(true)}
@@ -218,7 +323,11 @@ export function DashboardPage() {
               >
                 <SlidersHorizontal size={15} />
                 <span>{t("dashboard.filter")}</span>
-                {(filters.branch !== "all" || filters.service !== "all" || filters.specialist !== "all" || filters.status !== "all" || filters.timeRange.start) && (
+                {(filters.branch !== "all" ||
+                  filters.service !== "all" ||
+                  filters.specialist !== "all" ||
+                  filters.status !== "all" ||
+                  filters.timeRange.start) && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-teal-600 rounded-full border-2 border-white" />
                 )}
               </button>
@@ -228,31 +337,62 @@ export function DashboardPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-3">
-          <BookingsList bookings={filteredBookings} selectedDate={selectedDate} onChangeStatus={handleChangeStatus} />
+          <BookingsList
+            bookings={filteredBookings}
+            selectedDate={selectedDate}
+            onChangeStatus={handleChangeStatus}
+          />
           <Pagination pagination={pagination} onPageChange={handlePageChange} />
         </div>
       </div>
 
       {/* Mobile Calendar Sheet */}
       {mobileCalendarOpen && (
-        <MobileSheet title={t("calendar")} onClose={() => setMobileCalendarOpen(false)}>
+        <MobileSheet
+          title={t("calendar")}
+          onClose={() => setMobileCalendarOpen(false)}
+        >
           <div className="flex flex-col items-center">
             <Calendar
               selectedDate={selectedDate}
-              onDateSelect={(date) => { setSelectedDate(date); setMobileCalendarOpen(false); }}
+              onDateSelect={(date) => {
+                setSelectedDate(date);
+                setMobileCalendarOpen(false);
+              }}
               getBookingCount={getBookingCountForDate}
               showGoToToday
               showShowAll
             />
             <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 gap-3">
               {[
-                { label: t("dashboard.totalBookings"), value: pagination.total, color: "text-gray-900" },
-                { label: t("dashboard.today"), value: getBookingsForDate(new Date()).length, color: "text-teal-700" },
-                { label: t("dashboard.filtered"), value: filteredBookings.length, color: "text-gray-900" },
-                { label: t("dashboard.pending"), value: bookings.filter(b => b.status === "pending").length, color: "text-yellow-600" },
-              ].map(item => (
-                <div key={item.label} className="bg-gray-50 rounded-2xl px-4 py-3">
-                  <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
+                {
+                  label: t("dashboard.totalBookings"),
+                  value: pagination.total,
+                  color: "text-gray-900",
+                },
+                {
+                  label: t("dashboard.today"),
+                  value: getBookingsForDate(new Date()).length,
+                  color: "text-teal-700",
+                },
+                {
+                  label: t("dashboard.filtered"),
+                  value: filteredBookings.length,
+                  color: "text-gray-900",
+                },
+                {
+                  label: t("dashboard.pending"),
+                  value: bookings.filter((b) => b.status === "pending").length,
+                  color: "text-yellow-600",
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="bg-gray-50 rounded-2xl px-4 py-3"
+                >
+                  <p className={`text-2xl font-bold ${item.color}`}>
+                    {item.value}
+                  </p>
                   <p className="text-xs text-gray-400 mt-0.5">{item.label}</p>
                 </div>
               ))}
@@ -263,56 +403,117 @@ export function DashboardPage() {
 
       {/* Mobile Filter Sheet */}
       {mobileFiltersOpen && (
-        <MobileSheet title={t("dashboard.filterBookings")} onClose={() => setMobileFiltersOpen(false)}>
+        <MobileSheet
+          title={t("dashboard.filterBookings")}
+          onClose={() => setMobileFiltersOpen(false)}
+        >
           <div className="space-y-5">
             <FilterGroup
               label={t("dashboard.filters.branch")}
-              options={[{ label: t("dashboard.filters.all"), value: "all" }, ...branches.map(b => ({ label: b.address?.street || t("dashboard.filters.branch"), value: b._id }))]}
-              value={filters.branch} onChange={v => setFilters(p => ({ ...p, branch: v }))}
+              options={[
+                { label: t("dashboard.filters.all"), value: "all" },
+                ...branches.map((b) => ({
+                  label: b.address?.street || t("dashboard.filters.branch"),
+                  value: b._id,
+                })),
+              ]}
+              value={filters.branch}
+              onChange={(v) => setFilters((p) => ({ ...p, branch: v }))}
             />
             <FilterGroup
               label={t("dashboard.filters.service")}
-              options={[{ label: t("dashboard.filters.all"), value: "all" }, ...services.map(s => ({ label: s.name, value: s._id }))]}
-              value={filters.service} onChange={v => setFilters(p => ({ ...p, service: v }))}
+              options={[
+                { label: t("dashboard.filters.all"), value: "all" },
+                ...services.map((s) => ({ label: s.name, value: s._id })),
+              ]}
+              value={filters.service}
+              onChange={(v) => setFilters((p) => ({ ...p, service: v }))}
             />
             <FilterGroup
               label={t("dashboard.filters.specialist")}
-              options={[{ label: t("dashboard.filters.all"), value: "all" }, ...specialists.map(s => ({ label: s.name, value: s._id }))]}
-              value={filters.specialist} onChange={v => setFilters(p => ({ ...p, specialist: v }))}
+              options={[
+                { label: t("dashboard.filters.all"), value: "all" },
+                ...specialists.map((s) => ({ label: s.name, value: s._id })),
+              ]}
+              value={filters.specialist}
+              onChange={(v) => setFilters((p) => ({ ...p, specialist: v }))}
             />
             <FilterGroup
               label={t("dashboard.filters.status")}
-              options={["all", "pending", "confirmed", "completed", "cancelled"].map(s => ({ label: s === "all" ? t("dashboard.filters.all") : t(`statuses.${s}`), value: s }))}
-              value={filters.status} onChange={v => setFilters(p => ({ ...p, status: v }))}
+              options={[
+                "all",
+                "pending",
+                "confirmed",
+                "completed",
+                "cancelled",
+              ].map((s) => ({
+                label:
+                  s === "all" ? t("dashboard.filters.all") : t(`statuses.${s}`),
+                value: s,
+              }))}
+              value={filters.status}
+              onChange={(v) => setFilters((p) => ({ ...p, status: v }))}
             />
 
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t("dashboard.filters.timeRange")}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                {t("dashboard.filters.timeRange")}
+              </p>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <p className="text-xs text-gray-400 mb-1">{t("dashboard.filters.from")}</p>
-                  <input type="time" value={filters.timeRange.start}
-                    onChange={e => setFilters(p => ({ ...p, timeRange: { ...p.timeRange, start: e.target.value } }))}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+                  <p className="text-xs text-gray-400 mb-1">
+                    {t("dashboard.filters.from")}
+                  </p>
+                  <input
+                    type="time"
+                    value={filters.timeRange.start}
+                    onChange={(e) =>
+                      setFilters((p) => ({
+                        ...p,
+                        timeRange: { ...p.timeRange, start: e.target.value },
+                      }))
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+                  />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-gray-400 mb-1">{t("dashboard.filters.to")}</p>
-                  <input type="time" value={filters.timeRange.end}
-                    onChange={e => setFilters(p => ({ ...p, timeRange: { ...p.timeRange, end: e.target.value } }))}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+                  <p className="text-xs text-gray-400 mb-1">
+                    {t("dashboard.filters.to")}
+                  </p>
+                  <input
+                    type="time"
+                    value={filters.timeRange.end}
+                    onChange={(e) =>
+                      setFilters((p) => ({
+                        ...p,
+                        timeRange: { ...p.timeRange, end: e.target.value },
+                      }))
+                    }
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+                  />
                 </div>
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => setFilters({ branch: "all", service: "all", specialist: "all", timeRange: { start: "", end: "" }, status: "all" })}
-                className="flex-1 py-3.5 bg-gray-100 text-gray-700 rounded-2xl font-semibold text-sm">
+                onClick={() =>
+                  setFilters({
+                    branch: "all",
+                    service: "all",
+                    specialist: "all",
+                    timeRange: { start: "", end: "" },
+                    status: "all",
+                  })
+                }
+                className="flex-1 py-3.5 bg-gray-100 text-gray-700 rounded-2xl font-semibold text-sm"
+              >
                 {t("dashboard.filters.clearAll")}
               </button>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="flex-1 py-3.5 bg-teal-700 text-white rounded-2xl font-semibold text-sm">
+                className="flex-1 py-3.5 bg-teal-700 text-white rounded-2xl font-semibold text-sm"
+              >
                 {t("dashboard.filters.apply")}
               </button>
             </div>
@@ -323,7 +524,10 @@ export function DashboardPage() {
       {isModalOpen && selectedBooking && (
         <ChangeStatusModal
           isOpen={isModalOpen}
-          onClose={() => { setIsModalOpen(false); setSelectedBooking(null); }}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedBooking(null);
+          }}
           booking={selectedBooking}
           onUpdateStatus={handleUpdateStatus}
         />
@@ -332,8 +536,14 @@ export function DashboardPage() {
   );
 }
 
-function BookingsList({ bookings, selectedDate, onChangeStatus }: {
-  bookings: TBooking[]; selectedDate: Date | null; onChangeStatus: (id: string) => void;
+function BookingsList({
+  bookings,
+  selectedDate,
+  onChangeStatus,
+}: {
+  bookings: TBooking[];
+  selectedDate: Date | null;
+  onChangeStatus: (id: string) => void;
 }) {
   const { t } = useTranslation();
   if (bookings.length === 0) {
@@ -341,22 +551,36 @@ function BookingsList({ bookings, selectedDate, onChangeStatus }: {
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <p className="text-gray-500 text-sm">{t("dashboard.noBookings")}</p>
         <p className="text-xs text-gray-400 mt-1">
-          {selectedDate ? t("dashboard.tryDifferentDate") : t("dashboard.noBookingsMatch")}
+          {selectedDate
+            ? t("dashboard.tryDifferentDate")
+            : t("dashboard.noBookingsMatch")}
         </p>
       </div>
     );
   }
   return (
     <div className="space-y-4">
-      {bookings.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((booking) => (
-        <BookingCard key={booking._id} booking={booking} onChangeStatus={onChangeStatus} />
-      ))}
+      {bookings
+        .sort((a, b) => a.startTime.localeCompare(b.startTime))
+        .map((booking) => (
+          <BookingCard
+            key={booking._id}
+            booking={booking}
+            onChangeStatus={onChangeStatus}
+          />
+        ))}
     </div>
   );
 }
 
-function MobileSheet({ title, onClose, children }: {
-  title: string; onClose: () => void; children: React.ReactNode;
+function MobileSheet({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <>
@@ -367,7 +591,10 @@ function MobileSheet({ title, onClose, children }: {
         </div>
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
           <h3 className="font-semibold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500"
+          >
             <X size={16} />
           </button>
         </div>
@@ -377,16 +604,29 @@ function MobileSheet({ title, onClose, children }: {
   );
 }
 
-function FilterGroup({ label, options, value, onChange }: {
-  label: string; options: { label: string; value: string }[]; value: string; onChange: (v: string) => void;
+function FilterGroup({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { label: string; value: string }[];
+  value: string;
+  onChange: (v: string) => void;
 }) {
   return (
     <div>
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{label}</p>
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+        {label}
+      </p>
       <div className="flex flex-wrap gap-2">
-        {options.map(opt => (
-          <button key={opt.value} onClick={() => onChange(opt.value)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium border capitalize transition-colors ${value === opt.value ? "bg-teal-700 text-white border-teal-700" : "bg-white text-gray-700 border-gray-200"}`}>
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium border capitalize transition-colors ${value === opt.value ? "bg-teal-700 text-white border-teal-700" : "bg-white text-gray-700 border-gray-200"}`}
+          >
             {opt.label}
           </button>
         ))}

@@ -15,18 +15,40 @@ import {
   LogOut,
   Sun,
   Moon,
-  BellDot,
+  Bell,
 } from "lucide-react";
 import { ProfileAvatar, Tooltip } from "@/components";
 import { LanguageSelect } from "@/components/LanguageSelect";
+import { NotificationPanel } from "@/components/NotificationPanel";
+import { useNotifications } from "@/context/NoticationContext";
+import { useFilter } from "@/context/FilterContext";
 
 export function DashboardLayout() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const { selectedBranchId } = useFilter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
+  // ── Notification state ───────────────────────────────────────────────────
+  const {
+    notifications,
+    unseenCount,
+    pagination,
+    loading,
+    markSeen,
+    markAllSeen,
+    remove,
+    loadMore,
+  } = useNotifications(notifOpen, selectedBranchId);
+
+  const hasMore = pagination
+    ? pagination.page < pagination.pages
+    : false;
+
+  // ── Nav items ────────────────────────────────────────────────────────────
   const NAV_ITEMS = [
     { label: t("navigation.dashboard"), Icon: Home, to: "/dashboard" },
     { label: t("navigation.services"), Icon: Box, to: "/dashboard/services" },
@@ -148,9 +170,7 @@ export function DashboardLayout() {
             <button
               onClick={() => setDarkMode((d) => !d)}
               className="flex items-center justify-center rounded-xl select-none h-11 w-11 shrink-0 text-gray-400 hover:bg-white/50 hover:text-gray-800 transition-colors duration-200"
-              aria-label={
-                darkMode ? t("layout.lightMode") : t("layout.darkMode")
-              }
+              aria-label={darkMode ? t("layout.lightMode") : t("layout.darkMode")}
             >
               {darkMode ? (
                 <Sun className="w-4 h-4" strokeWidth={1.8} />
@@ -176,9 +196,7 @@ export function DashboardLayout() {
               ${collapsed ? "" : "ml-auto"}
             `}
             aria-label={
-              collapsed
-                ? t("layout.expandSidebar")
-                : t("layout.collapseSidebar")
+              collapsed ? t("layout.expandSidebar") : t("layout.collapseSidebar")
             }
           >
             <ChevronLeft
@@ -256,7 +274,27 @@ export function DashboardLayout() {
 
             <div className="flex items-center">
               <LanguageSelect />
-              <BellDot className="text-primary mr-4 hover:text-primary/80 cursor-pointer" />
+
+              {/* ── Bell button with unseen badge ── */}
+              <button
+                onClick={() => setNotifOpen((o) => !o)}
+                className="relative p-2 mr-2 rounded-xl text-gray-500 hover:bg-white/60
+                  hover:text-gray-800 transition-colors duration-200"
+                aria-label={t("notifications.title", "Notifications")}
+              >
+                <Bell className="w-5 h-5" strokeWidth={1.8} />
+                {unseenCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 flex items-center justify-center
+                      min-w-[17px] h-[17px] px-1 rounded-full
+                      bg-rose-400 text-white text-[9px] font-bold leading-none
+                      ring-2 ring-white/80"
+                  >
+                    {unseenCount > 99 ? "99+" : unseenCount}
+                  </span>
+                )}
+              </button>
+
               <ProfileAvatar initials={initials} link="/dashboard/settings" />
             </div>
           </header>
@@ -266,6 +304,21 @@ export function DashboardLayout() {
           </main>
         </div>
       </div>
+
+      {/* ── Notification panel (rendered outside the clipped layout box) ── */}
+      <NotificationPanel
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        notifications={notifications}
+        unseenCount={unseenCount}
+        loading={loading}
+        hasMore={hasMore}
+        onMarkSeen={markSeen}
+        onMarkAllSeen={markAllSeen}
+        onDelete={remove}
+        onLoadMore={loadMore}
+        
+      />
     </div>
   );
 }

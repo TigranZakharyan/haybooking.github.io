@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { UserLayout, DashboardLayout } from "@/layouts";
 import { HomePage, SignInPage, SignUpPage, DashboardPage, PricingPage, SettingsPage, AnalyticsPage, SpecialistsPage, ServicesPage, BranchesPage, MyBookingsPage, CustomerSettingsPage, BusinessPage } from "@/pages";
+import { FilterProvider } from "@/context/FilterContext";
 
 const router = createBrowserRouter([
   {
@@ -18,7 +19,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <DashboardLayout />,
+    element: <FilterProvider><DashboardLayout /></FilterProvider>,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "settings", element: <SettingsPage /> },
